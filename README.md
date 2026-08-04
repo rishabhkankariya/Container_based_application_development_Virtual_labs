@@ -145,12 +145,45 @@ Make sure Python 3 is installed.
    ```
    *Note: Environment variables such as `FLASK_SECRET_KEY`, `FLASK_RUN_HOST`, `FLASK_RUN_PORT`, and `FLASK_DEBUG` can be customized to change execution parameters.*
 
----
+## 👥 Collaborator & Teammate Development Guide
 
-## 👥 Branching Guidelines for Teammates
-1. Ensure your local branch is updated with the latest remote `main` branch before coding.
-2. Create a clean branch indicating your lab feature:
-   ```bash
-   git checkout -b feature/lab3-compose
-   ```
-3. Add your templates inside the `templates/` folder and implement logic inside `app.py`. Ensure DB alterations are added in `init_db()` under non-destructive `IF NOT EXISTS` queries.
+To work on new virtual lab worksheets (e.g., Lab 3, Lab 4, etc.) smoothly without code conflicts, follow these guidelines:
+
+### 1. Git Workflow
+- Always start by updating your local `main` branch:
+  ```bash
+  git checkout main
+  git pull origin main
+  ```
+- Create a feature branch named after the lab you are building:
+  ```bash
+  git checkout -b feature/lab3-compose
+  ```
+- Do not commit directly to the `main` branch. Push your branch and create a Pull Request (PR) for review.
+
+### 2. Adding a New Lab Module
+- **Frontend Templates**:
+  - Add your frontend pages inside `frontend/templates/` (e.g. `frontend/templates/lab3.html`).
+  - Link your stylesheets or script files under `frontend/static/`.
+- **Backend Routes & Logic**:
+  - Open `backend/app.py`.
+  - Add your routing handler (e.g., `@app.route('/lab/3')` or mapping to `/lab/<int:lab_number>`).
+- **Database Schema Alterations**:
+  - If your lab module requires new tables or configurations in the database, add them directly to the `init_db()` function in `backend/app.py` inside the `conn.executescript()` section using standard `IF NOT EXISTS` queries. This ensures that the database updates automatically when your team runs the app locally.
+  - Never check in the `database/vlab.db` file to Git.
+
+### 3. Local Development Best Practices
+- Run the server in Debug mode locally to see updates instantly without restarting:
+  ```bash
+  # On Windows PowerShell:
+  $env:FLASK_DEBUG="true"
+  python backend/app.py
+
+  # On Linux/macOS:
+  export FLASK_DEBUG="true"
+  python backend/app.py
+  ```
+- If you install any new libraries (e.g., `requests`, `docker`), make sure to freeze them into `backend/requirements.txt`:
+  ```bash
+  pip freeze > backend/requirements.txt
+  ```

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}V-Lab | Virtual Docker Laboratory Suite{% endblock %}</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<canvas id="particles"></canvas>
+{% block body %}{% endblock %}
+<!-- Toast Notification Container -->
+<div id="vlabToastContainer" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
+
+<!-- Custom Alert / Confirm Modal Overlay -->
+<div id="vlabModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1.5px solid var(--border-bright);border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3);animation:modalPop .25s cubic-bezier(0.16, 1, 0.3, 1)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div id="vlabModalIcon" style="width:36px;height:36px;border-radius:50%;background:rgba(2,132,199,0.1);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-circle-info"></i></div>
+      <h3 id="vlabModalTitle" style="margin:0;font-size:1.1rem;color:var(--text)">V-Lab Notification</h3>
+    </div>
+    <div id="vlabModalBody" style="font-size:.9rem;color:var(--muted);line-height:1.5;margin-bottom:20px"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px" id="vlabModalActions">
+      <button class="btn btn-primary btn-sm" onclick="closeVLabModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Particle system
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [];
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+for (let i = 0; i < 55; i++) particles.push({
+  x: Math.random()*W, y: Math.random()*H,
+  r: Math.random()*1.5+0.3,
+  vx: (Math.random()-.5)*.25, vy: (Math.random()-.5)*.25,
+  a: Math.random()*.5+.1,
+  c: Math.random()<.6?'45,143,255':'0,229,160'
+});
+function drawParticles() {
+  ctx.clearRect(0,0,W,H);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${p.c},${p.a})`; ctx.fill();
+  });
+  // Connect nearby particles
+  for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++){
+    const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    if(d<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);
+      ctx.lineTo(particles[j].x,particles[j].y);
+      ctx.strokeStyle=`rgba(45,143,255,${.08*(1-d/120)})`; ctx.lineWidth=.5; ctx.stroke();}
+  }
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// Global Toaster Helper
+window.showToast = function(msg, type='info') {
+  const container = document.getElementById('vlabToastContainer');
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    pointer-events: auto;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-bright);
+    border-left: 4px solid ${type==='success'?'var(--green)':(type==='error'?'var(--red)':'var(--blue)')};
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: .88rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 280px;
+    max-width: 420px;
+    animation: toastIn .3s cubic-bezier(0.16, 1, 0.3, 1);
+  `;
+  const icon = type==='success'?'fa-circle-check':(type==='error'?'fa-circle-xmark':'fa-circle-info');
+  const iconColor = type==='success'?'var(--green)':(type==='error'?'var(--red)':'var(--blue)');
+  toast.innerHTML = `<i class="fa-solid ${icon}" style="color:${iconColor};font-size:1.1rem"></i><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all .3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+};
+
+// Global Custom Alert Override
+window.alert = function(msg) {
+  document.getElementById('vlabModalBody').textContent = msg;
+  document.getElementById('vlabModalOverlay').style.display = 'flex';
+};
+
+function closeVLabModal() {
+  document.getElementById('vlabModalOverlay').style.display = 'none';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}Faculty Control Center &mdash; V-Lab Virtual Docker Suite{% endblock %}
+{% block body %}
+<div class="topbar">
+  <div class="brand"><span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span><span>V-Lab Container Suite &middot; Faculty Console</span><span class="live-dot"></span></div>
+  <div class="topbar-right">
+    <span class="live-badge"><i class="fa-solid fa-signal"></i> LIVE</span>
+    <span><i class="fa-solid fa-user-tie"></i> {{ session.get("faculty_username") }}</span>
+    <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
+  </div>
+</div>
+<div class="wrap">
+  <h1><i class="fa-solid fa-chart-pie" style="color:var(--blue)"></i> Comprehensive Class Analytics &amp; Multi-Lab Roster</h1>
+  <p style="margin-bottom:24px">Real-time instructor dashboard &mdash; monitors live student progress across Lab 1, Lab 2, future modules, background tasks, and credentials.</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, msg in messages %}
+    <div class="flash flash-{{ category }}"><i class="fa-solid fa-bell"></i> {{ msg }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+  <div class="grid-3" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:24px">
+    <div class="stat num-blue">
+      <div class="num"><i class="fa-solid fa-users" style="font-size:1.4rem;opacity:.5"></i> <span id="statTotal">{{ total_students }}</span></div>
+      <div class="lbl">Total Enrolled</div>
+      <div class="stat-bar"></div>
+    </div>
+    <div class="stat num-green">
+      <div class="num"><i class="fa-solid fa-circle-check" style="font-size:1.4rem;opacity:.5"></i> <span id="statDone">{{ lab1_completed }}</span> / {{ total_students }}</div>
+      <div class="lbl">Lab 1 Completed</div>
+      <div class="stat-bar"></div>
+    </div>
+    <div class="stat num-green" style="border-left:4px solid #38bdf8">
+      <div class="num" style="color:#38bdf8"><i class="fa-solid fa-box-archive" style="font-size:1.4rem;opacity:.5"></i> <span id="statLab2Done">{{ lab2_completed }}</span> / {{ total_students }}</div>
+      <div class="lbl">Lab 2 Completed</div>
+      <div class="stat-bar" style="background:#38bdf8"></div>
+    </div>
+  </div>
+  <!-- Video Lecture Upload Card -->
+  <div class="card">
+    <h3><i class="fa-solid fa-video"></i> Lecture Video Manager</h3>
+    <h2 style="margin-bottom:8px">Upload / Link Lab Video Explanation</h2>
+    <p style="margin-bottom:16px">Faculty can link YouTube/MP4 video tutorials to explain Lab 1 and Lab 2 to students.</p>
+    <div class="grid-2" style="grid-template-columns:1fr 1fr">
+      <div>
+        <label>Select Lab Module</label>
+        <select id="videoLabSelect">
+          <option value="1">Lab 1: Docker Desktop Setup & Verification</option>
+          <option value="2">Lab 2: Create Docker Image & Hello World Web App</option>
+        </select>
+        <label>Video Title</label>
+        <input type="text" id="videoTitleInput" placeholder="e.g. Lab 1 Detailed Explanation & Walkthrough">
+      </div>
+      <div>
+        <label>Video Embed / Stream URL</label>
+        <input type="text" id="videoUrlInput" placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ">
+        <button type="button" class="btn btn-primary" onclick="saveFacultyVideo()" style="width:100%;margin-top:4px"><i class="fa-solid fa-cloud-arrow-up"></i> Save &amp; Publish Video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Help Tickets Card -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div><h3><i class="fa-solid fa-headset"></i> Help Desk</h3><h2>Student Issue Tickets &amp; Help Requests</h2></div>
+      <span class="live-badge" id="ticketBadge">0 Tickets</span>
+    </div>
+    <div id="facultyTicketsContainer" style="display:flex;flex-direction:column;gap:12px">
+      <div style="color:var(--muted);font-size:.84rem;padding:12px 0">No active student support tickets reported.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><i class="fa-solid fa-file-excel"></i> Roster Upload</h3>
+    <h2 style="margin-bottom:8px">Import Class Roster via Excel</h2>
+    <p style="margin-bottom:16px">Upload a <code>.xlsx</code> file containing a <code>Name</code> column. Auto-generates student IDs and default passwords.</p>
+    <form method="POST" action="{{ url_for('faculty_upload') }}" enctype="multipart/form-data">
+      <div class="upload-zone">
+        <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--blue);font-size:2.4rem"></i></div>
+        <div class="upload-text" style="font-weight:600;margin-top:6px">Click to browse or drag an Excel file here</div>
+        <div class="upload-hint">.xlsx format only &mdash; see sample_roster.xlsx for column format</div>
+        <input type="file" name="roster_file" accept=".xlsx" required id="fileInput" onchange="showFileName(this)">
+      </div>
+      <div id="fileName" style="font-size:.84rem;color:var(--blue);font-family:var(--mono);margin:10px 0;min-height:18px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Upload &amp; Issue Credentials</button>
+        <a href="{{ url_for('download_creds') }}" class="btn btn-outline"><i class="fa-solid fa-file-export"></i> Export Credentials (.xlsx)</a>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div><h3><i class="fa-solid fa-microchip"></i> Live Operations</h3><h2>Active Student Background Tasks</h2></div>
+      <span class="live-badge" id="facultyTaskBadge">0 Active Tasks</span>
+    </div>
+    <div id="facultyTaskContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px">
+      <div style="color:var(--muted);font-size:.82rem;grid-column:1/-1;padding:12px 0">No background execution jobs currently running.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div><h3><i class="fa-solid fa-list-ol"></i> Student Roster &amp; All Lab Statuses</h3><h2>Individual Student Progress Across All Labs</h2></div>
+      <span class="live-badge"><i class="fa-solid fa-rotate"></i> Auto-refresh (5s)</span>
+    </div>
+    {% if roster|length == 0 %}
+    <div style="text-align:center;padding:40px 20px">
+      <div style="font-size:3rem;margin-bottom:12px;color:var(--muted)"><i class="fa-solid fa-clipboard-user"></i></div>
+      <div style="color:var(--muted)">No students enrolled yet. Upload a class list above to get started.</div>
+    </div>
+    {% else %}
+    <div style="overflow-x:auto">
+    <table id="rosterTable">
+      <thead><tr>
+        <th>Student ID</th><th>Name</th><th>Email</th>
+        <th>Default Password</th><th>Password Status</th>
+        <th>Lab 1 Progress</th><th>Lab 2 Progress</th><th>Lab 3 (Future)</th><th>Lab 4 (Future)</th>
+        <th>Overall Score</th>
+      </tr></thead>
+      <tbody>
+      {% for r in roster %}
+      <tr id="row-{{ r.student_id }}">
+        <td><code><i class="fa-solid fa-id-badge"></i> {{ r.student_id }}</code></td>
+        <td style="font-weight:600">{{ r.name }}</td>
+        <td>{{ r.email or "&#x2014;" }}</td>
+        <td><code>{{ r.default_password }}</code></td>
+        <td>
+          {% if r.password_changed %}<span class="badge badge-green"><i class="fa-solid fa-shield-check"></i> Changed</span>
+          {% else %}<span class="badge badge-amber"><i class="fa-solid fa-key"></i> Default</span>{% endif %}
+        </td>
+        <td>
+          {% if r.lab1.verified %}<span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Lab 1 Done (7/7)</span>
+          {% elif r.lab1.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab1.steps_done }}/7</span>
+          {% else %}<span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>{% endif %}
+        </td>
+        <td>
+          {% if r.lab2.verified %}<span class="badge badge-green" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0"><i class="fa-solid fa-circle-check"></i> Lab 2 Done (5/5)</span>
+          {% elif r.lab2.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab2.steps_done }}/5</span>
+          {% else %}<span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>{% endif %}
+        </td>
+        <td><span class="badge badge-muted" style="opacity:.6"><i class="fa-solid fa-lock"></i> Locked</span></td>
+        <td><span class="badge badge-muted" style="opacity:.6"><i class="fa-solid fa-lock"></i> Locked</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="progress-track" style="width:70px;height:6px">
+              <div class="progress-fill" style="--pct: {{ r.overall_pct }}%;"></div>
+            </div>
+            <span style="font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--text)">{{ r.overall_pct }}%</span>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+function showFileName(input){
+  const d=document.getElementById("fileName");
+  d.textContent=input.files[0]?("Selected: "+input.files[0].name):"";
+}
+function saveFacultyVideo() {
+  const lab_number = document.getElementById('videoLabSelect').value;
+  const video_title = document.getElementById('videoTitleInput').value;
+  const video_url = document.getElementById('videoUrlInput').value;
+  if (!video_title || !video_url) {
+    alert('Please enter both video title and embed URL!');
+    return;
+  }
+  fetch('/api/faculty/upload-video', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ lab_number: parseInt(lab_number), video_title, video_url })
+  })
+  .then(r => r.json())
+  .then(data => {
+    alert(data.message);
+    document.getElementById('videoTitleInput').value = '';
+    document.getElementById('videoUrlInput').value = '';
+  });
+}
+
+function pollTickets() {
+  fetch('/api/support/tickets/list')
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) return;
+    const tickets = d.tickets;
+    document.getElementById('ticketBadge').textContent = tickets.length + ' Ticket(s)';
+    const container = document.getElementById('facultyTicketsContainer');
+    if (!tickets.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:12px 0">No active student support tickets reported.</div>';
+      return;
+    }
+    let html = '';
+    tickets.forEach(t => {
+      html += `
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:700;font-size:.9rem;color:var(--text)"><i class="fa-solid fa-circle-question" style="color:var(--blue)"></i> ${t.title} (Lab ${t.lab_number})</span>
+            <span class="badge ${t.status==='OPEN'?'badge-amber':'badge-green'}">${t.status}</span>
+          </div>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:8px">Reported by <b>${t.student_name}</b> (${t.student_id}) &middot; ${t.created_at.slice(0,10)}</div>
+          <div style="background:var(--surface);padding:10px;border-radius:6px;font-size:.84rem;color:var(--text);margin-bottom:10px;border:1px solid var(--border)">${t.description}</div>
+          ${t.faculty_reply ? `<div style="font-size:.82rem;color:var(--green);font-weight:600;margin-bottom:8px"><i class="fa-solid fa-reply"></i> Faculty Reply: ${t.faculty_reply}</div>` : ''}
+          <div style="display:flex;gap:8px">
+            <input type="text" id="replyInput-${t.id}" placeholder="Type solution / reply for student..." style="margin:0;font-size:.82rem;padding:6px 10px">
+            <button class="btn btn-primary btn-sm" onclick="replyStudentTicket(${t.id})"><i class="fa-solid fa-paper-plane"></i> Send</button>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  });
+}
+
+function replyStudentTicket(ticketId) {
+  const reply = document.getElementById('replyInput-' + ticketId).value;
+  if (!reply) return;
+  fetch('/api/faculty/reply-ticket', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ ticket_id: ticketId, reply: reply, status: 'RESOLVED' })
+  })
+  .then(r => r.json())
+  .then(d => {
+    alert(d.message);
+    pollTickets();
+  });
+}
+
+// Live stats polling
+function pollStats(){
+  fetch("/api/faculty/stats")
+    .then(r=>r.json())
+    .then(d=>{
+      document.getElementById("statTotal").textContent=d.total;
+      document.getElementById("statDone").textContent=d.completed;
+      document.getElementById("statPending").textContent=d.total-d.completed;
+    }).catch(()=>{});
+
+  fetch("/api/tasks/list")
+    .then(r=>r.json())
+    .then(d=>{
+      if(!d.ok) return;
+      const tasks = d.tasks;
+      const active = tasks.filter(t=>t.status==='RUNNING');
+      document.getElementById("facultyTaskBadge").textContent = active.length + " Active Task(s)";
+      const container = document.getElementById("facultyTaskContainer");
+      if(!tasks.length){
+        container.innerHTML = '<div style="color:var(--muted);font-size:.82rem;grid-column:1/-1;padding:12px 0">No background execution jobs currently running.</div>';
+        return;
+      }
+      let html = '';
+      tasks.reverse().slice(0, 6).forEach(t=>{
+        html += `
+          <div class="task-item-card" style="padding:10px">
+            <div class="task-item-top">
+              <span class="task-name" style="font-size:.78rem">${t.name} (${t.student_id})</span>
+              <span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span>
+            </div>
+            <div class="task-meta" style="font-size:.7rem;margin:0">
+              <span>PID: ${t.pid||'N/A'}</span>
+              <span>CPU: ${t.cpu_percent}%</span>
+              <span>RAM: ${t.memory_mb}MB</span>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }).catch(()=>{});
+
+  pollTickets();
+}
+setInterval(pollStats, 5000);
+pollStats();
+</script>
+{% endblock %}
+

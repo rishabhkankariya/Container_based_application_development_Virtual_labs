@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Student Control Panel &mdash; V-Lab Virtual Docker Suite{% endblock %}
+{% block body %}
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span>
+    <span>V-Lab Container Suite</span>
+    <span class="live-dot"></span>
+  </div>
+  <div class="topbar-right">
+    <span><i class="fa-solid fa-user-circle"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
+    <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="fade-in">
+    <h1>Welcome back, {{ student.name.split(' ')[0] }} <i class="fa-solid fa-hand-wave" style="color:var(--amber)"></i></h1>
+    <p style="margin-bottom:28px">Your active lab modules and live execution metrics appear below.</p>
+  </div>
+
+  <!-- Stats row -->
+  <div class="grid-3" style="margin-bottom:24px">
+    <div class="stat num-blue fade-in" style="animation-delay:.05s">
+      <div class="num"><i class="fa-solid fa-list-check" style="font-size:1.4rem;opacity:.6"></i> {{ steps_done|length }}</div>
+      <div class="lbl">Steps completed</div>
+      <div class="stat-bar"></div>
+    </div>
+    <div class="stat num-{{ 'green' if verified else 'amber' }} fade-in" style="animation-delay:.1s">
+      <div class="num"><i class="fa-solid {{ 'fa-circle-check' if verified else 'fa-spinner' }}" style="font-size:1.4rem;opacity:.6"></i> {{ 'Done' if verified else 'Active' }}</div>
+      <div class="lbl">Lab 1 status</div>
+      <div class="stat-bar"></div>
+    </div>
+    <div class="stat num-purple fade-in" style="animation-delay:.15s">
+      <div class="num"><i class="fa-solid fa-chart-line" style="font-size:1.4rem;opacity:.6"></i> {{ ((steps_done|length / total_steps) * 100)|round|int }}%</div>
+      <div class="lbl">Progress</div>
+      <div class="stat-bar" style="background:var(--purple)"></div>
+    </div>
+  </div>
+
+  <!-- Lab 1 card -->
+  <div class="card fade-in {% if verified %}card-success{% endif %}" style="animation-delay:.2s">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <h3><i class="fa-solid fa-cubes"></i> CO1 · Module 1</h3>
+        <h2 style="font-size:1.3rem">Install Docker Desktop &amp; Verify Installation</h2>
+        <p style="margin:8px 0 14px">A hands-on walkthrough of installing Docker Desktop — system check, download, install, launch, and live background task verification.</p>
+        {% if verified %}
+          <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> Completed</span>
+        {% elif steps_done|length > 0 %}
+          <span class="badge badge-amber"><i class="fa-solid fa-clock"></i> In progress · {{ steps_done|length }}/{{ total_steps }} steps</span>
+        {% else %}
+          <span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>
+        {% endif %}
+      </div>
+      <div style="width:200px;text-align:right">
+        {% if verified %}
+          <div style="font-size:3.2rem;color:var(--green);filter:drop-shadow(0 0 20px rgba(16,185,129,0.5))"><i class="fa-brands fa-docker"></i></div>
+        {% else %}
+          <div class="progress-track" style="margin-bottom:8px"><div class="progress-fill" style="--pct: {{ (steps_done|length / total_steps * 100)|round|int }}%;"></div></div>
+          <div style="font-size:.78rem;color:var(--muted);text-align:right">{{ steps_done|length }}/{{ total_steps }} steps</div>
+        {% endif %}
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <a href="{{ url_for('lab1') }}" class="btn {% if verified %}btn-outline{% else %}btn-primary{% endif %}">
+        {% if verified %}<i class="fa-solid fa-eye"></i> Review Lab{% else %}{% if steps_done|length > 0 %}<i class="fa-solid fa-play"></i> Continue Lab &rarr;{% else %}<i class="fa-solid fa-rocket"></i> Start Lab &rarr;{% endif %}{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Lab 2 card -->
+  <div class="card fade-in {% if verified2 %}card-success{% endif %}" style="animation-delay:.25s">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <h3><i class="fa-solid fa-code"></i> CO1 · Module 2</h3>
+        <h2 style="font-size:1.3rem">Create &amp; Containerize a "Hello World!" Web App</h2>
+        <p style="margin:8px 0 14px">A full VS Code Web IDE experience: write index.html, configure Dockerfile, build images, and run your container live on port 8080.</p>
+        {% if verified2 %}
+          <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> Completed</span>
+        {% elif steps_done2|length > 0 %}
+          <span class="badge badge-amber"><i class="fa-solid fa-clock"></i> In progress · {{ steps_done2|length }}/{{ total_steps2 }} steps</span>
+        {% else %}
+          <span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Available Now</span>
+        {% endif %}
+      </div>
+      <div style="width:200px;text-align:right">
+        {% if verified2 %}
+          <div style="font-size:3.5rem;color:var(--green);filter:drop-shadow(0 0 20px rgba(5,150,105,0.4))"><i class="fa-solid fa-box-open"></i></div>
+        {% else %}
+          <div style="font-size:3.5rem;color:var(--blue);filter:drop-shadow(0 0 20px rgba(2,132,199,0.3));margin-bottom:8px"><i class="fa-solid fa-cubes-stacked"></i></div>
+          <div class="progress-track" style="margin-bottom:8px"><div class="progress-fill" style="--pct: {{ (steps_done2|length / total_steps2 * 100)|round|int }}%;"></div></div>
+          <div style="font-size:.78rem;color:var(--muted);text-align:right">{{ steps_done2|length }}/{{ total_steps2 }} steps</div>
+        {% endif %}
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <a href="{{ url_for('lab2') }}" class="btn {% if verified2 %}btn-outline{% else %}btn-primary{% endif %}">
+        <i class="fa-solid fa-code"></i> Open VS Code Lab IDE &rarr;
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

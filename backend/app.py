@@ -21,10 +21,14 @@ import psutil
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "instance", "vlab.db")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, "database", "vlab.db")
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "frontend", "templates"),
+    static_folder=os.path.join(BASE_DIR, "frontend", "static")
+)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "prod-fallback-secure-key-3n8d1s")
 
 LAB1_STEPS = [
@@ -193,7 +197,7 @@ def get_db():
 
 
 def init_db():
-    os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, "database"), exist_ok=True)
     conn = get_db()
     conn.executescript(
         """

@@ -19,31 +19,34 @@ This repository is organized so that different teammates can work on separate la
 
 ```text
 vlab-module1-docker/
-├── app.py                  # Flask Core Backend (Routing, DB Logic, Task Engine)
-├── requirements.txt        # Production-grade Python Dependencies
 ├── .gitignore              # Configured Git tracking exclusions (pycache, env, etc.)
-├── instance/
+├── README.md               # Collaborator documentation for your teammates
+├── database/
 │   └── vlab.db             # SQLite local database (generated on launch)
-├── static/
-│   ├── css/
-│   │   └── style.css       # Core styling & UI Theme
-│   └── images/
-│       └── logo.png        # Institution / Lab Branding Logo
-└── templates/              # HTML layout and dashboard templates
-    ├── base.html
-    ├── login.html
-    ├── student_dashboard.html
-    ├── faculty_dashboard.html
-    ├── lab1.html           # Lab 1: Docker Desktop Installation
-    ├── lab2.html           # Lab 2: Nginx Web App Containerization
-    └── change_password.html
+├── backend/
+│   ├── app.py              # Flask Core Backend (Routing, DB Logic, Task Engine)
+│   └── requirements.txt    # Production-grade Python Dependencies
+└── frontend/
+    ├── static/
+    │   ├── css/
+    │   │   └── style.css   # Core styling & UI Theme
+    │   └── images/
+    │       └── logo.png    # Institution / Lab Branding Logo
+    └── templates/          # HTML layout and dashboard templates
+        ├── base.html
+        ├── login.html
+        ├── student_dashboard.html
+        ├── faculty_dashboard.html
+        ├── lab1.html       # Lab 1: Docker Desktop Installation
+        ├── lab2.html       # Lab 2: Nginx Web App Containerization
+        └── change_password.html
 ```
 
 ---
 
 ## 🗄️ Database Schema (SQLite)
 
-The database initializes automatically inside the `instance/vlab.db` file. The following tables are created during initialization:
+The database initializes automatically inside the `database/vlab.db` file. The following tables are created during initialization:
 
 1. **`faculty`**: Handles educator credentials.
    - `id` (INTEGER, Primary Key)
@@ -134,11 +137,11 @@ Make sure Python 3 is installed.
    ```
 2. Install the production-grade dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install -r backend/requirements.txt
    ```
 3. Run the Flask application:
    ```bash
-   python app.py
+   python backend/app.py
    ```
    *Note: Environment variables such as `FLASK_SECRET_KEY`, `FLASK_RUN_HOST`, `FLASK_RUN_PORT`, and `FLASK_DEBUG` can be customized to change execution parameters.*
 

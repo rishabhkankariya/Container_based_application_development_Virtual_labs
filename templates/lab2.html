@@ -9,6 +9,7 @@
   </div>
   <div class="topbar-right">
     <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
     <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
   </div>
 </div>

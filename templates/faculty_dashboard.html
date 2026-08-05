@@ -6,6 +6,7 @@
   <div class="topbar-right">
     <span class="live-badge"><i class="fa-solid fa-signal"></i> LIVE</span>
     <span><i class="fa-solid fa-user-tie"></i> {{ session.get("faculty_username") }}</span>
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
     <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
   </div>
 </div>

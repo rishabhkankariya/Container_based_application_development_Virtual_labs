@@ -5,6 +5,7 @@
   <div class="brand"><span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span><span>V-Lab</span><span class="live-dot"></span></div>
   <div class="topbar-right">
     <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
     <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
   </div>
 </div>
@@ -381,7 +382,12 @@ function stageHTML_6(){return `
       <label><i class="fa-solid fa-user"></i> Docker Hub Username</label>
       <input type="text" id="dhUser" placeholder="your-dockerhub-username">
       <label><i class="fa-solid fa-key"></i> Password / Personal Access Token</label>
-      <input type="password" id="dhPass" placeholder="••••••••••••">
+      <div class="password-wrap">
+        <input type="password" id="dhPass" placeholder="••••••••••••">
+        <button type="button" class="password-toggle-btn" onclick="window.togglePassword(this)" title="Toggle password visibility">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+      </div>
       <div style="display:flex;gap:10px;margin-top:6px">
         <button class="btn btn-primary btn-sm" onclick="doDockerLogin()"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
         <button class="btn btn-outline btn-sm" onclick="skipDockerLogin()">Skip for now</button>

@@ -26,6 +26,16 @@ DB_PATH = os.path.join(BASE_DIR, "instance", "vlab.db")
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "prod-fallback-secure-key-3n8d1s")
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 
 LAB1_STEPS = [
     {"id": 1, "title": "Check System Requirements",
@@ -707,6 +717,51 @@ def login():
             flash("Invalid faculty username or password.", "error")
 
     return render_template("login.html")
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        role = request.form.get("role")
+        identifier = request.form.get("identifier", "").strip()
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not identifier or not new_password or not confirm_password:
+            flash("All fields are required.", "error")
+        elif len(new_password) < 6:
+            flash("Password must be at least 6 characters long.", "error")
+        elif new_password != confirm_password:
+            flash("Passwords do not match.", "error")
+        else:
+            conn = get_db()
+            if role == "student":
+                user = conn.execute("SELECT * FROM students WHERE student_id=?", (identifier,)).fetchone()
+                if not user:
+                    conn.close()
+                    flash("Student ID not found in database.", "error")
+                    return render_template("forgot_password.html")
+                conn.execute(
+                    "UPDATE students SET password_hash=?, password_changed=1 WHERE student_id=?",
+                    (generate_password_hash(new_password), identifier),
+                )
+            else:
+                user = conn.execute("SELECT * FROM faculty WHERE username=?", (identifier,)).fetchone()
+                if not user:
+                    conn.close()
+                    flash("Faculty username not found in database.", "error")
+                    return render_template("forgot_password.html")
+                conn.execute(
+                    "UPDATE faculty SET password_hash=?, password_changed=1 WHERE username=?",
+                    (generate_password_hash(new_password), identifier),
+                )
+            conn.commit()
+            conn.close()
+            flash("Password reset successfully! You can now log in with your new password.", "success")
+            return redirect(url_for("login"))
+
+    return render_template("forgot_password.html")
+
 
 
 @app.route("/logout")

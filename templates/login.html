@@ -2,6 +2,9 @@
 {% block title %}V-Lab | Virtual Docker Suite Portal Authentication{% endblock %}
 {% block body %}
 <div class="auth-screen">
+  <div style="position:absolute;top:20px;right:24px;z-index:10">
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
+  </div>
   <div class="auth-box">
     <div class="auth-logo">
       <div class="auth-whale-icon"><i class="fa-brands fa-docker"></i></div>
@@ -21,8 +24,18 @@
         </div>
         <label id="idLabel"><i class="fa-solid fa-id-badge"></i> Student ID</label>
         <input type="text" name="identifier" id="idField" placeholder="e.g. STU001" required autofocus>
-        <label><i class="fa-solid fa-lock"></i> Password</label>
-        <input type="password" name="password" placeholder="••••••••" required>
+        
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <label><i class="fa-solid fa-lock"></i> Password</label>
+          <a href="{{ url_for('forgot_password') }}" style="font-size:.76rem;color:var(--blue);font-weight:600;margin-bottom:6px">Forgot Password?</a>
+        </div>
+        <div class="password-wrap">
+          <input type="password" name="password" placeholder="••••••••" required>
+          <button type="button" class="password-toggle-btn" onclick="window.togglePassword(this)" title="Toggle password visibility">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:.95rem;padding:12px 20px">
           Sign In to Live Platform <i class="fa-solid fa-arrow-right"></i>
         </button>
@@ -48,3 +61,4 @@ function updateHint() {
 }
 </script>
 {% endblock %}
+

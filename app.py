@@ -719,48 +719,7 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        role = request.form.get("role")
-        identifier = request.form.get("identifier", "").strip()
-        new_password = request.form.get("new_password", "")
-        confirm_password = request.form.get("confirm_password", "")
 
-        if not identifier or not new_password or not confirm_password:
-            flash("All fields are required.", "error")
-        elif len(new_password) < 6:
-            flash("Password must be at least 6 characters long.", "error")
-        elif new_password != confirm_password:
-            flash("Passwords do not match.", "error")
-        else:
-            conn = get_db()
-            if role == "student":
-                user = conn.execute("SELECT * FROM students WHERE student_id=?", (identifier,)).fetchone()
-                if not user:
-                    conn.close()
-                    flash("Student ID not found in database.", "error")
-                    return render_template("forgot_password.html")
-                conn.execute(
-                    "UPDATE students SET password_hash=?, password_changed=1 WHERE student_id=?",
-                    (generate_password_hash(new_password), identifier),
-                )
-            else:
-                user = conn.execute("SELECT * FROM faculty WHERE username=?", (identifier,)).fetchone()
-                if not user:
-                    conn.close()
-                    flash("Faculty username not found in database.", "error")
-                    return render_template("forgot_password.html")
-                conn.execute(
-                    "UPDATE faculty SET password_hash=?, password_changed=1 WHERE username=?",
-                    (generate_password_hash(new_password), identifier),
-                )
-            conn.commit()
-            conn.close()
-            flash("Password reset successfully! You can now log in with your new password.", "success")
-            return redirect(url_for("login"))
-
-    return render_template("forgot_password.html")
 
 
 
@@ -1069,6 +1028,74 @@ def faculty_dashboard():
         lab1_completed=lab1_completed_count,
         lab2_completed=lab2_completed_count
     )
+
+
+@app.route("/faculty/add-student", methods=["POST"])
+@login_required_faculty
+def faculty_add_student():
+    """Allows faculty to manually enroll a single student with auto-generated ID & default password."""
+    if request.is_json:
+        data = request.get_json(force=True)
+        name = data.get("name", "").strip()
+        email = data.get("email", "").strip()
+    else:
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+
+    if not name or not email:
+        if request.is_json:
+            return jsonify({"ok": False, "message": "Both Student Name and Email are required."}), 400
+        flash("Both Student Name and Email are required.", "error")
+        return redirect(url_for("faculty_dashboard"))
+
+    conn = get_db()
+    existing_rows = conn.execute("SELECT student_id FROM students").fetchall()
+    existing_ids = set(r["student_id"] for r in existing_rows)
+
+    indices = []
+    for sid in existing_ids:
+        if sid.startswith("STU"):
+            try:
+                indices.append(int(sid[3:]))
+            except ValueError:
+                pass
+    next_idx = max(indices) + 1 if indices else len(existing_ids) + 1
+
+    student_id = generate_student_id(existing_ids, next_idx)
+    default_password = generate_default_password()
+    password_hash = generate_password_hash(default_password)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        conn.execute(
+            """INSERT INTO students (student_id, name, email, default_password, password_hash, password_changed, created_at)
+               VALUES (?, ?, ?, ?, ?, 0, ?)""",
+            (student_id, name, email, default_password, password_hash, now)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        conn.close()
+        if request.is_json:
+            return jsonify({"ok": False, "message": f"Database error: {str(e)}"}), 500
+        flash(f"Database error: {str(e)}", "error")
+        return redirect(url_for("faculty_dashboard"))
+
+    msg = f"Student '{name}' registered successfully! Assigned ID: {student_id} | Default Password: {default_password}"
+
+    if request.is_json:
+        return jsonify({
+            "ok": True,
+            "message": msg,
+            "student_id": student_id,
+            "name": name,
+            "email": email,
+            "default_password": default_password
+        })
+
+    flash(msg, "success")
+    return redirect(url_for("faculty_dashboard"))
+
 
 
 @app.route("/api/faculty/stats")

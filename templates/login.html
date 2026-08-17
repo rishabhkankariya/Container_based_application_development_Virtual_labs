@@ -37,7 +37,14 @@
           Sign In to Live Platform <i class="fa-solid fa-arrow-right"></i>
         </button>
       </form>
-      <div style="text-align:center;margin-top:18px;font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border)">
+
+      <div style="display:flex;justify-content:center;align-items:center;margin-top:14px">
+        <a href="{{ url_for('change_password') }}" style="color:var(--blue);font-size:.85rem;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+          <i class="fa-solid fa-key"></i> Need to change your password? Click here
+        </a>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border)">
         <i class="fa-solid fa-shield-halved"></i> Faculty default: <code>faculty</code> / <code>faculty123</code>
       </div>
     </div>

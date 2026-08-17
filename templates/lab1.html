@@ -2,48 +2,146 @@
 {% block title %}Lab 1 - Install Docker Desktop{% endblock %}
 {% block body %}
 <div class="topbar">
-  <div class="brand"><span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span><span>V-Lab</span><span class="live-dot"></span></div>
+  <div class="brand">
+    <span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span>
+    <span>V-Lab &middot; Docker Desktop Setup &amp; Verification Studio</span>
+    <span class="live-dot"></span>
+  </div>
   <div class="topbar-right">
     <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
     <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
     <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
   </div>
 </div>
-<div class="wrap">
-  <a href="{{ url_for('student_dashboard') }}" style="font-size:.84rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-  <h1 style="margin-top:12px"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 1 &mdash; Install Docker Desktop &amp; Verify</h1>
-  <p style="margin-bottom:24px">Complete all 7 stages to master Docker Desktop setup, system requirements, daemon launch, and live terminal checks.</p>
-  <div class="grid-2" style="grid-template-columns:360px 1fr;gap:24px">
-    <div class="card">
-      <h3>Progress &amp; Guidance</h3>
-      <div style="margin-bottom:14px">
-        <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:.74rem;margin-top:5px">
-          <span id="progLabel" style="color:#7a90b0">0 / 7 steps</span>
-          <span id="progPct" style="color:#2d8fff;font-family:monospace">0%</span>
+
+<div class="wrap" style="max-width:100%;padding:16px 24px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 1: Install Docker Desktop &amp; Verify Environment</h2>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
+      <button class="btn btn-outline" onclick="showLabVideoModal(1)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
+      <button class="btn btn-outline" onclick="showTicketModal(1)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
+      <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:var(--purple)"></i> Interactive Tour</button>
+      <button class="btn btn-green" onclick="verifyLab1Completion()"><i class="fa-solid fa-circle-check"></i> Submit &amp; Verify Lab 1</button>
+    </div>
+  </div>
+
+  <!-- Connected Step Guidance Banner with Arrows -->
+  <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-bottom:12px">
+    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="goTo(1)" title="Click to view Stage 1 & 2: System Check & Download">
+      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">1</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">System Audit &amp; Download <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Hardware scan &amp; installer package</span></div>
+    </div>
+    <div style="color:var(--blue);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
+    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="goTo(3)" title="Click to view Stage 3, 4 & 5: Installer Setup & Reboot">
+      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">2</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Installer &amp; Reboot Sync <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">WSL2 config &amp; hypervisor sync</span></div>
+    </div>
+    <div style="color:var(--green);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
+    <div style="background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(5,150,105,0.12);cursor:pointer;transition:transform .15s ease" onclick="goTo(6)" title="Click to view Stage 6 & 7: Daemon Launch & Terminal Check">
+      <span style="background:var(--green);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">3</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Engine &amp; Terminal Check <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Launch daemon &amp; run docker CLI</span></div>
+    </div>
+  </div>
+
+  <!-- Telemetry Bar -->
+  <div class="telemetry-bar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-family:var(--mono);font-size:.78rem">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i class="fa-brands fa-docker" style="color:var(--blue);font-size:1.1rem"></i>
+      <span style="font-weight:700;color:var(--text)">docker.desktop telemetry</span>
+      <span class="badge badge-green" style="font-size:.68rem;padding:2px 8px" id="lab1EngineStatus"><i class="fa-solid fa-circle"></i> Engine Ready</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px">
+      <div>PID: <b style="color:var(--blue)" id="l1Pid">14608</b></div>
+      <div>CPU: <b style="color:var(--green)" id="l1Cpu">0.12%</b></div>
+      <div>RAM: <b style="color:var(--amber)" id="l1Ram">8.4 MB</b></div>
+      <div>Disk: <b style="color:var(--purple)">14.57 GB</b></div>
+    </div>
+  </div>
+
+  <!-- Slide-in Drawer for Lab 1 Instructions & Checkmarks -->
+  <div id="instructionsDrawer" class="instructions-drawer">
+    <div class="instructions-drawer-header">
+      <h3><i class="fa-solid fa-list-check" style="color:var(--blue)"></i> LAB 1 INSTRUCTIONS</h3>
+      <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
+    </div>
+    
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;flex-shrink:0">
+      Complete all 7 stages to master Docker Desktop setup, system requirements, daemon launch, and live terminal checks:
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
+      <!-- Step 1 -->
+      <div id="checkCard-1" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(1)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-microchip" style="color:#38bdf8"></i> 1. SYSTEM REQUIREMENTS</b>
+          <span id="badge-1" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
+        <div style="font-size:.78rem;color:var(--muted)">Verify system architecture, CPU cores, RAM, and virtualization flags.</div>
       </div>
 
-      <!-- Video Explanation & Support Buttons -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-        <button class="btn btn-outline btn-sm" onclick="showLabVideoModal(1)" style="padding:6px 10px;font-size:.82rem"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
-        <button class="btn btn-outline btn-sm" onclick="showTicketModal(1)" style="padding:6px 10px;font-size:.82rem"><i class="fa-solid fa-headset" style="color:var(--amber)"></i> Ask Faculty</button>
+      <!-- Step 2 -->
+      <div id="checkCard-2" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-cloud-arrow-down" style="color:#38bdf8"></i> 2. DOWNLOAD DOCKER DESKTOP</b>
+          <span id="badge-2" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted)">Retrieve the official Docker Desktop installer executable package.</div>
       </div>
 
-      <div class="steps" id="stepList">
-        {% for s in steps %}
-        <div class="step" data-step="{{ s.id }}" id="step-{{ s.id }}">
-          <input type="checkbox" class="doc-chk" id="chk-{{ s.id }}" onchange="toggleDocCheck(this)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--green);flex-shrink:0;margin-right:4px">
-          <div class="step-num" id="stepnum-{{ s.id }}">{{ s.id }}</div>
-          <div class="step-body">
-            <h4 style="display:flex;align-items:center;justify-content:space-between">{{ s.title }}</h4>
-            <p>{{ s.desc }}</p>
-          </div>
+      <!-- Step 3 -->
+      <div id="checkCard-3" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-sliders" style="color:#38bdf8"></i> 3. RUN THE INSTALLER</b>
+          <span id="badge-3" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        {% endfor %}
+        <div style="font-size:.78rem;color:var(--muted)">Enable WSL2 backend and accept Docker End User License Agreement.</div>
+      </div>
+
+      <!-- Step 4 -->
+      <div id="checkCard-4" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(4)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-boxes-packing" style="color:#38bdf8"></i> 4. INSTALLATION PROGRESS</b>
+          <span id="badge-4" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted)">Unpack binary archives and provision virtualization bridge components.</div>
+      </div>
+
+      <!-- Step 5 -->
+      <div id="checkCard-5" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(5)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-rotate-right" style="color:#38bdf8"></i> 5. RESTART YOUR COMPUTER</b>
+          <span id="badge-5" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted)">Simulate OS reboot sequence to activate BIOS hypervisor flags.</div>
+      </div>
+
+      <!-- Step 6 -->
+      <div id="checkCard-6" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(6)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-rocket" style="color:#38bdf8"></i> 6. LAUNCH DOCKER DESKTOP</b>
+          <span id="badge-6" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted)">Start Docker Engine daemon and inspect real-time telemetry metrics.</div>
+      </div>
+
+      <!-- Step 7 -->
+      <div id="checkCard-7" class="checkCard-step" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s;cursor:pointer" onclick="goTo(7)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-terminal" style="color:#34d399"></i> 7. VERIFY THE INSTALLATION</b>
+          <span id="badge-7" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted)">Run docker --version and docker run hello-world in terminal.</div>
       </div>
     </div>
-    <div id="stageCard" class="card fade-in"></div>
+  </div>
+
+  <!-- Main Stage Studio Container -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div id="stageCard" class="card fade-in" style="min-height:540px;padding:24px"></div>
   </div>
 </div>
 
@@ -52,24 +150,71 @@
 <script>
 const _cfg = document.getElementById('labConfig');
 const STEPS = JSON.parse(_cfg.dataset.steps);
-let stepsDone = JSON.parse(_cfg.dataset.done);
-let verified = _cfg.dataset.verified === 'true';
+// Active lab workspace session starts fresh at Step 1 with Required step badges for clean re-practice
+let stepsDone = [];
+let verified = false;
 let currentStep = 1;
-if(stepsDone.length) currentStep = Math.min(Math.max(...stepsDone)+1, 7);
-if(verified) currentStep = 7;
+
+function toggleInstructionsDrawer(forceState) {
+  const drawer = document.getElementById('instructionsDrawer');
+  if(drawer) {
+    if(typeof forceState === 'boolean') {
+      drawer.style.transform = forceState ? 'translateX(0)' : 'translateX(-100%)';
+    } else {
+      const isClosed = drawer.style.transform === 'translateX(-100%)' || !drawer.style.transform;
+      drawer.style.transform = isClosed ? 'translateX(0)' : 'translateX(-100%)';
+    }
+  }
+}
+
+function startGuidedTour() {
+  alert('Welcome to Lab 1 Guided Tour!\n\n1. Click "Step Instructions & Checkmarks" to view task instructions.\n2. Work through the 7 stages from System Check to Terminal Verification.\n3. Execute docker --version and docker run hello-world in Stage 7.\n4. Click "Submit & Verify Lab 1" to complete the lab module!');
+}
+
+function verifyLab1Completion() {
+  if (stepsDone.length < 7 && !verified) {
+    alert('Please complete all 7 steps before submitting Lab 1!');
+    toggleInstructionsDrawer(true);
+    return;
+  }
+  fetch('/api/lab1/verify', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({cmd_version: 'docker --version', cmd_hello: 'docker run hello-world'})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      verified = true;
+      stepsDone = [1,2,3,4,5,6,7];
+      updateProgress();
+      alert('🎉 ' + data.message);
+      window.location.href = '/student/dashboard';
+    } else {
+      alert(data.message || 'Verification failed. Please ensure all steps are completed!');
+    }
+  });
+}
 
 function updateProgress(){
-  const pct = Math.round(stepsDone.length/7*100);
-  document.getElementById('mainProg').style.width = pct+'%';
-  document.getElementById('progLabel').textContent = stepsDone.length+' / 7 steps';
-  document.getElementById('progPct').textContent = pct+'%';
   STEPS.forEach(s=>{
-    const el=document.getElementById('step-'+s.id);
-    const num=document.getElementById('stepnum-'+s.id);
-    el.classList.remove('active','done');
-    if(stepsDone.includes(s.id)){el.classList.add('done');num.textContent='✓';}
-    else{num.textContent=s.id;}
-    if(s.id===currentStep)el.classList.add('active');
+    const card = document.getElementById('checkCard-' + s.id);
+    const badge = document.getElementById('badge-' + s.id);
+    if(card && badge) {
+      if(stepsDone.includes(s.id)) {
+        card.style.borderColor = 'var(--green)';
+        badge.className = 'badge badge-green';
+        badge.innerHTML = '<i class="fa-solid fa-check"></i> Done';
+      } else if(s.id === currentStep) {
+        card.style.borderColor = 'var(--blue)';
+        badge.className = 'badge badge-blue';
+        badge.innerHTML = '<i class="fa-solid fa-play"></i> In Progress';
+      } else {
+        card.style.borderColor = 'var(--border)';
+        badge.className = 'badge badge-amber';
+        badge.innerHTML = '<i class="fa-solid fa-clock"></i> Required';
+      }
+    }
   });
 }
 
@@ -84,7 +229,7 @@ function markDone(id){
 function goTo(id){currentStep=id;updateProgress();renderStage();}
 
 function nextBtn(label,id){
-  return '<button class="btn btn-primary" style="margin-top:14px" onclick="goTo('+id+')">'+label+' &rarr;</button>';
+  return '<button class="btn btn-primary" style="margin-top:16px;padding:8px 18px" onclick="goTo('+id+')">'+label+' &rarr;</button>';
 }
 
 function animFill(fillId,labelId,doneText,cb){
@@ -100,7 +245,7 @@ function animFill(fillId,labelId,doneText,cb){
 }
 
 /* ============================================================
-   STAGE HTML + WIRE
+   STAGE HTML + WIRE LOGIC
    ============================================================ */
 
 function renderStage(){
@@ -110,27 +255,27 @@ function renderStage(){
   wireStage(currentStep);
 }
 
-/* ---------- STEP 1: Real system check ---------- */
+/* ---------- STEP 1: Hardware check ---------- */
 function stageHTML_1(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-blue"><i class="fa-solid fa-microchip"></i> Step 1 of 7</span>
+    <span class="badge badge-blue"><i class="fa-solid fa-microchip"></i> Stage 1 of 7</span>
     <span class="badge badge-muted"><i class="fa-solid fa-server"></i> Hardware Audit</span>
   </div>
-  <h2>Check System Requirements</h2>
-  <p style="margin-bottom:16px">Scans system architecture, RAM allocation, CPU cores, disk storage, and virtualization firmware support.</p>
+  <h2 style="font-size:1.3rem;margin-bottom:6px">1. Check System Requirements</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">Scans system architecture, RAM allocation, CPU cores, disk storage, and virtualization firmware support.</p>
   <div class="sim-window">
     <div class="sim-titlebar">
       <span class="sim-dot r"></span><span class="sim-dot y"></span><span class="sim-dot g"></span>
       <span class="sim-title"><i class="fa-solid fa-terminal"></i> System Diagnostics Console</span>
     </div>
     <div class="sim-body" id="sysBody">
-      <div style="color:var(--muted);font-family:var(--mono);text-align:center;padding:24px 0">
-        <i class="fa-solid fa-magnifying-glass-chart" style="font-size:2rem;color:var(--blue);margin-bottom:10px;display:block"></i>
+      <div style="color:var(--text);font-family:var(--mono);font-weight:600;text-align:center;padding:24px 0">
+        <i class="fa-solid fa-magnifying-glass-chart" style="font-size:2.2rem;color:var(--blue);margin-bottom:12px;display:block"></i>
         Click "Run Hardware Check" to scan server system specifications...
       </div>
     </div>
   </div>
-  <button class="btn btn-primary" id="sysBtn" onclick="runSysCheck()"><i class="fa-solid fa-bolt-lightning"></i> Run Hardware Check</button>
+  <button class="btn btn-primary" id="sysBtn" style="margin-top:14px" onclick="runSysCheck()"><i class="fa-solid fa-bolt-lightning"></i> Run Hardware Check</button>
 `;}
 
 function wireStage_1(){
@@ -180,11 +325,11 @@ function wireStage_1(){
 /* ---------- STEP 2: Download ---------- */
 function stageHTML_2(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-blue"><i class="fa-solid fa-cloud-arrow-down"></i> Step 2 of 7</span>
+    <span class="badge badge-blue"><i class="fa-solid fa-cloud-arrow-down"></i> Stage 2 of 7</span>
     <span class="badge badge-muted"><i class="fa-solid fa-file-code"></i> Installer Download</span>
   </div>
-  <h2>Download Docker Desktop</h2>
-  <p>Retrieve the official Docker Desktop installer package for your operating system.</p>
+  <h2 style="font-size:1.3rem;margin-bottom:6px">2. Download Docker Desktop</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">Retrieve the official Docker Desktop installer package for your operating system.</p>
   <div class="sim-window">
     <div class="sim-titlebar">
       <span class="sim-dot r"></span><span class="sim-dot y"></span><span class="sim-dot g"></span>
@@ -200,8 +345,9 @@ function stageHTML_2(){return `
       </div>
     </div>
   </div>
-  <button class="btn btn-primary" id="dlBtn"><i class="fa-solid fa-download"></i> Start Package Download</button>
+  <button class="btn btn-primary" id="dlBtn" style="margin-top:14px"><i class="fa-solid fa-download"></i> Start Package Download</button>
 `;}
+
 function wireStage_2(){
   document.getElementById('dlBtn').addEventListener('click',function(){
     this.disabled=true;
@@ -215,31 +361,32 @@ function wireStage_2(){
 /* ---------- STEP 3: Installer ---------- */
 function stageHTML_3(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-blue"><i class="fa-solid fa-sliders"></i> Step 3 of 7</span>
+    <span class="badge badge-blue"><i class="fa-solid fa-sliders"></i> Stage 3 of 7</span>
     <span class="badge badge-muted"><i class="fa-solid fa-gear"></i> Configuration</span>
   </div>
-  <h2>Run the Installer Setup</h2>
-  <p>Configure installation parameters, enable the WSL 2 backend, and accept the license terms.</p>
+  <h2 style="font-size:1.3rem;margin-bottom:6px">3. Run the Installer Setup</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">Configure installation parameters, enable the WSL 2 backend, and accept the license terms.</p>
   <div class="sim-window">
     <div class="sim-titlebar">
       <span class="sim-dot r"></span><span class="sim-dot y"></span><span class="sim-dot g"></span>
       <span class="sim-title"><i class="fa-solid fa-screwdriver-wrench"></i> Docker Desktop Configuration</span>
     </div>
     <div class="sim-body" style="padding:22px">
-      <div style="color:#f8fafc;font-family:var(--sans);font-weight:700;font-size:.92rem;margin-bottom:16px"><i class="fa-solid fa-sliders" style="color:var(--blue)"></i> Virtualization Configuration</div>
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;font-family:var(--sans);font-size:.86rem;color:#f8fafc">
+      <div style="color:var(--text);font-family:var(--sans);font-weight:700;font-size:.92rem;margin-bottom:16px"><i class="fa-solid fa-sliders" style="color:var(--blue)"></i> Virtualization Configuration</div>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;font-family:var(--sans);font-size:.86rem;color:var(--text)">
         <input type="checkbox" checked disabled id="wsl2chk" style="width:16px;height:16px;accent-color:var(--blue);cursor:not-allowed">
-        <label for="wsl2chk" style="color:#f8fafc;font-weight:500;margin:0;text-transform:none;letter-spacing:normal">Use WSL 2 backend instead of Hyper-V</label>
+        <label for="wsl2chk" style="color:var(--text);font-weight:500;margin:0;text-transform:none;letter-spacing:normal">Use WSL 2 backend instead of Hyper-V</label>
         <span class="badge badge-green"><i class="fa-solid fa-star"></i> Recommended</span>
       </div>
-      <div style="display:flex;gap:12px;align-items:center;font-family:var(--sans);font-size:.86rem;color:#f8fafc">
+      <div style="display:flex;gap:12px;align-items:center;font-family:var(--sans);font-size:.86rem;color:var(--text)">
         <input type="checkbox" id="licenseChk" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer" onchange="document.getElementById('installBtn').disabled=!this.checked">
-        <label for="licenseChk" style="color:#f8fafc;font-weight:500;margin:0;text-transform:none;letter-spacing:normal;cursor:pointer">I accept the terms in the Docker End User License Agreement</label>
+        <label for="licenseChk" style="color:var(--text);font-weight:500;margin:0;text-transform:none;letter-spacing:normal;cursor:pointer">I accept the terms in the Docker End User License Agreement</label>
       </div>
     </div>
   </div>
-  <button class="btn btn-primary" id="installBtn" disabled><i class="fa-solid fa-check"></i> Install Docker Desktop</button>
+  <button class="btn btn-primary" id="installBtn" disabled style="margin-top:14px"><i class="fa-solid fa-check"></i> Install Docker Desktop</button>
 `;}
+
 function wireStage_3(){
   document.getElementById('installBtn').addEventListener('click',function(){
     markDone(3); goTo(4);
@@ -249,24 +396,25 @@ function wireStage_3(){
 /* ---------- STEP 4: Install progress ---------- */
 function stageHTML_4(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-blue"><i class="fa-solid fa-spinner"></i> Step 4 of 7</span>
+    <span class="badge badge-blue"><i class="fa-solid fa-spinner"></i> Stage 4 of 7</span>
     <span class="badge badge-muted"><i class="fa-solid fa-gears"></i> Unpacking &amp; Services</span>
   </div>
-  <h2>Installation Progress</h2>
-  <p>Docker Desktop is extracting binaries, registering WSL 2 instances, and configuring network bridges.</p>
+  <h2 style="font-size:1.3rem;margin-bottom:6px">4. Installation Progress</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">Docker Desktop is extracting binaries, registering WSL 2 instances, and configuring network bridges.</p>
   <div class="sim-window">
     <div class="sim-titlebar">
       <span class="sim-dot r"></span><span class="sim-dot y"></span><span class="sim-dot g"></span>
       <span class="sim-title"><i class="fa-solid fa-box-open"></i> Installing Components...</span>
     </div>
     <div class="sim-body">
-      <div id="instLabel" style="color:var(--muted);font-family:var(--mono);margin-bottom:10px">Click Begin to start unpacking...</div>
+      <div id="instLabel" style="color:var(--text);font-family:var(--mono);margin-bottom:10px;font-weight:600">Click Begin to start unpacking...</div>
       <div class="fake-progress"><div class="fake-progress-fill" id="instFill"></div></div>
       <div id="instLog" style="font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-top:12px;min-height:45px"></div>
     </div>
   </div>
-  <button class="btn btn-primary" id="instBtn"><i class="fa-solid fa-play"></i> Begin Installation Sequence</button>
+  <button class="btn btn-primary" id="instBtn" style="margin-top:14px"><i class="fa-solid fa-play"></i> Begin Installation Sequence</button>
 `;}
+
 function wireStage_4(){
   document.getElementById('instBtn').addEventListener('click',function(){
     this.disabled=true;
@@ -278,7 +426,7 @@ function wireStage_4(){
     },600);
     animFill('instFill','instLabel','Installation sequence completed successfully!',()=>{
       clearInterval(logTimer);
-      log.innerHTML+='<div style="color:var(--green);font-weight:bold"><i class="fa-solid fa-circle-check"></i> Docker Desktop binaries deployed successfully!</div>';
+      log.innerHTML+='<div style="color:var(--green);font-weight:bold;margin-top:6px"><i class="fa-solid fa-circle-check"></i> Docker Desktop binaries deployed successfully!</div>';
       markDone(4);
       document.getElementById('stageCard').insertAdjacentHTML('beforeend',nextBtn('Proceed to Restart Verification',5));
     });
@@ -288,11 +436,11 @@ function wireStage_4(){
 /* ---------- STEP 5: Restart ---------- */
 function stageHTML_5(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-blue"><i class="fa-solid fa-rotate-right"></i> Step 5 of 7</span>
+    <span class="badge badge-blue"><i class="fa-solid fa-rotate-right"></i> Stage 5 of 7</span>
     <span class="badge badge-muted"><i class="fa-solid fa-power-off"></i> Reboot Sync</span>
   </div>
-  <h2>Restart Your System</h2>
-  <p>A system reboot is required to activate BIOS virtualization flags and kernel hypervisors.</p>
+  <h2 style="font-size:1.3rem;margin-bottom:6px">5. Restart Your System</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">A system reboot is required to activate BIOS virtualization flags and kernel hypervisors.</p>
   <div class="sim-window">
     <div class="sim-titlebar">
       <span class="sim-dot r"></span><span class="sim-dot y"></span><span class="sim-dot g"></span>
@@ -300,18 +448,19 @@ function stageHTML_5(){return `
     </div>
     <div class="sim-body" id="restartBody" style="text-align:center;padding:28px">
       <i class="fa-solid fa-desktop" style="font-size:3rem;color:var(--blue);margin-bottom:10px;display:block"></i>
-      <div style="color:var(--muted);font-family:var(--mono)">System ready for reboot simulation</div>
+      <div style="color:var(--text);font-family:var(--mono);font-weight:600">System ready for reboot simulation</div>
     </div>
   </div>
-  <button class="btn btn-primary" id="restartBtn"><i class="fa-solid fa-rotate-right"></i> Simulate Reboot Sequence</button>
+  <button class="btn btn-primary" id="restartBtn" style="margin-top:14px"><i class="fa-solid fa-rotate-right"></i> Simulate Reboot Sequence</button>
 `;}
+
 function wireStage_5(){
   document.getElementById('restartBtn').addEventListener('click',function(){
     this.disabled=true;
     const b=document.getElementById('restartBody');
     b.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:var(--amber);margin-bottom:10px;display:block"></i><div style="color:var(--amber);font-family:var(--mono)">Shutting down system services...</div>';
-    setTimeout(()=>{b.innerHTML='<i class="fa-solid fa-circle-notch fa-spin" style="font-size:2.5rem;color:var(--blue);margin-bottom:10px;display:block"></i><div style="color:var(--muted);font-family:var(--mono)">Restarting system kernel...</div>';},1000);
-    setTimeout(()=>{b.innerHTML='<i class="fa-solid fa-desktop" style="font-size:2.5rem;color:var(--blue);margin-bottom:10px;display:block"></i><div style="color:var(--muted);font-family:var(--mono)">Rebooting operating system...</div>';},2000);
+    setTimeout(()=>{b.innerHTML='<i class="fa-solid fa-circle-notch fa-spin" style="font-size:2.5rem;color:var(--blue);margin-bottom:10px;display:block"></i><div style="color:var(--text);font-family:var(--mono)">Restarting system kernel...</div>';},1000);
+    setTimeout(()=>{b.innerHTML='<i class="fa-solid fa-desktop" style="font-size:2.5rem;color:var(--blue);margin-bottom:10px;display:block"></i><div style="color:var(--text);font-family:var(--mono)">Rebooting operating system...</div>';},2000);
     setTimeout(()=>{
       b.innerHTML='<i class="fa-solid fa-circle-check" style="font-size:3rem;color:var(--green);margin-bottom:10px;display:block"></i><div style="color:var(--green);font-family:var(--mono);font-weight:bold">System reboot completed! Hypervisor active.</div>';
       markDone(5);
@@ -320,56 +469,56 @@ function wireStage_5(){
   });
 }
 
-/* ---------- STEP 6: Launch Docker + Docker Hub Login ---------- */
+/* ---------- STEP 6: Launch Docker Engine ---------- */
 function stageHTML_6(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-blue"><i class="fa-solid fa-rocket"></i> Step 6 of 7</span>
+    <span class="badge badge-blue"><i class="fa-solid fa-rocket"></i> Stage 6 of 7</span>
     <span class="badge badge-muted"><i class="fa-brands fa-docker"></i> Daemon Launch</span>
   </div>
-  <h2>Launch Docker Engine</h2>
-  <p>Start the Docker Engine daemon and optionally authenticate with Docker Hub.</p>
-  <div class="sim-window" style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;overflow:hidden">
-    <div class="sim-titlebar" style="background:#1e293b;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+  <h2 style="font-size:1.3rem;margin-bottom:6px">6. Launch Docker Engine</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">Start the Docker Engine daemon and optionally authenticate with Docker Hub.</p>
+  <div class="sim-window">
+    <div class="sim-titlebar">
       <div style="display:flex;align-items:center;gap:8px">
         <span class="sim-dot r"></span><span class="sim-dot y"></span><span class="sim-dot g"></span>
-        <span class="sim-title" style="color:#94a3b8;font-size:.82rem;font-family:var(--mono)"><i class="fa-brands fa-docker" style="color:#38bdf8"></i> docker.desktop &mdash; Engine Dashboard</span>
+        <span class="sim-title"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> docker.desktop &mdash; Engine Dashboard</span>
       </div>
       <span class="badge badge-green" style="font-size:.7rem"><i class="fa-solid fa-circle"></i> Engine Running</span>
     </div>
-    <div class="sim-body" id="launchBody" style="padding:16px;color:#f8fafc">
+    <div class="sim-body" id="launchBody" style="padding:16px">
       <!-- Top Docker Stats Status Bar -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-        <div style="background:#1e293b;padding:10px;border-radius:8px;border:1px solid #334155">
-          <div style="font-size:.72rem;color:#94a3b8;font-weight:700">CONTAINER PID</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#38bdf8;font-family:var(--mono);margin-top:2px" id="simPid">14608</div>
+        <div style="background:var(--surface-2);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700">CONTAINER PID</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--blue);font-family:var(--mono);margin-top:2px" id="simPid">14608</div>
         </div>
-        <div style="background:#1e293b;padding:10px;border-radius:8px;border:1px solid #334155">
-          <div style="font-size:.72rem;color:#94a3b8;font-weight:700">CPU USAGE</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#34d399;font-family:var(--mono);margin-top:2px" id="simCpu">0.12%</div>
+        <div style="background:var(--surface-2);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700">CPU USAGE</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--green);font-family:var(--mono);margin-top:2px" id="simCpu">0.12%</div>
         </div>
-        <div style="background:#1e293b;padding:10px;border-radius:8px;border:1px solid #334155">
-          <div style="font-size:.72rem;color:#94a3b8;font-weight:700">RAM MEMORY</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#fbbf24;font-family:var(--mono);margin-top:2px" id="simRam">8.4 MB</div>
+        <div style="background:var(--surface-2);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700">RAM MEMORY</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--amber);font-family:var(--mono);margin-top:2px" id="simRam">8.4 MB</div>
         </div>
-        <div style="background:#1e293b;padding:10px;border-radius:8px;border:1px solid #334155">
-          <div style="font-size:.72rem;color:#94a3b8;font-weight:700">DISK ALLOCATED</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#c084fc;font-family:var(--mono);margin-top:2px">14.57 GB</div>
+        <div style="background:var(--surface-2);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700">DISK ALLOCATED</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--purple);font-family:var(--mono);margin-top:2px">14.57 GB</div>
         </div>
       </div>
 
       <!-- Real-time Live Container Resource Chart -->
-      <div style="background:#1e293b;padding:14px;border-radius:8px;border:1px solid #334155;margin-bottom:14px">
+      <div style="background:var(--surface-2);padding:14px;border-radius:8px;border:1px solid var(--border);margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:.8rem;font-weight:700;color:#cbd5e1"><i class="fa-solid fa-chart-line" style="color:#38bdf8"></i> Real-time Container Telemetry &amp; Resource Metrics</div>
-          <span style="font-size:.72rem;color:#34d399;font-family:var(--mono)"><i class="fa-solid fa-signal"></i> Live Stream</span>
+          <div style="font-size:.8rem;font-weight:700;color:var(--text)"><i class="fa-solid fa-chart-line" style="color:var(--blue)"></i> Real-time Container Telemetry &amp; Resource Metrics</div>
+          <span style="font-size:.72rem;color:var(--green);font-family:var(--mono)"><i class="fa-solid fa-signal"></i> Live Stream</span>
         </div>
-        <canvas id="dockerStatsChart" height="90" style="width:100%;background:#0f172a;border-radius:6px;border:1px solid #334155"></canvas>
+        <canvas id="dockerStatsChart" height="90" style="width:100%;background:var(--surface);border-radius:6px;border:1px solid var(--border)"></canvas>
       </div>
 
-      <div id="launchStatus" style="color:#94a3b8;font-family:var(--mono);font-size:.82rem;text-align:center;padding:6px">Docker Engine daemon status: Active</div>
+      <div id="launchStatus" style="color:var(--muted);font-family:var(--mono);font-size:.82rem;text-align:center;padding:6px">Docker Engine daemon status: Active</div>
     </div>
   </div>
-  <button class="btn btn-primary" id="launchBtn" style="margin-top:12px"><i class="fa-solid fa-play"></i> Launch Docker Desktop Engine</button>
+  <button class="btn btn-primary" id="launchBtn" style="margin-top:14px"><i class="fa-solid fa-play"></i> Launch Docker Desktop Engine</button>
   <div id="hubSection" style="display:none;margin-top:18px">
     <div class="dockerhub-form">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
@@ -388,7 +537,7 @@ function stageHTML_6(){return `
           <i class="fa-solid fa-eye"></i>
         </button>
       </div>
-      <div style="display:flex;gap:10px;margin-top:6px">
+      <div style="display:flex;gap:10px;margin-top:12px">
         <button class="btn btn-primary btn-sm" onclick="doDockerLogin()"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
         <button class="btn btn-outline btn-sm" onclick="skipDockerLogin()">Skip for now</button>
       </div>
@@ -396,9 +545,8 @@ function stageHTML_6(){return `
     </div>
   </div>
 `;}
+
 function wireStage_6(){
-  // Initialize Real-Time Docker Container Telemetry Canvas Chart
-  // Fetch Real OS Docker Container Telemetry from Backend API
   setTimeout(()=>{
     const cvs = document.getElementById('dockerStatsChart');
     if(cvs) {
@@ -474,21 +622,24 @@ function wireStage_6(){
   };
 }
 
-/* ---------- STEP 7: Verify - Real + Simulated ---------- */
+/* ---------- STEP 7: Verify ---------- */
 function stageHTML_7(){return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span class="badge badge-green"><i class="fa-solid fa-vial-circle-check"></i> Step 7 of 7</span>
+    <span class="badge badge-green"><i class="fa-solid fa-vial-circle-check"></i> Stage 7 of 7</span>
     <span class="badge badge-blue"><i class="fa-solid fa-terminal"></i> Terminal Verification</span>
   </div>
-  <h2>Verify Docker Installation</h2>
-  <div class="verify-tabs">
-    <button class="verify-tab active" id="tab-sim" onclick="switchTab('sim')"><i class="fa-solid fa-terminal"></i> Live Shell</button>
-    <button class="verify-tab" id="tab-real" onclick="switchTab('real')"><i class="fa-solid fa-bolt"></i> Real System Audit</button>
+  <h2 style="font-size:1.3rem;margin-bottom:6px">7. Verify Docker Installation</h2>
+  <p style="margin-bottom:14px;color:var(--muted)">Run version and container execution checks in the integrated CLI terminal.</p>
+  
+  <div class="verify-tabs" style="display:flex;gap:10px;margin-bottom:14px">
+    <button class="verify-tab active" id="tab-sim" onclick="switchTab('sim')" style="padding:8px 16px;border-radius:6px;cursor:pointer"><i class="fa-solid fa-terminal"></i> Live Shell Terminal</button>
+    <button class="verify-tab" id="tab-real" onclick="switchTab('real')" style="padding:8px 16px;border-radius:6px;cursor:pointer"><i class="fa-solid fa-bolt"></i> Real System Audit</button>
   </div>
+
   <!-- SIMULATED / LIVE SHELL TAB -->
   <div id="panel-sim">
-    <p style="margin-bottom:10px">Execute terminal commands directly on the live platform or test your Docker knowledge.</p>
-    <div style="background:rgba(45,143,255,0.07);border:1px solid rgba(45,143,255,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.82rem">
+    <p style="margin-bottom:10px;color:var(--muted);font-size:.88rem">Execute terminal commands directly on the live platform or test your Docker CLI commands.</p>
+    <div style="background:rgba(45,143,255,0.07);border:1px solid rgba(45,143,255,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-family:var(--mono);font-size:.82rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <span>Suggested Verification Commands:</span>
         <button class="btn btn-outline btn-sm" onclick="triggerBgVerificationTask()">&#x26A1; Run in Background Task</button>
@@ -496,75 +647,113 @@ function stageHTML_7(){return `
       <div>1. <span style="color:#00e5a0">docker --version</span></div>
       <div style="margin-top:2px">2. <span style="color:#00e5a0">docker run hello-world</span></div>
     </div>
-    <div class="terminal" id="terminal">
-      <div class="line out">Platform Shell Ready. Type commands below (e.g. docker --version, hostname, whoami, docker ps):</div>
+    <div class="terminal" id="terminal" style="min-height:220px">
+      <div class="line out">Platform Shell Ready. Type commands below (e.g. docker --version, docker run hello-world, hostname):</div>
       <div class="cursor-row"><span class="prompt">$&nbsp;</span><input type="text" id="termInput" autocomplete="off" placeholder="type command and press Enter..."></div>
     </div>
-    <div id="simResult" style="margin-top:10px"></div>
+    <div id="simResult" style="margin-top:12px"></div>
   </div>
+
   <!-- REAL TAB -->
   <div id="panel-real" style="display:none">
-    <p style="margin-bottom:12px">This runs <strong style="color:#2d8fff">actual Docker commands</strong> on the server machine to verify a real installation.</p>
+    <p style="margin-bottom:12px;color:var(--muted);font-size:.88rem">This runs <strong style="color:#2d8fff">actual Docker commands</strong> on the server machine to verify a real installation.</p>
     <button class="btn btn-primary" id="realCheckBtn" onclick="runRealDockerCheck()">&#x26A1; Run Real Docker Verification</button>
     <div id="realResult" style="margin-top:14px"></div>
   </div>
 `;}
+
 function wireStage_7(){
-  // Sim / Live terminal
   const term=document.getElementById('terminal');
   const input=document.getElementById('termInput');
   let cmd1='', cmd2='';
-  input.focus();
-  input.addEventListener('keydown',function(e){
-    if(e.key!=='Enter')return;
-    const val=this.value.trim();
-    if(!val)return;
+  let commandHistory = [];
+  let historyIndex = -1;
+  if(input) input.focus();
 
-    const echo=document.createElement('div');
-    echo.className='line';
-    echo.innerHTML='<span class="prompt">$</span> '+val.replace(/</g,'&lt;');
-    term.insertBefore(echo,this.closest('.cursor-row'));
-
-    // Execute via live terminal API
-    fetch('/api/terminal/exec', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({command: val})
-    })
-    .then(r=>r.json())
-    .then(res=>{
-      if(res.action === 'clear'){
-        // Clear previous lines
-        const lines = term.querySelectorAll('.line');
-        lines.forEach(l => l.remove());
+  if(input) {
+    input.addEventListener('keydown',function(e){
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (commandHistory.length > 0) {
+          if (historyIndex === -1) {
+            historyIndex = commandHistory.length - 1;
+          } else if (historyIndex > 0) {
+            historyIndex--;
+          }
+          this.value = commandHistory[historyIndex];
+          setTimeout(() => { this.setSelectionRange(this.value.length, this.value.length); }, 0);
+        }
+        return;
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (commandHistory.length > 0 && historyIndex !== -1) {
+          if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            this.value = commandHistory[historyIndex];
+            setTimeout(() => { this.setSelectionRange(this.value.length, this.value.length); }, 0);
+          } else {
+            historyIndex = -1;
+            this.value = '';
+          }
+        }
         return;
       }
 
-      const out=document.createElement('div');
-      out.className = res.ok ? 'line success-line' : 'line out';
-      out.style.whiteSpace = 'pre-wrap';
-      out.textContent = res.output;
-      term.insertBefore(out, this.closest('.cursor-row'));
-      term.scrollTop = term.scrollHeight;
+      if(e.key!=='Enter')return;
+      const val=this.value.trim();
+      if(!val)return;
 
-      const lowerVal = val.toLowerCase();
-      if(lowerVal.includes('docker --version') || lowerVal.includes('docker -v')) cmd1 = val;
-      if(lowerVal.includes('docker run')) cmd2 = val;
-
-      if(cmd1 && cmd2 && !verified) {
-        submitSimVerify(cmd1, cmd2);
+      if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== val) {
+        commandHistory.push(val);
       }
-    })
-    .catch(err=>{
-      const out=document.createElement('div');
-      out.className = 'line err';
-      out.textContent = 'Execution error: ' + err;
-      term.insertBefore(out, this.closest('.cursor-row'));
-      term.scrollTop = term.scrollHeight;
-    });
+      historyIndex = -1;
 
-    this.value='';
-  });
+      const echo=document.createElement('div');
+      echo.className='line';
+      echo.innerHTML='<span class="prompt">$</span> '+val.replace(/</g,'&lt;');
+      term.insertBefore(echo,this.closest('.cursor-row'));
+
+      fetch('/api/terminal/exec', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({command: val})
+      })
+      .then(r=>r.json())
+      .then(res=>{
+        if(res.action === 'clear'){
+          const lines = term.querySelectorAll('.line');
+          lines.forEach(l => l.remove());
+          return;
+        }
+
+        const out=document.createElement('div');
+        out.className = res.ok ? 'line success-line' : 'line out';
+        out.style.whiteSpace = 'pre-wrap';
+        out.textContent = res.output;
+        term.insertBefore(out, this.closest('.cursor-row'));
+        term.scrollTop = term.scrollHeight;
+
+        const lowerVal = val.toLowerCase();
+        if(lowerVal.includes('docker --version') || lowerVal.includes('docker -v')) cmd1 = val;
+        if(lowerVal.includes('docker run')) cmd2 = val;
+
+        markDone(7);
+
+        if(cmd1 && cmd2 && !verified) {
+          submitSimVerify(cmd1, cmd2);
+        }
+      })
+      .catch(err=>{
+        const out=document.createElement('div');
+        out.className = 'line err';
+        out.textContent = 'Execution error: ' + err;
+        term.insertBefore(out, this.closest('.cursor-row'));
+        term.scrollTop = term.scrollHeight;
+      });
+
+      this.value='';
+    });
+  }
 
   window.triggerBgVerificationTask = function(){
     fetch('/api/tasks/start', {
@@ -583,12 +772,11 @@ function wireStage_7(){
     });
   };
 
-  // Real check
   window.runRealDockerCheck=function(){
     document.getElementById('realCheckBtn').disabled=true;
     document.getElementById('realCheckBtn').textContent='Running...';
     const res=document.getElementById('realResult');
-    res.innerHTML='<div style="color:#2d8fff;font-family:monospace;font-size:.83rem">&#x231B; Running docker commands on this machine...</div>';
+    res.innerHTML='<div style="color:#2d8fff;font-family:var(--mono);font-size:.83rem">&#x231B; Running docker commands on server machine...</div>';
     fetch('/api/verify-docker-real',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
       .then(r=>r.json()).then(data=>{
         let html='';
@@ -606,7 +794,7 @@ function wireStage_7(){
             <div class="check-icon ${cr.ok?'ok':'fail'}">${icon}</div>
             <div>
               <div class="check-label">${c.label}</div>
-              <div class="check-detail" style="font-family:monospace;white-space:pre-wrap;word-break:break-all">${cr.output}</div>
+              <div class="check-detail" style="font-family:var(--mono);white-space:pre-wrap;word-break:break-all">${cr.output}</div>
             </div>
           </div>`;
         });
@@ -616,7 +804,7 @@ function wireStage_7(){
           verified=true; stepsDone=[1,2,3,4,5,6,7]; updateProgress();
           res.insertAdjacentHTML('beforeend','<a href="/student/dashboard" class="btn btn-green" style="margin-top:10px">&#x2192; Back to Dashboard</a>');
         } else {
-          res.insertAdjacentHTML('beforeend','<div class="flash flash-error" style="margin-top:12px">Docker not found or not running on this machine. Use the Live Shell tab to complete the lab.</div>');
+          res.insertAdjacentHTML('beforeend','<div class="flash flash-error" style="margin-top:12px">Docker not found or not running on server machine. Use the Live Shell tab to complete the lab.</div>');
           document.getElementById('realCheckBtn').disabled=false;
           document.getElementById('realCheckBtn').textContent='Retry Real Check';
         }
@@ -640,14 +828,13 @@ function submitSimVerify(c1,c2){
       const box=document.getElementById('simResult');
       if(data.ok){
         verified=true; stepsDone=[1,2,3,4,5,6,7]; updateProgress();
-        box.innerHTML='<div class="flash flash-success success-burst">&#x1F389; Lab 1 complete! <a href="/student/dashboard">Back to dashboard &rarr;</a></div>';
+        if(box) box.innerHTML='<div class="flash flash-success success-burst">&#x1F389; Lab 1 complete! <a href="/student/dashboard">Back to dashboard &rarr;</a></div>';
       } else {
-        box.innerHTML='<div class="flash flash-error">'+data.message+'</div>';
+        if(box) box.innerHTML='<div class="flash flash-error">'+data.message+'</div>';
       }
     });
 }
 
-/* ============================================================ */
 function stageHTML(id){
   switch(id){
     case 1: return stageHTML_1();
@@ -660,6 +847,7 @@ function stageHTML(id){
     default: return '';
   }
 }
+
 function wireStage(id){
   switch(id){
     case 1: wireStage_1();break;
@@ -671,15 +859,6 @@ function wireStage(id){
     case 7: wireStage_7();break;
   }
 }
-
-// Clickable steps
-document.querySelectorAll('.step').forEach(el=>{
-  el.addEventListener('click',()=>{
-    const id=parseInt(el.dataset.step);
-    const maxUnlocked=stepsDone.length?Math.max(...stepsDone)+1:1;
-    if(stepsDone.includes(id)||id===currentStep||id===maxUnlocked) goTo(id);
-  });
-});
 
 updateProgress();
 renderStage();
@@ -810,25 +989,7 @@ function submitSupportTicket() {
     closeTicketModal();
   });
 }
-
-function showDocsModal(labNum) {
-  document.getElementById('docsOverlay').style.display = 'flex';
-}
-
-function closeDocsModal() {
-  document.getElementById('docsOverlay').style.display = 'none';
-}
-
-function toggleDocCheck(chk) {
-  const stepEl = chk.closest('.step');
-  if(stepEl) {
-    if(chk.checked) stepEl.classList.add('done');
-    else stepEl.classList.remove('done');
-  }
-}
 </script>
-
-
 
 <!-- Video Explanation Modal -->
 <div id="labVideoOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;padding:20px">
@@ -852,7 +1013,7 @@ function toggleDocCheck(chk) {
     </div>
     <input type="hidden" id="ticketLabNum" value="1">
     <label>Issue Summary / Title</label>
-    <input type="text" id="ticketTitleInput" placeholder="e.g. Docker daemon check failed on step 6">
+    <input type="text" id="ticketTitleInput" placeholder="e.g. System check error on step 1">
     <label>Detailed Problem Description</label>
     <textarea id="ticketDescInput" rows="4" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:16px" placeholder="Describe the error code or obstacle you encountered..."></textarea>
     <div style="display:flex;justify-content:flex-end;gap:10px">

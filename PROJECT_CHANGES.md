@@ -76,8 +76,21 @@ This document outlines all features, UI/UX upgrades, and structural changes made
   - Added native inline SVG eye / eye-slash password visibility toggle buttons.
 - **`change_password.html`**:
   - Integrated eye visibility buttons for initial login password updates.
-- **`lab1.html` & `lab2.html`**:
+- **`lab1.html`, `lab2.html` & `lab3.html`**:
   - Added theme switcher controls and password toggle support for Docker Hub fields.
+
+---
+
+## 🧪 7. Lab 3 / Experiment 3 Integration
+
+- **Interactive Lab Module (`lab3.html`)**:
+  - Implemented Experiment 3: "Run a container from the 'hello-world' Docker image & verify application execution".
+  - Includes step guidance (1. Environment Audit, 2. Pull hello-world, 3. Run Container, 4. Inspect Lifecycle, 5. Verification), hints, command references, interactive shell console, live telemetry, and video/ticket support.
+  - Full completion condition: Experiment marks complete (`verification_passed = 1`) only after executing and verifying application execution.
+- **Student Dashboard Integration (`student_dashboard.html`)**:
+  - Added Lab 3 / Experiment 3 card, progress status bar, total step counter (17 steps across 3 modules), and navigation buttons.
+- **Faculty Dashboard Integration (`faculty_dashboard.html`)**:
+  - Added Lab 3 Completed stat card, Lecture Video Manager dropdown option, Student Roster Lab 3 progress column, roster search/sorting engine integration, and filtering support.
 
 ---
 

@@ -1,0 +1,1479 @@
+{% extends "base.html" %}
+{% block title %}Lab 3 - Run Hello World Container & Verify Application{% endblock %}
+{% block body %}
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span>
+    <span>V-Lab &middot; VS Code Web IDE</span>
+    <span class="live-dot"></span>
+  </div>
+  <div class="topbar-right">
+    <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
+    <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
+  </div>
+</div>
+
+<div class="wrap" style="max-width:100%;padding:16px 24px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 3: Build Custom "Hello World!" Web App &amp; Run Container</h2>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
+      <button class="btn btn-outline" onclick="showLabVideoModal(3)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
+      <button class="btn btn-outline" onclick="showTicketModal(3)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
+      <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:var(--purple)"></i> Interactive Tour</button>
+      <button class="btn btn-green" onclick="submitLab3Completion()"><i class="fa-solid fa-circle-check"></i> Submit &amp; Verify Lab 3</button>
+    </div>
+  </div>
+
+  <!-- Connected Step Guidance Banner with Arrows -->
+  <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-bottom:12px">
+    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 1 details & guidance">
+      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">1</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Inspect &amp; Create Files <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Click + to create index.html &amp; Dockerfile</span></div>
+    </div>
+    <div style="color:var(--blue);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
+    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 2 details & commands">
+      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">2</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Test Compulsory Docker Commands <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">docker pull, docker run &amp; docker ps -a</span></div>
+    </div>
+    <div style="color:var(--green);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
+    <div style="background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(5,150,105,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 3 details & verification">
+      <span style="background:var(--green);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">3</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">View Live Web Page &amp; Verify <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Test app on port 8080 &amp; submit</span></div>
+    </div>
+  </div>
+
+  <!-- Telemetry Bar -->
+  <div class="telemetry-bar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-family:var(--mono);font-size:.78rem">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i class="fa-brands fa-docker" style="color:var(--blue);font-size:1.1rem"></i>
+      <span style="font-weight:700;color:var(--text)">docker.desktop telemetry</span>
+      <span class="badge badge-green" style="font-size:.68rem;padding:2px 8px" id="lab3EngineStatus"><i class="fa-solid fa-circle"></i> Engine Ready</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px">
+      <div>PID: <b style="color:var(--blue)" id="l3Pid">14608</b></div>
+      <div>CPU: <b style="color:var(--green)" id="l3Cpu">0.12%</b></div>
+      <div>RAM: <b style="color:var(--amber)" id="l3Ram">8.4 MB</b></div>
+      <div>Disk: <b style="color:var(--purple)">14.57 GB</b></div>
+    </div>
+  </div>
+
+  <!-- Slide-in Drawer for Lab 3 Instructions & Checkmarks -->
+  <div id="instructionsDrawer" class="instructions-drawer">
+    <div class="instructions-drawer-header">
+      <h3><i class="fa-solid fa-list-check" style="color:var(--blue)"></i> LAB 3 INSTRUCTIONS</h3>
+      <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
+    </div>
+    
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;flex-shrink:0">
+      Complete these tasks in the VS Code Web IDE to build and run your custom web app container:
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
+      <!-- Step 1: CREATE INDEX.HTML -->
+      <div id="checkCard-index" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-html5" style="color:#e34f26"></i> 1. CREATE INDEX.HTML</b>
+          <span id="badge-index" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE HTML CODE FROM REFERENCE BELOW:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (TYPE MANUALLY - COPY BLOCKED)</div>
+          <div class="no-copy-code">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;title&gt;My App&lt;/title&gt;&lt;/head&gt;<br>&lt;body&gt;&lt;h1&gt;Hello World!&lt;/h1&gt;&lt;/body&gt;<br>&lt;/html&gt;</div>
+        </div>
+      </div>
+
+      <!-- Step 2: CREATE DOCKERFILE -->
+      <div id="checkCard-dockerfile" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
+          <span id="badge-dockerfile" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + TO CREATE DOCKERFILE WITH NGINX INSTRUCTIONS:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (TYPE MANUALLY - COPY BLOCKED)</div>
+          <div class="no-copy-code">FROM nginx:alpine<br>COPY index.html /usr/share/nginx/html/index.html</div>
+        </div>
+      </div>
+
+      <!-- Step 3: PULL HELLO-WORLD IMAGE -->
+      <div id="checkCard-pull" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-download" style="color:#38bdf8"></i> 3. PULL HELLO-WORLD IMAGE</b>
+          <span id="badge-pull" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker pull hello-world</div>
+      </div>
+
+      <!-- Step 4: RUN HELLO-WORLD CONTAINER -->
+      <div id="checkCard-run" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-play" style="color:var(--green)"></i> 4. RUN HELLO-WORLD CONTAINER</b>
+          <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399">docker run hello-world</div>
+      </div>
+
+      <!-- Step 5: BUILD CUSTOM WEB IMAGE -->
+      <div id="checkCard-build" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-hammer" style="color:#f59e0b"></i> 5. BUILD WEBSITE IMAGE</b>
+          <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#f59e0b">docker build -t my-website .</div>
+      </div>
+
+      <!-- Step 6: RUN DETACHED CONTAINER -->
+      <div id="checkCard-run_web" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-globe" style="color:#10b981"></i> 6. RUN WEBSITE CONTAINER</b>
+          <span id="badge-run_web" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#10b981">docker run -d -p 8080:80 my-website</div>
+      </div>
+
+      <!-- Step 7: STOP AND START CONTAINER -->
+      <div id="checkCard-stop_start" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-power-off" style="color:#ef4444"></i> 7. STOP &amp; START CONTAINER</b>
+          <span id="badge-stop_start" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMANDS IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#f87171">docker stop &lt;container_id&gt;<br>docker start &lt;container_id&gt;</div>
+      </div>
+
+      <!-- Step 8: SYSTEM PRUNE -->
+      <div id="checkCard-prune" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-broom" style="color:#a855f7"></i> 8. CLEAN SYSTEM PRUNE</b>
+          <span id="badge-prune" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#a855f7">docker system prune</div>
+      </div>
+
+      <!-- Step 9: INSPECT ALL CONTAINERS AGAIN -->
+      <div id="checkCard-ps2" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-magnifying-glass" style="color:#38bdf8"></i> 9. INSPECT ALL CONTAINERS</b>
+          <span id="badge-ps2" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker ps -a</div>
+      </div>
+
+      <!-- Step 10: FORCE REMOVE CONTAINER -->
+      <div id="checkCard-rm" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-trash-can" style="color:#ef4444"></i> 10. FORCE REMOVE CONTAINER</b>
+          <span id="badge-rm" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#ef4444">docker rm -f &lt;container_id&gt;</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;flex-shrink:0">
+      <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:.74rem;margin-top:5px">
+        <span id="progLabel" style="color:var(--muted)">0 / 10 Steps Tested</span>
+        <span id="progPct" style="color:var(--blue);font-family:monospace">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Integrated VS Code Workplace Layout -->
+  <div class="vscode-container" style="height:calc(100vh - 170px);min-height:720px">
+    <!-- Activity Bar -->
+    <div class="vscode-activitybar">
+      <div class="vscode-activity-icon active" id="act-explorer" title="Explorer (Ctrl+Shift+E)" onclick="switchActivityTab('explorer')"><i class="fa-regular fa-copy"></i></div>
+      <div class="vscode-activity-icon" id="act-search" title="Search (Ctrl+Shift+F)" onclick="switchActivityTab('search')"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="vscode-activity-icon" id="act-git" title="Source Control" onclick="switchActivityTab('git')"><i class="fa-solid fa-code-branch"></i></div>
+      <div class="vscode-activity-icon" id="act-docker" title="Docker Extension" onclick="switchActivityTab('docker')"><i class="fa-brands fa-docker"></i></div>
+    </div>
+
+    <!-- Explorer Sidebar -->
+    <div class="vscode-sidebar" id="vscodeSidebar">
+      <div class="vscode-sidebar-title" style="display:flex;justify-content:space-between;align-items:center" id="sidebarHeaderTitle">
+        <span>EXPLORER &mdash; HELLO-WEB</span>
+        <div class="sidebar-action-icons">
+          <span class="sidebar-action-icon add-file" id="sbNewFile" onclick="createNewFilePrompt()" title="Create New File"><i class="fa-solid fa-plus"></i></span>
+          <span class="sidebar-action-icon rename-file" id="sbRenameFile" onclick="renameCurrentFilePrompt()" title="Rename Selected File"><i class="fa-solid fa-pen"></i></span>
+          <span class="sidebar-action-icon delete-file" id="sbDeleteFile" onclick="deleteCurrentFilePrompt()" title="Delete Selected File"><i class="fa-solid fa-trash"></i></span>
+          <span class="sidebar-action-icon save-file" id="sbSaveFile" onclick="saveCurrentFile()" title="Save File (Ctrl+S)"><i class="fa-solid fa-floppy-disk"></i></span>
+        </div>
+      </div>
+      <div class="vscode-file-tree" id="fileTreeContainer"></div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="vscode-main">
+      <!-- File Tabs -->
+      <div class="vscode-tabs" id="vscodeTabsContainer"></div>
+
+      <!-- Quick Action Toolbar -->
+      <div class="vscode-editor-toolbar">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> New File</button>
+          <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
+          <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> Rename</button>
+          <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> Delete</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:.76rem;color:#94a3b8;font-family:var(--mono)" id="editorFileStatus">Editing: index.html</span>
+        </div>
+      </div>
+
+      <!-- Editor & Preview Split Pane -->
+      <div class="vscode-editor-pane">
+        <!-- Left: Code Editor -->
+        <div class="vscode-code-area">
+          <div class="vscode-line-numbers" id="lineNumbers">1</div>
+          <div class="vscode-editor-wrapper">
+            <pre class="vscode-highlight-layer" id="codeHighlight" aria-hidden="true"></pre>
+            <textarea class="vscode-textarea" id="codeEditor" spellcheck="false" placeholder="Write your HTML / Dockerfile code here..." oninput="onCodeInput()" onscroll="syncEditorScroll()"></textarea>
+          </div>
+        </div>
+
+        <!-- Right: Live Browser Preview -->
+        <div class="vscode-preview-pane">
+          <div class="vscode-preview-header">
+            <i class="fa-solid fa-rotate-right" style="cursor:pointer;color:var(--blue)" title="Refresh Live Web App" onclick="refreshPreview()"></i>
+            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> http://localhost:8080</div>
+            <span class="badge badge-green" id="previewBadge">Offline</span>
+          </div>
+          <div class="vscode-preview-body" id="previewContainer">
+            <div style="text-align:center;padding:60px 20px;color:#64748b">
+              <i class="fa-solid fa-server" style="font-size:2.5rem;margin-bottom:12px;display:block"></i>
+              <div style="font-weight:600;font-size:.95rem">Web Server Container Not Running</div>
+              <div style="font-size:.82rem;margin-top:4px">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 8080.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-Width Bottom Integrated Terminal -->
+      <div class="vscode-bottom-terminal">
+        <div class="vscode-terminal-header">
+          <span class="vscode-terminal-tab active" id="termTab-terminal" onclick="switchTerminalTab('terminal')"><i class="fa-solid fa-terminal"></i> TERMINAL</span>
+          <span class="vscode-terminal-tab" id="termTab-problems" onclick="switchTerminalTab('problems')"><i class="fa-solid fa-circle-exclamation"></i> PROBLEMS (0)</span>
+          <span class="vscode-terminal-tab" id="termTab-output" onclick="switchTerminalTab('output')"><i class="fa-solid fa-square-poll-vertical"></i> OUTPUT</span>
+        </div>
+        <div class="terminal" id="vsTerminal" style="border:none;border-radius:0;flex:1;max-height:none">
+          <div class="line out">VS Code Integrated Terminal [bash/cmd]. Type docker commands below:</div>
+          <div class="cursor-row">
+            <span class="prompt">hello-web$&nbsp;</span>
+            <input type="text" id="vsTermInput" autocomplete="off" placeholder="type docker pull hello-world, docker run hello-world, or docker ps -a">
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="vscode-statusbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="cursor:pointer"><i class="fa-solid fa-code-branch"></i> main*</span>
+          <span style="cursor:pointer"><i class="fa-solid fa-circle-xmark"></i> 0</span>
+          <span style="cursor:pointer"><i class="fa-solid fa-triangle-exclamation"></i> 0</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <span style="cursor:pointer">UTF-8</span>
+          <span style="cursor:pointer" id="statusLang">HTML</span>
+          <span style="cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles"></i> Prettier</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop Blur Tour Modal Overlay -->
+<div id="tourOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s ease">
+  <div style="background:var(--surface);border:1px solid var(--border-bright);border-radius:16px;width:100%;max-width:520px;padding:28px;box-shadow:0 25px 50px rgba(0,0,0,0.3);position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span class="badge badge-blue" id="tourStepBadge"><i class="fa-solid fa-compass"></i> Step 1 of 3</span>
+      <button onclick="closeTourModal()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer">&times;</button>
+    </div>
+    <h2 id="tourTitle" style="font-size:1.3rem;margin-bottom:8px;color:var(--text)">Step Title</h2>
+    <p id="tourDesc" style="color:var(--muted);font-size:.92rem;line-height:1.5;margin-bottom:24px">Step description goes here.</p>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <button class="btn btn-outline btn-sm" id="tourPrevBtn" onclick="prevTourStep()">&larr; Previous</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline btn-sm" onclick="closeTourModal()">Skip Tour</button>
+        <button class="btn btn-primary btn-sm" id="tourNextBtn" onclick="nextTourStep()">Next Step &rarr;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Video Explanation Modal -->
+<div id="labVideoOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border-bright);border-radius:16px;width:100%;max-width:760px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 id="labVideoTitle" style="font-size:1.1rem;margin:0;color:var(--text)"><i class="fa-solid fa-video" style="color:var(--blue)"></i> Faculty Lecture Explanation</h3>
+      <button onclick="closeLabVideoModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">&times;</button>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;background:#000">
+      <iframe id="labVideoFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- Help Ticket Support Modal -->
+<div id="ticketOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border-bright);border-radius:16px;width:100%;max-width:540px;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="font-size:1.1rem;margin:0;color:var(--text)"><i class="fa-solid fa-headset" style="color:var(--amber)"></i> Ask Faculty &amp; View Responses</h3>
+      <button onclick="closeTicketModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">&times;</button>
+    </div>
+    <input type="hidden" id="ticketLabNum" value="3">
+    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text);font-weight:600">Issue Summary / Title</label>
+    <input type="text" id="ticketTitleInput" placeholder="e.g. docker pull hello-world command failing" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:12px;box-sizing:border-box">
+    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text);font-weight:600">Detailed Problem Description</label>
+    <textarea id="ticketDescInput" rows="3" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:14px;box-sizing:border-box" placeholder="Describe the error code or obstacle you encountered..."></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" onclick="closeTicketModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitSupportTicket()"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <h4 style="font-size:.9rem;margin:0 0 10px;color:var(--text)"><i class="fa-solid fa-reply-all" style="color:var(--blue)"></i> Previous Questions &amp; Faculty Answers</h4>
+    <div id="modalTicketsHistory" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto">
+      <div style="font-size:.82rem;color:var(--muted)">Loading previous support questions...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Dark Input Prompt Modal -->
+<div id="customPromptModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);z-index:9999999;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease">
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 60px rgba(0,0,0,0.5);color:#f8fafc">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="font-size:1.1rem;margin:0;color:#f8fafc;display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:0.04em" id="customPromptTitle"><i class="fa-solid fa-file-circle-plus" style="color:#38bdf8"></i> CREATE NEW FILE</h3>
+      <button onclick="closeCustomPromptModal()" style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer">&times;</button>
+    </div>
+    <div style="font-size:.86rem;color:#94a3b8;margin-bottom:14px" id="customPromptMessage">Enter file name to add to workspace:</div>
+    <input type="text" id="customPromptInput" style="width:100%;background:#0f172a;border:1.5px solid #0284c7;color:#f8fafc;padding:12px 14px;border-radius:8px;outline:none;font-family:var(--mono);font-size:.9rem;margin-bottom:20px;box-sizing:border-box" placeholder="e.g. index.html, Dockerfile">
+    <div style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn btn-outline btn-sm" style="color:#cbd5e1;border:1px solid #475569;border-radius:8px;padding:8px 18px" onclick="closeCustomPromptModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="customPromptConfirmBtn" style="background:#0284c7;border:none;border-radius:8px;padding:8px 20px;font-weight:700"><i class="fa-solid fa-check"></i> Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Confirmation Modal for Deletion -->
+<div id="customConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);z-index:9999999;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease">
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 60px rgba(0,0,0,0.5);color:#f8fafc">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <div style="width:42px;height:42px;border-radius:50%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div>
+        <h3 style="font-size:1.1rem;margin:0;color:#f8fafc" id="customConfirmTitle">Confirm Action</h3>
+        <div style="font-size:.85rem;color:#94a3b8;margin-top:2px" id="customConfirmMessage">Are you sure you want to delete this file?</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+      <button class="btn btn-outline btn-sm" style="color:#cbd5e1;border:1px solid #475569;border-radius:8px;padding:8px 16px" onclick="closeCustomConfirmModal()">Cancel</button>
+      <button class="btn btn-sm" id="customConfirmBtn" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-weight:700"><i class="fa-solid fa-trash"></i> Delete File</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Toast Notification Container -->
+<div id="customToastContainer" style="position:fixed;top:20px;right:20px;z-index:9999999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
+
+<div id="labConfig" data-verified="{{ 'true' if verified else 'false' }}" style="display:none"></div>
+
+<script>
+const isAlreadyVerified = document.getElementById('labConfig').dataset.verified === 'true';
+
+let files = {
+  'index.html': ''
+};
+
+let currentFile = 'index.html';
+let containerRunning = false;
+
+// Strictly track compulsory Docker commands (Must be executed in terminal console)
+let testedState = {
+  env: false,
+  pull: false,
+  run: false,
+  ps: false,
+  build: false,
+  run_web: false,
+  stop_start: false,
+  prune: false,
+  ps2: false,
+  rm: false
+};
+
+// Guided Tour Modal Logic
+let currentTourStep = 1;
+const tourSteps = [
+  {
+    num: 1,
+    title: "Step 1: Inspect & Create Files",
+    desc: "Click '+' in the Explorer sidebar on the left to create index.html and Dockerfile. Type your HTML content and Docker Nginx instructions according to the step instructions drawer.",
+    highlightId: "fileTreeContainer"
+  },
+  {
+    num: 2,
+    title: "Step 2: Test Compulsory Docker Commands",
+    desc: "Click inside the Integrated Terminal at the bottom and test all 3 compulsory Docker commands:\n1) docker pull hello-world\n2) docker run hello-world\n3) docker ps -a",
+    highlightId: "vsTerminal"
+  },
+  {
+    num: 3,
+    title: "Step 3: View Live Web Page & Verify Lab 3",
+    desc: "Verify that your containerized web application is active on http://localhost:8080. Click 'Submit & Verify Lab 3' at top right to complete the lab.",
+    highlightId: "previewContainer"
+  }
+];
+
+function startGuidedTour() {
+  currentTourStep = 1;
+  renderTourModal();
+  document.getElementById('tourOverlay').style.display = 'flex';
+}
+
+function renderTourModal() {
+  const step = tourSteps[currentTourStep - 1];
+  document.getElementById('tourStepBadge').textContent = `Step ${step.num} of 3`;
+  document.getElementById('tourTitle').textContent = step.title;
+  document.getElementById('tourDesc').textContent = step.desc;
+  document.getElementById('tourPrevBtn').disabled = currentTourStep === 1;
+  document.getElementById('tourNextBtn').textContent = currentTourStep === 3 ? 'Finish Tour' : 'Next Step →';
+}
+
+function nextTourStep() {
+  if (currentTourStep < 3) {
+    currentTourStep++;
+    renderTourModal();
+  } else {
+    closeTourModal();
+  }
+}
+
+function prevTourStep() {
+  if (currentTourStep > 1) {
+    currentTourStep--;
+    renderTourModal();
+  }
+}
+
+function closeTourModal() {
+  document.getElementById('tourOverlay').style.display = 'none';
+}
+
+// Video Tutorial & Ticket Support Modals
+function showLabVideoModal(labNum) {
+  fetch('/api/lab/video/' + labNum)
+  .then(r => r.json())
+  .then(d => {
+    if(d.ok && d.video) {
+      document.getElementById('labVideoTitle').textContent = d.video.video_title;
+      document.getElementById('labVideoFrame').src = d.video.video_url;
+      document.getElementById('labVideoOverlay').style.display = 'flex';
+    } else {
+      alert('No lecture video has been uploaded for Lab ' + labNum + ' by the faculty yet.');
+    }
+  });
+}
+
+function closeLabVideoModal() {
+  document.getElementById('labVideoFrame').src = '';
+  document.getElementById('labVideoOverlay').style.display = 'none';
+}
+
+function loadModalTicketsHistory(labNum) {
+  const container = document.getElementById('modalTicketsHistory');
+  if (!container) return;
+  fetch('/api/support/tickets/list')
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) return;
+    const tickets = (d.tickets || []).filter(t => parseInt(t.lab_number) === parseInt(labNum));
+    if (!tickets.length) {
+      container.innerHTML = '<div style="font-size:.82rem;color:var(--muted)">No previous support questions submitted for Lab ' + labNum + '.</div>';
+      return;
+    }
+    let html = '';
+    tickets.forEach(t => {
+      const isResolved = t.status === 'RESOLVED' || t.faculty_reply;
+      html += `
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:700;font-size:.84rem;color:var(--text)"><i class="fa-solid fa-circle-question" style="color:var(--blue)"></i> ${t.title}</span>
+            <span class="badge ${isResolved ? 'badge-green' : 'badge-amber'}" style="font-size:.72rem;padding:2px 8px">${isResolved ? 'Answered' : 'Pending'}</span>
+          </div>
+          <div style="font-size:.8rem;color:var(--text);margin-bottom:6px"><b>Q:</b> ${t.description}</div>
+          ${t.faculty_reply ? `
+            <div style="background:rgba(16,185,129,0.1);border-left:3px solid var(--green);padding:6px 10px;border-radius:4px;font-size:.8rem;color:var(--text)">
+              <b style="color:var(--green)"><i class="fa-solid fa-user-tie"></i> Faculty Answer:</b> ${t.faculty_reply}
+            </div>
+          ` : `
+            <div style="font-size:.78rem;color:var(--amber);font-style:italic"><i class="fa-solid fa-clock"></i> Awaiting faculty response...</div>
+          `}
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }).catch(() => {});
+}
+
+function showTicketModal(labNum) {
+  document.getElementById('ticketLabNum').value = labNum;
+  document.getElementById('ticketTitleInput').value = '';
+  document.getElementById('ticketDescInput').value = '';
+  loadModalTicketsHistory(labNum);
+  document.getElementById('ticketOverlay').style.display = 'flex';
+}
+
+function closeTicketModal() {
+  document.getElementById('ticketOverlay').style.display = 'none';
+}
+
+function submitSupportTicket() {
+  const lab_number = parseInt(document.getElementById('ticketLabNum').value);
+  const title = document.getElementById('ticketTitleInput').value.trim();
+  const description = document.getElementById('ticketDescInput').value.trim();
+
+  if(!title || !description) {
+    alert('Please enter a title and problem description!');
+    return;
+  }
+  fetch('/api/support/ticket', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ lab_number, title, description })
+  })
+  .then(r => r.json())
+  .then(data => {
+    alert(data.message);
+    document.getElementById('ticketTitleInput').value = '';
+    document.getElementById('ticketDescInput').value = '';
+    loadModalTicketsHistory(lab_number);
+  });
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('customToastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.style.background = type === 'success' ? '#059669' : (type === 'error' ? '#ef4444' : '#0284c7');
+  toast.style.color = '#ffffff';
+  toast.style.padding = '10px 18px';
+  toast.style.borderRadius = '8px';
+  toast.style.fontSize = '0.85rem';
+  toast.style.fontWeight = '600';
+  toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.4)';
+  toast.style.pointerEvents = 'auto';
+  toast.style.display = 'flex';
+  toast.style.alignItems = 'center';
+  toast.style.gap = '8px';
+  toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function toggleInstructionsDrawer() {
+  const drawer = document.getElementById('instructionsDrawer');
+  if (drawer.style.transform === 'translateX(0px)') {
+    drawer.style.transform = 'translateX(-100%)';
+  } else {
+    drawer.style.transform = 'translateX(0px)';
+  }
+}
+
+// Press Escape key to close drawer
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const drawer = document.getElementById('instructionsDrawer');
+    if (drawer && drawer.style.transform === 'translateX(0px)') {
+      toggleInstructionsDrawer();
+    }
+  }
+});
+
+function switchActivityTab(tabName) {
+  document.querySelectorAll('.vscode-activity-icon').forEach(icon => icon.classList.remove('active'));
+  const header = document.getElementById('sidebarHeaderTitle');
+  const tree = document.getElementById('fileTreeContainer');
+
+  if(tabName === 'explorer') {
+    document.getElementById('act-explorer').classList.add('active');
+    header.innerHTML = `<span>EXPLORER &mdash; HELLO-WEB</span>
+      <div class="sidebar-action-icons">
+        <span class="sidebar-action-icon add-file" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i></span>
+        <span class="sidebar-action-icon rename-file" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i></span>
+        <span class="sidebar-action-icon delete-file" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i></span>
+        <span class="sidebar-action-icon save-file" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i></span>
+      </div>`;
+    renderFileTree();
+  } else if(tabName === 'search') {
+    document.getElementById('act-search').classList.add('active');
+    header.innerHTML = `<span>Search Project</span>`;
+    tree.innerHTML = `<div style="padding:16px 12px;font-size:.8rem;color:var(--muted)"><input type="text" placeholder="Search files..." style="width:100%;margin-bottom:8px;padding:6px;background:#1e1e1e;border:1px solid #333;color:#ccc;border-radius:4px"><i class="fa-solid fa-check"></i> 0 results in workspace</div>`;
+  } else if(tabName === 'git') {
+    document.getElementById('act-git').classList.add('active');
+    header.innerHTML = `<span>Source Control</span>`;
+    tree.innerHTML = `<div style="padding:16px 12px;font-size:.8rem;color:var(--muted)"><i class="fa-solid fa-code-commit"></i> Changed Files (index.html, Dockerfile)<br><div style="margin-top:10px;font-weight:600;color:var(--blue);cursor:pointer" onclick="alert('Git Commit & Push Simulated!')"><i class="fa-solid fa-check"></i> Commit Changes</div></div>`;
+  } else if(tabName === 'docker') {
+    document.getElementById('act-docker').classList.add('active');
+    header.innerHTML = `<span>Docker Extension &mdash; Metrics</span>`;
+    tree.innerHTML = `
+      <div style="padding:12px;font-size:.8rem;color:#e2e8f0;font-family:var(--sans)">
+        <div style="font-weight:700;margin-bottom:8px;color:#38bdf8;display:flex;align-items:center;gap:6px"><i class="fa-brands fa-docker"></i> Docker Containers</div>
+        <div style="background:#1e293b;border:1px solid #334155;padding:8px;border-radius:6px;margin-bottom:12px">
+          <div style="font-weight:700;color:${containerRunning ? '#34d399' : '#94a3b8'};font-size:.82rem">
+            ${containerRunning ? '🟢 hello-web:latest (Active)' : '⚪ hello-web (Stopped)'}
+          </div>
+          <div style="font-size:.74rem;color:#94a3b8;margin-top:4px">Port Mapping: 0.0.0.0:8080 &rarr; 80/tcp</div>
+        </div>
+
+        <div style="font-weight:700;margin-bottom:6px;color:#38bdf8"><i class="fa-solid fa-chart-pie"></i> Resource Stats</div>
+        <div style="display:flex;flex-direction:column;gap:6px;background:#0f172a;border:1px solid #334155;padding:10px;border-radius:6px;font-family:var(--mono);font-size:.76rem">
+          <div style="display:flex;justify-content:space-between"><span>PID:</span><span style="color:#38bdf8;font-weight:700">14608</span></div>
+          <div style="display:flex;justify-content:space-between"><span>CPU Usage:</span><span style="color:#34d399;font-weight:700">${containerRunning ? '0.14%' : '0.00%'}</span></div>
+          <div style="display:flex;justify-content:space-between"><span>RAM Memory:</span><span style="color:#fbbf24;font-weight:700">${containerRunning ? '8.4 MB' : '0 MB'}</span></div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function switchTerminalTab(tabName) {
+  document.querySelectorAll('.vscode-terminal-tab').forEach(el=>el.classList.remove('active'));
+  const termBox = document.getElementById('vsTerminal');
+
+  if(tabName === 'terminal') {
+    document.getElementById('termTab-terminal').classList.add('active');
+    termBox.style.display = 'block';
+  } else if(tabName === 'problems') {
+    document.getElementById('termTab-problems').classList.add('active');
+    alert('Problems Panel: No syntax or Docker errors detected in workspace.');
+  } else if(tabName === 'output') {
+    document.getElementById('termTab-output').classList.add('active');
+    alert('Output Panel: Docker Daemon & VS Code Server running cleanly.');
+  }
+}
+
+function updateChecklistStatus(type, isCompleted) {
+  const card = document.getElementById('checkCard-' + type);
+  const badge = document.getElementById('badge-' + type);
+  if (card && badge) {
+    if (isCompleted) {
+      card.style.borderColor = 'var(--green)';
+      card.style.background = 'rgba(16,185,129,0.08)';
+      badge.className = 'badge badge-green';
+      badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed';
+    } else {
+      card.style.borderColor = 'var(--border)';
+      card.style.background = 'var(--surface-2)';
+      badge.className = 'badge badge-amber';
+      badge.innerHTML = '<i class="fa-solid fa-clock"></i> Required';
+    }
+  }
+  updateProgressTrack();
+}
+
+function updateChecklistUI(type) {
+  updateChecklistStatus(type, true);
+}
+
+function updateProgressTrack() {
+  const count = Object.values(testedState).filter(Boolean).length;
+  const pct = Math.round((count / 10) * 100);
+  const mainProg = document.getElementById('mainProg');
+  const progLabel = document.getElementById('progLabel');
+  const progPct = document.getElementById('progPct');
+  if (mainProg) mainProg.style.width = pct + '%';
+  if (progLabel) progLabel.textContent = count + ' / 10 Steps Tested';
+  if (progPct) progPct.textContent = pct + '%';
+}
+
+function checkCodeProgress() {
+  const indexCode = files['index.html'] || '';
+  const dockerCode = files['Dockerfile'] || '';
+
+  const hasIndex = Boolean(indexCode.trim().length > 10 && indexCode.toLowerCase().includes('html'));
+  const hasDockerfile = Boolean(dockerCode.trim().length > 5 && dockerCode.toLowerCase().includes('from'));
+
+  testedState.index = hasIndex;
+  testedState.dockerfile = hasDockerfile;
+
+  updateChecklistStatus('index', hasIndex);
+  updateChecklistStatus('dockerfile', hasDockerfile);
+
+  if (hasIndex) markStepBackend(1);
+  if (hasDockerfile) markStepBackend(2);
+}
+
+function checkCompulsoryCommand(cmd) {
+  const c = cmd.toLowerCase().trim();
+  
+  if (c.includes('docker pull')) {
+    testedState.pull = true;
+    updateChecklistUI('pull');
+    markStepBackend(3);
+  }
+  if (c.includes('docker run hello-world') || (c.includes('docker run') && c.includes('hello-world'))) {
+    testedState.run = true;
+    updateChecklistUI('run');
+    markStepBackend(4);
+  }
+  if (c.includes('docker build')) {
+    testedState.build = true;
+    updateChecklistUI('build');
+    markStepBackend(5);
+  }
+  if (c.includes('docker run') && (c.includes('my-website') || c.includes('-p 8080') || c.includes('-d'))) {
+    testedState.run_web = true;
+    updateChecklistUI('run_web');
+    markStepBackend(6);
+    containerRunning = true;
+    refreshPreview();
+  }
+  if (c.includes('docker stop') || c.includes('docker start')) {
+    testedState.stop_start = true;
+    updateChecklistUI('stop_start');
+    markStepBackend(7);
+  }
+  if (c.includes('docker system prune') || c.includes('docker prune')) {
+    testedState.prune = true;
+    updateChecklistUI('prune');
+    markStepBackend(8);
+  }
+  if (c.includes('docker ps')) {
+    testedState.ps2 = true;
+    updateChecklistUI('ps2');
+    markStepBackend(9);
+  }
+  if (c.includes('docker rm')) {
+    testedState.rm = true;
+    updateChecklistUI('rm');
+    markStepBackend(10);
+  }
+}
+
+function markStepBackend(stepId) {
+  fetch('/api/lab3/step', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({step_id: stepId})
+  });
+}
+
+/* Custom Modal Dialog Handlers */
+let promptCallback = null;
+function openCustomPrompt(title, message, defaultValue, iconClass, iconColor, callback) {
+  const modal = document.getElementById('customPromptModal');
+  const inputEl = document.getElementById('customPromptInput');
+  const titleEl = document.getElementById('customPromptTitle');
+  const msgEl = document.getElementById('customPromptMessage');
+  const confirmBtn = document.getElementById('customPromptConfirmBtn');
+
+  if (titleEl) titleEl.innerHTML = `<i class="${iconClass}" style="color:${iconColor}"></i> ${title.toUpperCase()}`;
+  if (msgEl) msgEl.textContent = message;
+  if (inputEl) inputEl.value = defaultValue || '';
+  promptCallback = callback;
+
+  if (modal) modal.style.display = 'flex';
+  setTimeout(() => { if (inputEl) inputEl.focus(); }, 50);
+
+  if (inputEl) {
+    inputEl.onkeydown = (e) => {
+      if (e.key === 'Enter') confirmCustomPrompt();
+      if (e.key === 'Escape') closeCustomPromptModal();
+    };
+  }
+  if (confirmBtn) confirmBtn.onclick = confirmCustomPrompt;
+}
+
+function confirmCustomPrompt() {
+  const inputEl = document.getElementById('customPromptInput');
+  const val = inputEl ? inputEl.value.trim() : '';
+  closeCustomPromptModal();
+  if (promptCallback) promptCallback(val);
+}
+
+function closeCustomPromptModal() {
+  const modal = document.getElementById('customPromptModal');
+  if (modal) modal.style.display = 'none';
+}
+
+let confirmCallback = null;
+function openCustomConfirm(title, message, btnText, btnColor, callback) {
+  const modal = document.getElementById('customConfirmModal');
+  const titleEl = document.getElementById('customConfirmTitle');
+  const msgEl = document.getElementById('customConfirmMessage');
+  const btn = document.getElementById('customConfirmBtn');
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (btn) {
+    btn.innerHTML = `<i class="fa-solid fa-trash"></i> ${btnText}`;
+    btn.style.background = btnColor || '#ef4444';
+    btn.onclick = () => {
+      closeCustomConfirmModal();
+      if (confirmCallback) confirmCallback(true);
+    };
+  }
+  confirmCallback = callback;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeCustomConfirmModal() {
+  const modal = document.getElementById('customConfirmModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function createNewFilePrompt() {
+  openCustomPrompt(
+    'Create New File',
+    'Enter file name to add to workspace:',
+    '',
+    'fa-solid fa-file-circle-plus',
+    '#38bdf8',
+    (fname) => {
+      if (!fname) return;
+      if (files[fname] !== undefined) {
+        alert(`File '${fname}' already exists!`);
+        return;
+      }
+      files[fname] = '';
+      renderFileTree();
+      renderTabs();
+      switchFile(fname);
+      showToast(`Created file '${fname}'`, 'success');
+    }
+  );
+}
+
+function renameCurrentFilePrompt() {
+  if (!currentFile) return;
+  openCustomPrompt(
+    'Rename File',
+    `Enter new name for '${currentFile}':`,
+    currentFile,
+    'fa-solid fa-pen-to-square',
+    '#f59e0b',
+    (newName) => {
+      if (!newName || newName === currentFile) return;
+      if (files[newName] !== undefined) {
+        alert(`File '${newName}' already exists!`);
+        return;
+      }
+      const oldName = currentFile;
+      files[newName] = files[oldName];
+      delete files[oldName];
+      switchFile(newName);
+      showToast(`Renamed '${oldName}' to '${newName}'`, 'success');
+    }
+  );
+}
+
+function deleteCurrentFilePrompt() {
+  if (!currentFile) return;
+  deleteFile(currentFile);
+}
+
+function deleteFile(filename, e) {
+  if (e) e.stopPropagation();
+  openCustomConfirm(
+    'Delete File',
+    `Are you sure you want to permanently delete '${filename}'?`,
+    'Delete File',
+    '#ef4444',
+    (confirmed) => {
+      if (!confirmed) return;
+      delete files[filename];
+      if (currentFile === filename) {
+        const keys = Object.keys(files);
+        currentFile = keys.length ? keys[0] : null;
+      }
+      renderFileTree();
+      renderTabs();
+      if (currentFile) {
+        switchFile(currentFile);
+      } else {
+        document.getElementById('codeEditor').value = '';
+        document.getElementById('lineNumbers').innerHTML = '1';
+      }
+      showToast(`Deleted file '${filename}'`, 'error');
+    }
+  );
+}
+
+function renderFileTree() {
+  const container = document.getElementById('fileTreeContainer');
+  if(!container) return;
+  container.innerHTML = '';
+  Object.keys(files).forEach(filename => {
+    const div = document.createElement('div');
+    div.className = 'vscode-file-item' + (filename === currentFile ? ' active' : '');
+    const iconClass = filename.endsWith('.html') ? 'fa-brands fa-html5' : (filename === 'Dockerfile' ? 'fa-brands fa-docker' : 'fa-solid fa-file-code');
+    const iconColor = filename.endsWith('.html') ? '#e34c26' : (filename === 'Dockerfile' ? '#2496ed' : 'var(--blue)');
+    div.innerHTML = `<i class="${iconClass}" style="color:${iconColor}"></i> <span>${filename}</span>`;
+    div.onclick = () => switchFile(filename);
+    container.appendChild(div);
+  });
+}
+
+function renderTabs() {
+  const container = document.getElementById('vscodeTabsContainer');
+  container.innerHTML = '';
+  Object.keys(files).forEach(filename => {
+    const tab = document.createElement('div');
+    tab.className = 'vscode-tab' + (filename === currentFile ? ' active' : '');
+    const iconClass = filename.endsWith('.html') ? 'fa-brands fa-html5' : (filename === 'Dockerfile' ? 'fa-brands fa-docker' : 'fa-solid fa-file-code');
+    const iconColor = filename.endsWith('.html') ? '#e34c26' : (filename === 'Dockerfile' ? '#2496ed' : 'var(--blue)');
+    tab.innerHTML = `<i class="${iconClass}" style="color:${iconColor}"></i> ${filename} <i class="fa-solid fa-xmark close-tab" onclick="deleteFile('${filename}', event)" title="Delete File"></i>`;
+    tab.onclick = (e) => {
+      if(!e.target.classList.contains('close-tab')) switchFile(filename);
+    };
+    container.appendChild(tab);
+  });
+}
+
+// Undo & Redo History Stack per file
+let undoStacks = {};
+let redoStacks = {};
+let isUndoRedoAction = false;
+let undoDebounceTimer = null;
+
+function initUndoStack(filename) {
+  if (!filename) return;
+  if (!undoStacks[filename] || undoStacks[filename].length === 0) {
+    undoStacks[filename] = [{
+      value: files[filename] !== undefined ? files[filename] : '',
+      start: 0,
+      end: 0
+    }];
+  }
+  if (!redoStacks[filename]) {
+    redoStacks[filename] = [];
+  }
+}
+
+function pushUndoState(immediate = false) {
+  if (isUndoRedoAction || !currentFile) return;
+  const editor = document.getElementById('codeEditor');
+  if (!editor) return;
+
+  const currentState = {
+    value: editor.value,
+    start: editor.selectionStart,
+    end: editor.selectionEnd
+  };
+
+  const doPush = () => {
+    if (!undoStacks[currentFile]) undoStacks[currentFile] = [];
+    const stack = undoStacks[currentFile];
+    const lastState = stack[stack.length - 1];
+
+    if (!lastState || lastState.value !== currentState.value) {
+      stack.push(currentState);
+      if (stack.length > 150) stack.shift();
+      redoStacks[currentFile] = [];
+    }
+  };
+
+  if (immediate) {
+    if (undoDebounceTimer) clearTimeout(undoDebounceTimer);
+    doPush();
+  } else {
+    if (undoDebounceTimer) clearTimeout(undoDebounceTimer);
+    undoDebounceTimer = setTimeout(doPush, 300);
+  }
+}
+
+function performUndo() {
+  if (!currentFile || !undoStacks[currentFile] || undoStacks[currentFile].length <= 1) return;
+  const editor = document.getElementById('codeEditor');
+  if (!editor) return;
+
+  if (undoDebounceTimer) clearTimeout(undoDebounceTimer);
+
+  isUndoRedoAction = true;
+  const stack = undoStacks[currentFile];
+  const currentState = {
+    value: editor.value,
+    start: editor.selectionStart,
+    end: editor.selectionEnd
+  };
+
+  if (!redoStacks[currentFile]) redoStacks[currentFile] = [];
+  redoStacks[currentFile].push(currentState);
+
+  stack.pop(); // Remove current state
+  const prev = stack[stack.length - 1];
+
+  if (prev) {
+    editor.value = prev.value;
+    editor.selectionStart = prev.start;
+    editor.selectionEnd = prev.end;
+    files[currentFile] = prev.value;
+    updateLineNumbers();
+    syncHighlight();
+    checkCodeProgress();
+  }
+  isUndoRedoAction = false;
+}
+
+function performRedo() {
+  if (!currentFile || !redoStacks[currentFile] || redoStacks[currentFile].length === 0) return;
+  const editor = document.getElementById('codeEditor');
+  if (!editor) return;
+
+  if (undoDebounceTimer) clearTimeout(undoDebounceTimer);
+
+  isUndoRedoAction = true;
+  const nextState = redoStacks[currentFile].pop();
+  if (nextState) {
+    if (!undoStacks[currentFile]) undoStacks[currentFile] = [];
+    undoStacks[currentFile].push(nextState);
+
+    editor.value = nextState.value;
+    editor.selectionStart = nextState.start;
+    editor.selectionEnd = nextState.end;
+    files[currentFile] = nextState.value;
+    updateLineNumbers();
+    syncHighlight();
+    checkCodeProgress();
+  }
+  isUndoRedoAction = false;
+}
+
+function switchFile(filename) {
+  if (currentFile && files[currentFile] !== undefined) {
+    files[currentFile] = document.getElementById('codeEditor').value;
+  }
+  currentFile = filename;
+  initUndoStack(filename);
+  renderFileTree();
+  renderTabs();
+  
+  const editor = document.getElementById('codeEditor');
+  if (editor) {
+    editor.value = files[filename] !== undefined ? files[filename] : '';
+    updateLineNumbers();
+    updateBreadcrumb();
+    syncHighlight();
+    checkCodeProgress();
+  }
+}
+
+function saveCurrentFile() {
+  if (!currentFile) {
+    showToast('No active file selected to save!', 'error');
+    return;
+  }
+  const editor = document.getElementById('codeEditor');
+  files[currentFile] = editor.value;
+  refreshPreview();
+  checkCodeProgress();
+  showToast(`Saved '${currentFile}' successfully!`, 'success');
+}
+
+function updateLineNumbers() {
+  const text = document.getElementById('codeEditor').value;
+  const lines = text.split('\n').length;
+  let nums = '';
+  for (let i = 1; i <= lines; i++) {
+    nums += i + '<br>';
+  }
+  document.getElementById('lineNumbers').innerHTML = nums;
+}
+
+function syncEditorScroll() {
+  const textarea = document.getElementById('codeEditor');
+  const highlightLayer = document.getElementById('codeHighlight');
+  if (textarea && highlightLayer) {
+    highlightLayer.scrollTop = textarea.scrollTop;
+    highlightLayer.scrollLeft = textarea.scrollLeft;
+  }
+}
+
+function updateBreadcrumb() {
+  const statusEl = document.getElementById('editorFileStatus');
+  const langEl = document.getElementById('statusLang');
+  if (!currentFile) {
+    if (statusEl) statusEl.textContent = 'No file open';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Editing: ' + currentFile;
+  if (langEl) langEl.textContent = currentFile.endsWith('.html') ? 'HTML' : (currentFile === 'Dockerfile' ? 'Dockerfile' : 'PLAIN TEXT');
+}
+
+function syncHighlight() {
+  const editor = document.getElementById('codeEditor');
+  const highlight = document.getElementById('codeHighlight');
+  if (!editor || !highlight) return;
+  highlight.innerHTML = highlightSyntax(editor.value, currentFile) + '<br>';
+  syncEditorScroll();
+}
+
+function onCodeInput() {
+  updateLineNumbers();
+  syncHighlight();
+  if (currentFile && files[currentFile] !== undefined) {
+    files[currentFile] = document.getElementById('codeEditor').value;
+  }
+  if (containerRunning && (currentFile === 'index.html' || currentFile.endsWith('.html'))) {
+    refreshPreview();
+  }
+}
+
+function highlightSyntax(code, filename) {
+  if (!code) return '';
+  let cleanCode = code.replace(/<span[^>]*>/g, '').replace(/<\/span>/g, '').replace(/"hl-[^"]*">/g, '');
+  let escaped = cleanCode
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  if (filename && (filename.endsWith('.html') || filename.endsWith('.htm'))) {
+    escaped = escaped.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-comment">$1</span>');
+    escaped = escaped.replace(/(&lt;\/?)([a-zA-Z0-9\-]+)([\s\S]*?)(&gt;)/g, function(match, p1, p2, p3, p4) {
+      let attrs = p3.replace(/([a-zA-Z0-9\-]+)=("[^"]*"|'[^']*'|[^\s&>]+)/g, '<span class="hl-attr-name">$1</span>=<span class="hl-attr-value">$2</span>');
+      return `<span class="hl-tag-bracket">${p1}</span><span class="hl-tag-name">${p2}</span>${attrs}<span class="hl-tag-bracket">${p4}</span>`;
+    });
+  } else if (filename === 'Dockerfile') {
+    const lines = escaped.split('\n');
+    escaped = lines.map(line => {
+      if (line.trim().startsWith('#')) return `<span class="hl-comment">${line}</span>`;
+      return line.replace(/\b(FROM|COPY|EXPOSE|RUN|CMD|ENTRYPOINT|ENV|WORKDIR|ADD)\b/g, '<span class="hl-docker-keyword">$1</span>');
+    }).join('\n');
+  }
+  return escaped;
+}
+
+function refreshPreview() {
+  const container = document.getElementById('previewContainer');
+  const badge = document.getElementById('previewBadge');
+  if (!container) return;
+
+  const currentContent = (currentFile === 'index.html' ? document.getElementById('codeEditor').value : files['index.html']);
+
+  if (!containerRunning) {
+    if (badge) { badge.className = 'badge badge-green'; badge.textContent = 'Offline'; }
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:#64748b">
+        <i class="fa-solid fa-server" style="font-size:2.5rem;margin-bottom:12px;display:block"></i>
+        <div style="font-weight:600;font-size:.95rem">Web Server Container Not Running</div>
+        <div style="font-size:.82rem;margin-top:4px">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 8080.</div>
+      </div>
+    `;
+  } else {
+    if (badge) { badge.className = 'badge badge-green'; badge.textContent = '• Live'; }
+    container.innerHTML = '<iframe id="livePreviewIframe" style="width:100%;height:100%;border:none;background:#ffffff"></iframe>';
+    const iframe = document.getElementById('livePreviewIframe');
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(currentContent || '<html><body style="font-family:sans-serif;padding:20px;color:#000"><h3>No index.html content written yet.</h3></body></html>');
+    doc.close();
+  }
+}
+
+function openInstructionsDrawer() {
+  const drawer = document.getElementById('instructionsDrawer');
+  if (drawer) {
+    drawer.style.transform = 'translateX(0px)';
+  }
+}
+
+function submitLab3Completion() {
+  const missing = [];
+  if (!testedState.index) missing.push('• 1. Create index.html in Explorer');
+  if (!testedState.dockerfile) missing.push('• 2. Create Dockerfile in Explorer');
+  if (!testedState.pull) missing.push('• 3. docker pull hello-world');
+  if (!testedState.run) missing.push('• 4. docker run hello-world');
+  if (!testedState.build) missing.push('• 5. docker build -t my-website .');
+  if (!testedState.run_web) missing.push('• 6. docker run -d -p 8080:80 my-website');
+  if (!testedState.stop_start) missing.push('• 7. docker stop & docker start <container_id>');
+  if (!testedState.prune) missing.push('• 8. docker system prune');
+  if (!testedState.ps2) missing.push('• 9. docker ps -a');
+  if (!testedState.rm) missing.push('• 10. docker rm -f <container_id>');
+
+  if (missing.length > 0) {
+    const formattedText = '⚠️ <b>Lab 3 Verification Blocked!</b><br><br>You must test all compulsory Docker functions in the inbuilt console before completing Lab 3:<br><br>' + missing.join('<br>');
+    alert(formattedText);
+    openInstructionsDrawer();
+    return;
+  }
+
+  fetch('/api/lab3/verify', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ verified: true, tested: testedState })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      alert('🎉 Congratulations! You have successfully tested all compulsory Docker commands and completed Lab 3!');
+      window.location.href = '/student/dashboard';
+    } else {
+      alert('Verification Failed: ' + (data.message || 'Error completing lab.'));
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  renderFileTree();
+  renderTabs();
+  switchFile('index.html');
+  refreshPreview();
+
+  checkCodeProgress();
+  updateProgressTrack();
+
+  const editor = document.getElementById('codeEditor');
+
+  // Intelligent VS Code Auto-Indentation, Tab & Undo/Redo Key Handler
+  editor.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        performRedo();
+      } else {
+        performUndo();
+      }
+      return;
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      performRedo();
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      pushUndoState(true);
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      const val = this.value;
+
+      if (!e.shiftKey) {
+        // Insert 4 spaces
+        this.value = val.substring(0, start) + '    ' + val.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      } else {
+        // Outdent 4 spaces if line starts with 4 spaces
+        let lineStart = val.lastIndexOf('\n', start - 1) + 1;
+        let lineText = val.substring(lineStart, start);
+        if (lineText.startsWith('    ')) {
+          this.value = val.substring(0, lineStart) + val.substring(lineStart + 4);
+          this.selectionStart = this.selectionEnd = Math.max(lineStart, start - 4);
+        }
+      }
+      if (currentFile) files[currentFile] = this.value;
+      updateLineNumbers();
+      syncHighlight();
+      checkCodeProgress();
+      pushUndoState(true);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      pushUndoState(true);
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      const val = this.value;
+
+      // Find current line up to cursor
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = val.substring(lineStart, start);
+
+      // Calculate leading indent (spaces/tabs)
+      const indentMatch = currentLine.match(/^[\t ]*/);
+      let indent = indentMatch ? indentMatch[0] : '';
+
+      // Auto-indent 4 extra spaces after a colon, brace, or paren
+      const trimmedLine = currentLine.trim();
+      if (trimmedLine.endsWith(':') || trimmedLine.endsWith('{') || trimmedLine.endsWith('(')) {
+        indent += '    ';
+      }
+
+      const insertText = '\n' + indent;
+      this.value = val.substring(0, start) + insertText + val.substring(end);
+      this.selectionStart = this.selectionEnd = start + insertText.length;
+
+      if (currentFile) files[currentFile] = this.value;
+      updateLineNumbers();
+      syncHighlight();
+      checkCodeProgress();
+      pushUndoState(true);
+    }
+  });
+
+  editor.addEventListener('input', function() {
+    if (currentFile) {
+      files[currentFile] = this.value;
+      updateLineNumbers();
+      syncHighlight();
+      checkCodeProgress();
+      pushUndoState(false);
+    }
+  });
+
+  editor.addEventListener('scroll', syncEditorScroll);
+
+  // Global Ctrl+S Keyboard Shortcut
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveCurrentFile();
+    } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'e') {
+      e.preventDefault();
+      switchActivityTab('explorer');
+    } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      switchActivityTab('search');
+    } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'g') {
+      e.preventDefault();
+      switchActivityTab('git');
+    }
+  });
+
+  // Terminal Keyboard Handler with Command History
+  const input = document.getElementById('vsTermInput');
+  const term = document.getElementById('vsTerminal');
+  let commandHistory = [];
+  let historyIndex = -1;
+
+  if (input) {
+    input.focus();
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (commandHistory.length > 0) {
+          if (historyIndex === -1) {
+            historyIndex = commandHistory.length - 1;
+          } else if (historyIndex > 0) {
+            historyIndex--;
+          }
+          this.value = commandHistory[historyIndex];
+          setTimeout(() => { this.setSelectionRange(this.value.length, this.value.length); }, 0);
+        }
+        return;
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (commandHistory.length > 0 && historyIndex !== -1) {
+          if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            this.value = commandHistory[historyIndex];
+            setTimeout(() => { this.setSelectionRange(this.value.length, this.value.length); }, 0);
+          } else {
+            historyIndex = -1;
+            this.value = '';
+          }
+        }
+        return;
+      }
+
+      if (e.key !== 'Enter') return;
+      const val = this.value.trim();
+      if (!val) return;
+
+      if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== val) {
+        commandHistory.push(val);
+      }
+      historyIndex = -1;
+
+      const echo = document.createElement('div');
+      echo.className = 'line';
+      echo.style.color = '#38bdf8';
+      echo.innerHTML = '<span class="prompt">hello-web$&nbsp;</span>' + val.replace(/</g, '&lt;');
+      term.insertBefore(echo, this.closest('.cursor-row'));
+      this.value = '';
+
+      fetch('/api/terminal/exec', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ command: val, files: files })
+      })
+      .then(r => {
+        if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
+          return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
+        }
+        return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
+      })
+      .then(res => {
+        if (res.action === 'clear') {
+          term.querySelectorAll('.line').forEach(l => l.remove());
+          return;
+        }
+        if (res.ok) {
+          checkCompulsoryCommand(val);
+        }
+
+        const out = document.createElement('div');
+        out.className = 'line';
+        out.style.whiteSpace = 'pre-wrap';
+
+        const cleanOutput = res.output ? res.output.trim() : '';
+        const firstLine = cleanOutput.split('\n')[0].trim();
+        const isContainerId = /^[a-f0-9]{12,64}$/i.test(firstLine);
+
+        if (res.ok && (isContainerId || cleanOutput.toLowerCase().includes('container launched'))) {
+          out.className = 'line success-line';
+          out.style.color = '#38bdf8';
+          out.textContent = cleanOutput;
+        } else {
+          out.className = res.ok ? 'line success-line' : 'line err';
+          out.textContent = cleanOutput || 'Command executed with no output.';
+        }
+
+        const cursorRow = input.closest('.cursor-row');
+        term.insertBefore(out, cursorRow);
+        setTimeout(() => {
+          term.scrollTop = term.scrollHeight;
+        }, 10);
+      })
+      .catch(err => {
+        const out = document.createElement('div');
+        out.className = 'line err';
+        out.textContent = 'Execution error: ' + err.message;
+        const cursorRow = input.closest('.cursor-row');
+        term.insertBefore(out, cursorRow);
+        setTimeout(() => {
+          term.scrollTop = term.scrollHeight;
+        }, 10);
+      });
+    });
+  }
+});
+
+// Telemetry loop
+setInterval(() => {
+  fetch('/api/system-telemetry')
+    .then(r => r.json())
+    .then(d => {
+      if(d.ok) {
+        const p = document.getElementById('l3Pid');
+        const c = document.getElementById('l3Cpu');
+        const r = document.getElementById('l3Ram');
+        const statusBadge = document.getElementById('lab3EngineStatus');
+        if(p) p.textContent = d.pid;
+        if(c) c.textContent = d.cpu;
+        if(r) r.textContent = d.ram;
+        if(statusBadge && d.docker_status_text) {
+          if(d.docker_engine === 'local') {
+            statusBadge.className = 'badge badge-green';
+            statusBadge.innerHTML = '<i class="fa-solid fa-plug"></i> ' + d.docker_status_text;
+          } else {
+            statusBadge.className = 'badge badge-blue';
+            statusBadge.innerHTML = '<i class="fa-solid fa-bolt"></i> ' + d.docker_status_text;
+          }
+        }
+      }
+    }).catch(() => {});
+}, 3000);
+</script>
+{% endblock %}

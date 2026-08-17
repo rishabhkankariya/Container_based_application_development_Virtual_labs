@@ -24,7 +24,7 @@
 <div id="vlabToastContainer" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
 
 <!-- Custom Alert / Confirm Modal Overlay -->
-<div id="vlabModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;padding:20px">
+<div id="vlabModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:9999999;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border:1.5px solid var(--border-bright);border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3);animation:modalPop .25s cubic-bezier(0.16, 1, 0.3, 1)">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <div id="vlabModalIcon" style="width:36px;height:36px;border-radius:50%;background:rgba(2,132,199,0.1);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-circle-info"></i></div>
@@ -38,24 +38,37 @@
 </div>
 
 <script>
-// Theme Switcher & Global Helpers
+// Global Theme Synchronization System
 window.toggleVLabTheme = function() {
   const current = document.documentElement.getAttribute('data-theme') || 'dark';
   const target = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', target);
   localStorage.setItem('vlab-theme', target);
   updateThemeIcons(target);
+  window.dispatchEvent(new CustomEvent('vlab-theme-change', { detail: { theme: target } }));
 };
 
 function updateThemeIcons(theme) {
-  document.querySelectorAll('.theme-toggle-btn i').forEach(icon => {
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    const icon = btn.querySelector('i');
     if (theme === 'light') {
-      icon.className = 'fa-solid fa-moon';
+      if (icon) icon.className = 'fa-solid fa-moon';
+      btn.title = 'Switch to Dark Mode';
     } else {
-      icon.className = 'fa-solid fa-sun';
+      if (icon) icon.className = 'fa-solid fa-sun';
+      btn.title = 'Switch to Light Mode';
     }
   });
 }
+
+// Synchronize theme across multiple tabs & windows in real-time
+window.addEventListener('storage', (e) => {
+  if (e.key === 'vlab-theme' && e.newValue) {
+    document.documentElement.setAttribute('data-theme', e.newValue);
+    updateThemeIcons(e.newValue);
+    window.dispatchEvent(new CustomEvent('vlab-theme-change', { detail: { theme: e.newValue } }));
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   const theme = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -166,9 +179,12 @@ window.showToast = function(msg, type='info') {
   }, 4000);
 };
 
-// Global Custom Alert Override
 window.alert = function(msg) {
-  document.getElementById('vlabModalBody').textContent = msg;
+  const modalBody = document.getElementById('vlabModalBody');
+  if (modalBody) {
+    modalBody.style.whiteSpace = 'pre-wrap';
+    modalBody.innerHTML = typeof msg === 'string' ? msg.replace(/\n/g, '<br>') : msg;
+  }
   document.getElementById('vlabModalOverlay').style.display = 'flex';
 };
 

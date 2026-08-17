@@ -36,6 +36,7 @@ vlab-module1-docker/
     ├── faculty_dashboard.html
     ├── lab1.html           # Lab 1: Docker Desktop Installation
     ├── lab2.html           # Lab 2: Nginx Web App Containerization
+    ├── lab3.html           # Lab 3: Run hello-world Container & Verify Application
     └── change_password.html
 ```
 

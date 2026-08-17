@@ -481,6 +481,8 @@ td code{background:var(--surface-3);padding:2px 7px;border-radius:4px;font-size:
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   background: #1e1e1e;
 }
 .vscode-tabs {
@@ -518,42 +520,289 @@ td code{background:var(--surface-3);padding:2px 7px;border-radius:4px;font-size:
   flex: 1;
   display: flex;
   position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 .vscode-code-area {
   flex: 1;
   display: flex;
+  height: 100%;
+  min-height: 0;
   background: #1e1e1e;
   font-family: var(--mono);
   font-size: 0.88rem;
   line-height: 1.6;
   position: relative;
+  overflow: hidden;
+}
+.vscode-editor-wrapper {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+.vscode-highlight-layer,
+.vscode-textarea {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 14px !important;
+  margin: 0 !important;
+  border: none !important;
+  font-family: 'Consolas', 'Cascadia Code', 'Fira Code', monospace !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: 1.6 !important;
+  letter-spacing: 0px !important;
+  word-spacing: 0px !important;
+  tab-size: 4 !important;
+  -moz-tab-size: 4 !important;
+  white-space: pre !important;
+  word-wrap: normal !important;
+  overflow-wrap: normal !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
+  font-variant-ligatures: none !important;
+  font-feature-settings: normal !important;
+  -webkit-font-smoothing: antialiased;
+}
+.vscode-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none !important;
+  user-select: none !important;
+  background: #1e1e1e !important;
+  color: #d4d4d4 !important;
+  z-index: 1;
 }
 .vscode-textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
   flex: 1;
-  background: #1e1e1e;
-  color: #38bdf8;
-  border: none;
-  padding: 14px;
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
+  background: transparent !important;
+  color: transparent !important;
   resize: none;
   outline: none;
-  caret-color: #38bdf8;
+  caret-color: #38bdf8 !important;
+  z-index: 2;
 }
 .vscode-line-numbers {
   padding: 14px 10px;
+  height: 100%;
   text-align: right;
-  color: #007acc;
+  color: #858585;
   user-select: none;
-  background: #181818;
+  background: #1e1e1e;
   border-right: 1px solid #2d2d2d;
-  font-family: var(--mono);
-  font-size: 0.88rem;
-  line-height: 1.6;
+  font-family: 'Consolas', 'Cascadia Code', 'Fira Code', monospace !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
   min-width: 42px;
   overflow: hidden;
+  box-sizing: border-box;
 }
+
+/* VS Code Dark+ Authentic Syntax Highlight Classes */
+.hl-keyword { color: #569cd6 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-builtin { color: #4ec9b0 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-function { color: #dcdcaa !important; font-weight: normal !important; font-style: normal !important; }
+.hl-decorator { color: #c586c0 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-string { color: #ce9178 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-number { color: #b5cea8 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-comment { color: #6a9955 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-tag-bracket { color: #808080 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-tag-name { color: #569cd6 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-attr-name { color: #9cdcfe !important; font-weight: normal !important; font-style: normal !important; }
+.hl-attr-value { color: #ce9178 !important; font-weight: normal !important; font-style: normal !important; }
+.hl-docker-keyword { color: #c586c0 !important; font-weight: normal !important; font-style: normal !important; }
+
+/* ---------------------------------------------------------------------------
+   VS Code Light+ Theme Overrides for Light Mode
+   --------------------------------------------------------------------------- */
+[data-theme="light"] .vscode-container {
+  background: #ffffff;
+  color: #333333;
+  border-color: #e5e5e5;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .vscode-activitybar {
+  background: #f3f3f3;
+  border-right-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-activity-icon {
+  color: #616161;
+}
+[data-theme="light"] .vscode-activity-icon.active,
+[data-theme="light"] .vscode-activity-icon:hover {
+  color: #000000;
+}
+[data-theme="light"] .vscode-sidebar {
+  background: #f8f8f8;
+  border-right-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-sidebar-title {
+  color: #616161;
+  border-bottom-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-file-item {
+  color: #333333;
+}
+[data-theme="light"] .vscode-file-item:hover {
+  background: #e8e8e8;
+}
+[data-theme="light"] .vscode-file-item.active {
+  background: #e2e2e2;
+  color: #000000;
+}
+[data-theme="light"] .vscode-main {
+  background: #ffffff;
+}
+[data-theme="light"] .vscode-tabs {
+  background: #f3f3f3;
+  border-bottom-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-tab {
+  background: #ececec;
+  color: #616161;
+  border-right-color: #f3f3f3;
+}
+[data-theme="light"] .vscode-tab.active {
+  background: #ffffff;
+  color: #333333;
+  border-top-color: #007acc;
+}
+[data-theme="light"] .vscode-editor-toolbar {
+  background: #f8f8f8;
+  border-bottom-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-code-area,
+[data-theme="light"] .vscode-editor-wrapper {
+  background: #ffffff;
+}
+[data-theme="light"] .vscode-highlight-layer {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+[data-theme="light"] .vscode-textarea {
+  background: transparent !important;
+  color: transparent !important;
+  caret-color: #007acc !important;
+}
+[data-theme="light"] .vscode-line-numbers {
+  background: #ffffff;
+  color: #237893;
+  border-right-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-bottom-terminal {
+  background: #f8f8f8;
+  border-top-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-terminal-header {
+  background: #f3f3f3;
+  color: #616161;
+  border-bottom-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-terminal-tab {
+  color: #616161;
+}
+[data-theme="light"] .vscode-terminal-tab.active {
+  color: #000000;
+  border-bottom-color: #007acc;
+}
+[data-theme="light"] .terminal {
+  background: #f8f8f8 !important;
+  color: #1e1e1e !important;
+}
+[data-theme="light"] .terminal .line.out {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .terminal .line.err {
+  color: #dc2626 !important;
+}
+[data-theme="light"] .terminal .line.ok {
+  color: #059669 !important;
+}
+[data-theme="light"] .terminal .prompt {
+  color: #059669 !important;
+}
+[data-theme="light"] .terminal input[type="text"] {
+  color: #0284c7 !important;
+  caret-color: #0284c7 !important;
+}
+[data-theme="light"] .vscode-preview-pane {
+  background: #ffffff;
+  border-left-color: #e5e5e5;
+}
+[data-theme="light"] .vscode-preview-header {
+  background: #f3f3f3;
+  border-bottom-color: #e5e5e5;
+  color: #333333;
+}
+[data-theme="light"] .vscode-preview-url {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+/* Lab 1 Sim Window & Diagnostics Console Theme Adaptations */
+[data-theme="light"] .sim-window {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .sim-titlebar {
+  background: #f1f5f9 !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+}
+[data-theme="light"] .sim-title {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] .sim-body {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .sim-body div,
+[data-theme="light"] .sim-body span,
+[data-theme="light"] .sim-body label {
+  color: inherit;
+}
+[data-theme="light"] .sim-body .check-item {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .sim-body .check-label {
+  color: #0f172a !important;
+}
+[data-theme="light"] .sim-body .check-value {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .sim-body .check-detail {
+  color: #475569 !important;
+}
+[data-theme="light"] .fake-progress {
+  background: #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* VS Code Light+ Syntax Token Highlighting */
+[data-theme="light"] .hl-keyword { color: #0000ff !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-builtin { color: #267f99 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-function { color: #795e26 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-decorator { color: #af00db !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-string { color: #a31515 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-number { color: #098658 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-comment { color: #008000 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-tag-bracket { color: #808080 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-tag-name { color: #800000 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-attr-name { color: #ff0000 !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-attr-value { color: #0000ff !important; font-weight: normal !important; font-style: normal !important; }
+[data-theme="light"] .hl-docker-keyword { color: #af00db !important; font-weight: normal !important; font-style: normal !important; }
 .editor-action-btn {
   display: inline-flex;
   align-items: center;
@@ -663,6 +912,106 @@ td code{background:var(--surface-3);padding:2px 7px;border-radius:4px;font-size:
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* Instructions Drawer Theme Styles Across All 4 Labs (100% Solid Opaque - No Transparency) */
+.instructions-drawer {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 380px;
+  height: calc(100vh - 60px);
+  background: #090d16 !important; /* 100% Solid Opaque Dark Background */
+  border-right: 1.5px solid var(--border);
+  box-shadow: 15px 0 40px rgba(0, 0, 0, 0.7);
+  z-index: 999999;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s, border-color 0.3s;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  color: var(--text);
+  backdrop-filter: none !important;
+}
+.instructions-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+.instructions-drawer-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.instructions-drawer-close {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  opacity: 0.85;
+  transition: opacity 0.2s, color 0.2s;
+}
+.instructions-drawer-close:hover {
+  opacity: 1;
+  color: var(--blue);
+}
+
+/* Light Theme Adaptations for Instructions Drawer Across All 4 Labs (100% Solid Opaque White) */
+[data-theme="light"] .instructions-drawer {
+  background: #ffffff !important; /* 100% Solid Opaque Pure White Background */
+  border-right-color: #cbd5e1 !important;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+  backdrop-filter: none !important;
+}
+[data-theme="light"] .instructions-drawer-header {
+  border-bottom-color: #e2e8f0 !important;
+}
+[data-theme="light"] .instructions-drawer-header h3 {
+  color: #0f172a !important;
+}
+[data-theme="light"] .instructions-drawer-close {
+  color: #475569 !important;
+}
+[data-theme="light"] .checkCard-step,
+[data-theme="light"] [id^="checkCard-"] {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] [id^="checkCard-"]:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] [id^="checkCard-"] b {
+  color: #0f172a !important;
+}
+[data-theme="light"] [id^="checkCard-"] div {
+  color: #475569 !important;
+}
+[data-theme="light"] .no-copy-box {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .no-copy-code {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .instructions-drawer div[style*="background:#0f172a"] {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0284c7 !important;
+}
 .vscode-preview-pane {
   flex: 1;
   background: #ffffff;
@@ -691,10 +1040,31 @@ td code{background:var(--surface-3);padding:2px 7px;border-radius:4px;font-size:
 .vscode-preview-body {
   flex: 1;
   padding: 24px;
+  background: #ffffff;
   color: #0f172a;
+  overflow: auto;
+}
+.vscode-preview-body h1,
+.vscode-preview-body h2,
+.vscode-preview-body h3,
+.vscode-preview-body h4,
+.vscode-preview-body h5,
+.vscode-preview-body h6 {
+  color: #0f172a !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-bottom: 0.5rem;
+}
+.vscode-preview-body p,
+.vscode-preview-body span,
+.vscode-preview-body li,
+.vscode-preview-body td,
+.vscode-preview-body label {
+  color: #334155;
 }
 .vscode-bottom-terminal {
-  height: 200px;
+  height: 280px;
+  min-height: 240px;
+  flex-shrink: 0;
   background: #181818;
   border-top: 1px solid #333333;
   display: flex;

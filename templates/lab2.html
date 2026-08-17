@@ -14,16 +14,16 @@
   </div>
 </div>
 
-<div style="padding:14px 20px">
+<div class="wrap" style="max-width:100%;padding:16px 24px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div>
       <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-solid fa-code" style="color:var(--blue)"></i> Lab 2: Create a Docker Image of a "Hello World!" Web Application</h2>
+      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 2: Create a Docker Image of a "Hello World!" Web Application</h2>
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
       <button class="btn btn-outline" onclick="showLabVideoModal(2)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
-      <button class="btn btn-outline" onclick="showTicketModal(2)"><i class="fa-solid fa-headset" style="color:var(--amber)"></i> Ask Faculty</button>
+      <button class="btn btn-outline" onclick="showTicketModal(2)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
       <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:var(--purple)"></i> Interactive Tour</button>
       <button class="btn btn-green" onclick="verifyLab2Completion()"><i class="fa-solid fa-circle-check"></i> Submit &amp; Verify Lab 2</button>
     </div>
@@ -47,73 +47,90 @@
     </div>
   </div>
 
-  <!-- Prominent Live Docker Container Metrics Bar -->
-  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:#f8fafc;font-family:var(--mono);font-size:.78rem">
+  <!-- Telemetry Bar -->
+  <div class="telemetry-bar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-family:var(--mono);font-size:.78rem">
     <div style="display:flex;align-items:center;gap:8px">
-      <i class="fa-brands fa-docker" style="color:#38bdf8;font-size:1.1rem"></i>
-      <span style="font-weight:700;color:#f8fafc">docker.desktop telemetry</span>
+      <i class="fa-brands fa-docker" style="color:var(--blue);font-size:1.1rem"></i>
+      <span style="font-weight:700;color:var(--text)">docker.desktop telemetry</span>
       <span class="badge badge-green" style="font-size:.68rem;padding:2px 8px" id="lab2EngineStatus"><i class="fa-solid fa-circle"></i> Engine Ready</span>
     </div>
     <div style="display:flex;align-items:center;gap:20px">
-      <div>PID: <b style="color:#38bdf8" id="l2Pid">14608</b></div>
-      <div>CPU: <b style="color:#34d399" id="l2Cpu">0.12%</b></div>
-      <div>RAM: <b style="color:#fbbf24" id="l2Ram">8.4 MB</b></div>
-      <div>Disk: <b style="color:#c084fc">14.57 GB</b></div>
+      <div>PID: <b style="color:var(--blue)" id="l2Pid">14608</b></div>
+      <div>CPU: <b style="color:var(--green)" id="l2Cpu">0.12%</b></div>
+      <div>RAM: <b style="color:var(--amber)" id="l2Ram">8.4 MB</b></div>
+      <div>Disk: <b style="color:var(--purple)">14.57 GB</b></div>
     </div>
   </div>
 
-  <!-- Collapsible Slide-in Side Drawer for Instructions & Checkmarks -->
-  <div id="instructionsDrawer" style="position:fixed;top:0;left:0;width:340px;height:100vh;background:var(--surface);border-right:1.5px solid var(--border-bright);box-shadow:10px 0 30px rgba(0,0,0,0.15);z-index:99999;transform:translateX(-100%);transition:transform .3s cubic-bezier(0.16, 1, 0.3, 1);padding:24px;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px">
-      <h3 style="font-size:1.1rem;margin:0;color:var(--text);display:flex;align-items:center;gap:8px"><i class="fa-solid fa-list-check" style="color:var(--blue)"></i> Lab 2 Instructions</h3>
-      <button onclick="toggleInstructionsDrawer()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">&times;</button>
+  <!-- Slide-in Drawer for Lab 2 Instructions & Checkmarks -->
+  <div id="instructionsDrawer" class="instructions-drawer">
+    <div class="instructions-drawer-header">
+      <h3><i class="fa-solid fa-list-check" style="color:var(--blue)"></i> LAB 2 INSTRUCTIONS</h3>
+      <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
     </div>
-    <div style="font-size:.84rem;color:var(--muted);margin-bottom:14px;line-height:1.5">
+    
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;flex-shrink:0">
       Complete these tasks in the VS Code Web IDE to package and deploy your web application container:
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1;padding-right:4px">
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div style="flex:1"><b style="color:var(--text);font-size:.88rem">1. Create index.html</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Click <b>+</b> in Explorer sidebar and write HTML code from reference below:</div>
-          <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false" ondragstart="return false">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:.7rem;color:#f59e0b;font-weight:700"><span><i class="fa-solid fa-lock"></i> Reference (Type Manually - Copy Blocked)</span></div>
-            <div class="no-copy-code">&lt;h1&gt;Hello World! 👋&lt;/h1&gt;<br>&lt;p&gt;My containerized web app is running live!&lt;/p&gt;</div>
-          </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
+      <!-- Step 1: CREATE INDEX.HTML -->
+      <div id="checkCard-index" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-html5" style="color:#e34f26"></i> 1. CREATE INDEX.HTML</b>
+          <span id="badge-index" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div style="flex:1"><b style="color:var(--text);font-size:.88rem">2. Create Dockerfile</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Click <b>+</b> to create Dockerfile with Nginx instructions from reference below:</div>
-          <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false" ondragstart="return false">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:.7rem;color:#f59e0b;font-weight:700"><span><i class="fa-solid fa-lock"></i> Reference (Type Manually - Copy Blocked)</span></div>
-            <div class="no-copy-code">FROM nginx:alpine<br>COPY index.html /usr/share/nginx/html/index.html<br>EXPOSE 80</div>
-          </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE HTML CODE FROM REFERENCE BELOW:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (TYPE MANUALLY - COPY BLOCKED)</div>
+          <div class="no-copy-code">&lt;h1&gt;Hello World! 👋&lt;/h1&gt;<br>&lt;p&gt;My containerized web app is running live!&lt;/p&gt;</div>
         </div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div><b style="color:var(--text);font-size:.88rem">3. Save Code Files</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Press <b>Ctrl+S</b> or click 💾 Save icon in toolbar.</div></div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div><b style="color:var(--text);font-size:.88rem">4. Build Docker Image</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Run <code>docker build -t hello-web .</code> in terminal.</div></div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div><b style="color:var(--text);font-size:.88rem">5. Run Web Container</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Run <code>docker run -d -p 8080:80 hello-web</code>.</div></div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div><b style="color:var(--text);font-size:.88rem">6. Preview Web Page</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Verify live preview updates on port 8080.</div></div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer">
-        <input type="checkbox" onchange="toggleLab2DocCheck(this)" style="margin-top:3px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
-        <div><b style="color:var(--text);font-size:.88rem">7. Complete Module</b><div style="font-size:.8rem;color:var(--muted);margin-top:4px">Click <b>Submit &amp; Verify Lab 2</b> button above.</div></div>
-      </label>
+      </div>
+
+      <!-- Step 2: CREATE DOCKERFILE -->
+      <div id="checkCard-dockerfile" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
+          <span id="badge-dockerfile" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + TO CREATE DOCKERFILE WITH NGINX INSTRUCTIONS FROM REFERENCE BELOW:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (TYPE MANUALLY - COPY BLOCKED)</div>
+          <div class="no-copy-code">FROM nginx:alpine<br>COPY index.html /usr/share/nginx/html/index.html<br>EXPOSE 80</div>
+        </div>
+      </div>
+
+      <!-- Step 3: BUILD DOCKER IMAGE -->
+      <div id="checkCard-build" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-hammer" style="color:#38bdf8"></i> 3. BUILD DOCKER IMAGE</b>
+          <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker build -t hello-web .</div>
+      </div>
+
+      <!-- Step 4: RUN WEB CONTAINER -->
+      <div id="checkCard-run" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-play" style="color:var(--green)"></i> 4. RUN WEB CONTAINER</b>
+          <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399">docker run -d -p 8080:80 hello-web</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;flex-shrink:0">
+      <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:.74rem;margin-top:5px">
+        <span id="progLabel" style="color:var(--muted)">0 / 4 Compulsory Tested</span>
+        <span id="progPct" style="color:var(--blue);font-family:monospace">0%</span>
+      </div>
     </div>
   </div>
 
-  <div class="vscode-container" style="height:calc(100vh - 120px)">
+  <div class="vscode-container" style="height:calc(100vh - 170px);min-height:720px">
       <!-- Activity Bar -->
       <div class="vscode-activitybar">
         <div class="vscode-activity-icon active" id="act-explorer" title="Explorer (Ctrl+Shift+E)" onclick="switchActivityTab('explorer')"><i class="fa-regular fa-copy"></i></div>
@@ -160,7 +177,10 @@
       <div class="vscode-editor-pane">
         <div class="vscode-code-area">
           <div class="vscode-line-numbers" id="lineNumbers">1</div>
-          <textarea class="vscode-textarea" id="codeEditor" spellcheck="false" oninput="updateLineNumbers()"></textarea>
+          <div class="vscode-editor-wrapper">
+            <pre class="vscode-highlight-layer" id="codeHighlight" aria-hidden="true"></pre>
+            <textarea class="vscode-textarea" id="codeEditor" spellcheck="false" placeholder="Write your HTML / Dockerfile code here..." oninput="onCodeInput()" onscroll="syncEditorScroll()"></textarea>
+          </div>
         </div>
 
         <!-- Live Browser Preview Frame -->
@@ -187,7 +207,7 @@
           <span class="vscode-terminal-tab" id="termTab-problems" onclick="switchTerminalTab('problems')"><i class="fa-solid fa-circle-exclamation"></i> Problems (0)</span>
           <span class="vscode-terminal-tab" id="termTab-output" onclick="switchTerminalTab('output')"><i class="fa-solid fa-square-poll-vertical"></i> Output</span>
         </div>
-        <div class="terminal" id="vsTerminal" style="background:#181818;border:none;border-radius:0;flex:1;max-height:none">
+        <div class="terminal" id="vsTerminal" style="border:none;border-radius:0;flex:1;max-height:none">
           <div class="line out">VS Code Integrated Terminal [bash/cmd]. Type docker commands below:</div>
           <div class="cursor-row"><span class="prompt">hello-web$&nbsp;</span><input type="text" id="vsTermInput" autocomplete="off" placeholder="type docker build -t hello-web . or docker run -d -p 8080:80 hello-web"></div>
         </div>
@@ -237,6 +257,7 @@ function switchFile(filename) {
   if (statusEl) statusEl.textContent = 'Editing: ' + filename;
 
   updateLineNumbers();
+  syncHighlight();
   if(containerRunning && filename === 'index.html') {
     refreshPreview();
   }
@@ -452,6 +473,48 @@ function renderTabs() {
   });
 }
 
+function syncEditorScroll() {
+  const ed = document.getElementById('codeEditor');
+  const hl = document.getElementById('codeHighlight');
+  if (ed && hl) {
+    hl.scrollTop = ed.scrollTop;
+    hl.scrollLeft = ed.scrollLeft;
+  }
+}
+
+function highlightSyntax(code, filename) {
+  if (!code) return '';
+  let cleanCode = code.replace(/<span[^>]*>/g, '').replace(/<\/span>/g, '').replace(/"hl-[^"]*">/g, '');
+  let escaped = cleanCode
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  if (filename && (filename.endsWith('.html') || filename.endsWith('.htm'))) {
+    escaped = escaped.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-comment">$1</span>');
+    escaped = escaped.replace(/(&lt;\/?)([a-zA-Z0-9\-]+)([\s\S]*?)(&gt;)/g, function(match, p1, p2, p3, p4) {
+      let attrs = p3.replace(/([a-zA-Z0-9\-]+)=("[^"]*"|'[^']*'|[^\s&>]+)/g, '<span class="hl-attr-name">$1</span>=<span class="hl-attr-value">$2</span>');
+      return `<span class="hl-tag-bracket">${p1}</span><span class="hl-tag-name">${p2}</span>${attrs}<span class="hl-tag-bracket">${p4}</span>`;
+    });
+  } else if (filename === 'Dockerfile') {
+    const lines = escaped.split('\n');
+    escaped = lines.map(line => {
+      if (line.trim().startsWith('#')) return `<span class="hl-comment">${line}</span>`;
+      return line.replace(/\b(FROM|COPY|EXPOSE|RUN|CMD|ENTRYPOINT|ENV|WORKDIR|ADD)\b/g, '<span class="hl-docker-keyword">$1</span>');
+    }).join('\n');
+  }
+  return escaped;
+}
+
+function syncHighlight() {
+  const ed = document.getElementById('codeEditor');
+  const hl = document.getElementById('codeHighlight');
+  if (ed && hl) {
+    hl.innerHTML = highlightSyntax(ed.value, currentFile) + '<br>';
+    syncEditorScroll();
+  }
+}
+
 function updateLineNumbers() {
   const editor = document.getElementById('codeEditor');
   if(!editor || !currentFile) return;
@@ -465,10 +528,94 @@ function updateLineNumbers() {
   }
 }
 
+let testedState = {
+  html: false,
+  dockerfile: false,
+  build: false,
+  run: false
+};
+
+function updateChecklistStatus(type, isCompleted) {
+  const card = document.getElementById('checkCard-' + type);
+  const badge = document.getElementById('badge-' + type);
+  if (card && badge) {
+    if (isCompleted) {
+      card.style.borderColor = 'var(--green)';
+      card.style.background = 'rgba(16,185,129,0.08)';
+      badge.className = 'badge badge-green';
+      badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed';
+    } else {
+      card.style.borderColor = 'var(--border)';
+      card.style.background = 'var(--surface-2)';
+      badge.className = 'badge badge-amber';
+      badge.innerHTML = '<i class="fa-solid fa-clock"></i> Required';
+    }
+  }
+  updateProgressTrack();
+}
+
+function updateChecklistUI(type) {
+  updateChecklistStatus(type, true);
+}
+
+function updateProgressTrack() {
+  const count = Object.values(testedState).filter(Boolean).length;
+  const pct = Math.round((count / 4) * 100);
+  const mainProg = document.getElementById('mainProg');
+  const progLabel = document.getElementById('progLabel');
+  const progPct = document.getElementById('progPct');
+  if (mainProg) mainProg.style.width = pct + '%';
+  if (progLabel) progLabel.textContent = count + ' / 4 Compulsory Tested';
+  if (progPct) progPct.textContent = pct + '%';
+}
+
+function checkCodeProgress() {
+  const hasIndex = Boolean(files['index.html'] && files['index.html'].trim().length > 0);
+  const hasDockerfile = Boolean(files['Dockerfile'] && files['Dockerfile'].toLowerCase().includes('from'));
+  
+  testedState.html = hasIndex;
+  testedState.dockerfile = hasDockerfile;
+
+  updateChecklistStatus('index', hasIndex);
+  updateChecklistStatus('dockerfile', hasDockerfile);
+}
+
+function checkCompulsoryCommand(cmd) {
+  const c = cmd.toLowerCase().trim();
+  if (c.includes('docker build')) {
+    testedState.build = true;
+    updateChecklistUI('build');
+  }
+  if (c.includes('docker run')) {
+    testedState.run = true;
+    updateChecklistUI('run');
+  }
+}
+
+function onCodeInput() {
+  updateLineNumbers();
+  syncHighlight();
+  if (currentFile && files[currentFile] !== undefined) {
+    files[currentFile] = document.getElementById('codeEditor').value;
+  }
+  checkCodeProgress();
+  if (containerRunning && (currentFile === 'index.html' || currentFile.endsWith('.html'))) {
+    refreshPreview();
+  }
+}
+
 function refreshPreview() {
   const container = document.getElementById('previewContainer');
+  if(!container) return;
+
+  const currentContent = (currentFile === 'index.html' ? document.getElementById('codeEditor').value : files['index.html']);
+
   if(containerRunning) {
-    container.innerHTML = files['index.html'];
+    if (currentContent && currentContent.trim() !== '') {
+      container.innerHTML = currentContent;
+    } else {
+      container.innerHTML = `<div style="padding:24px;color:#64748b;font-family:var(--sans)">index.html is empty. Write your HTML code in the editor to see live web output!</div>`;
+    }
     document.getElementById('previewBadge').textContent = 'Live on Port 8080';
     document.getElementById('previewBadge').className = 'badge badge-green';
   } else {
@@ -611,11 +758,45 @@ function refreshExplorerTree() {
 }
 const term = document.getElementById('vsTerminal');
 const input = document.getElementById('vsTermInput');
+let commandHistory = [];
+let historyIndex = -1;
 
 input.addEventListener('keydown', function(e){
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (commandHistory.length > 0) {
+      if (historyIndex === -1) {
+        historyIndex = commandHistory.length - 1;
+      } else if (historyIndex > 0) {
+        historyIndex--;
+      }
+      this.value = commandHistory[historyIndex];
+      setTimeout(() => { this.setSelectionRange(this.value.length, this.value.length); }, 0);
+    }
+    return;
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (commandHistory.length > 0 && historyIndex !== -1) {
+      if (historyIndex < commandHistory.length - 1) {
+        historyIndex++;
+        this.value = commandHistory[historyIndex];
+        setTimeout(() => { this.setSelectionRange(this.value.length, this.value.length); }, 0);
+      } else {
+        historyIndex = -1;
+        this.value = '';
+      }
+    }
+    return;
+  }
+
   if(e.key !== 'Enter') return;
   const val = this.value.trim();
   if(!val) return;
+
+  if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== val) {
+    commandHistory.push(val);
+  }
+  historyIndex = -1;
 
   const echo = document.createElement('div');
   echo.className = 'line';
@@ -634,9 +815,14 @@ input.addEventListener('keydown', function(e){
   fetch('/api/terminal/exec', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ command: val })
+    body: JSON.stringify({ command: val, files: files })
   })
-  .then(r => r.json())
+  .then(r => {
+    if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
+      return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
+    }
+    return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
+  })
   .then(data => {
     const out = document.createElement('div');
     if(data.action === 'clear') {
@@ -644,9 +830,12 @@ input.addEventListener('keydown', function(e){
       lines.forEach(l => l.remove());
       return;
     }
-    if(valLower.includes('docker run')) {
-      containerRunning = true;
-      refreshPreview();
+    if(data.ok) {
+      checkCompulsoryCommand(val);
+      if(valLower.includes('docker run')) {
+        containerRunning = true;
+        refreshPreview();
+      }
     }
     out.className = data.ok ? 'line success-line' : 'line err';
     out.textContent = data.output || 'Command executed with no output.';
@@ -656,7 +845,7 @@ input.addEventListener('keydown', function(e){
   .catch(err => {
     const out = document.createElement('div');
     out.className = 'line err';
-    out.textContent = 'Execution error: ' + err.message;
+    out.textContent = 'Execution error: ' + (err.message || 'Unknown network error.');
     term.insertBefore(out, input.closest('.cursor-row'));
     term.scrollTop = term.scrollHeight;
   });
@@ -874,9 +1063,19 @@ setInterval(() => {
         const cEl = document.getElementById('l2Cpu');
         const rEl = document.getElementById('l2Ram');
         const pEl = document.getElementById('l2Pid');
+        const statusBadge = document.getElementById('lab2EngineStatus');
         if(cEl) cEl.textContent = data.cpu;
         if(rEl) rEl.textContent = data.ram;
         if(pEl) pEl.textContent = data.pid;
+        if(statusBadge && data.docker_status_text) {
+          if(data.docker_engine === 'local') {
+            statusBadge.className = 'badge badge-green';
+            statusBadge.innerHTML = '<i class="fa-solid fa-plug"></i> ' + data.docker_status_text;
+          } else {
+            statusBadge.className = 'badge badge-blue';
+            statusBadge.innerHTML = '<i class="fa-solid fa-bolt"></i> ' + data.docker_status_text;
+          }
+        }
       }
     }).catch(()=>{});
 }, 1000);

@@ -26,10 +26,14 @@ import psutil
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "instance", "vlab.db")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, "database", "vlab.db")
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "frontend", "templates"),
+    static_folder=os.path.join(BASE_DIR, "frontend", "static")
+)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "prod-fallback-secure-key-3n8d1s")
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
@@ -229,7 +233,7 @@ def get_db():
 
 
 def init_db():
-    os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, "database"), exist_ok=True)
     conn = get_db()
     conn.executescript(
         """
@@ -2179,4 +2183,39 @@ if __name__ == "__main__":
     port = int(os.environ.get("FLASK_RUN_PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "false").lower() in ("true", "1", "t")
     
-    app.run(host=host, port=port, debug=debug)
+    ssl_context = None
+    # Check in the same directory as app.py
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    cert_path = os.path.join(current_dir, "cert.pem")
+    key_path = os.path.join(current_dir, "key.pem")
+    
+    # Automatically generate SSL certificates on startup if missing
+    if not (os.path.exists(cert_path) and os.path.exists(key_path)):
+        try:
+            print("SSL Certificates missing. Auto-generating self-signed certificates...")
+            import subprocess
+            subprocess.run(
+                ["python", os.path.join(current_dir, "generate_cert.py")],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+        except Exception as e:
+            print(f"Warning: Could not auto-generate SSL certificates: {e}")
+
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        ssl_context = (cert_path, key_path)
+        print(f"Loading SSL certificate from {cert_path}")
+        
+        # Automatically trust the certificate in the local Windows store on startup
+        try:
+            import subprocess
+            subprocess.run(
+                ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\CurrentUser\Root"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            print("Successfully verified/registered SSL certificate in Windows Root Store.")
+        except Exception as e:
+            print(f"Warning: Auto-trust registration failed: {e}")
+        
+    app.run(host=host, port=port, debug=debug, ssl_context=ssl_context)

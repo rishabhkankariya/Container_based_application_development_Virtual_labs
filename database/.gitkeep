@@ -1,0 +1,2 @@
+This directory will store the local SQLite database.
+The database file `vlab.db` is generated automatically when launching the Flask application, and is ignored by version control to avoid pushing environment-specific DB state.

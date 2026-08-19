@@ -61,7 +61,13 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# Flask stuff:
+# Flask / Database stuff:
+database/*.db
+database/*.db-journal
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
 instance/
 .webassets-cache
 
@@ -134,3 +140,8 @@ cython_debug/
 
 # VS Code settings
 .vscode/
+
+# Certificates and keys
+*.pem
+*.crt
+

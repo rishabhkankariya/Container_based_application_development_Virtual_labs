@@ -2,6 +2,9 @@
 {% block title %}V-Lab | Virtual Docker Suite Portal Authentication{% endblock %}
 {% block body %}
 <div class="auth-screen">
+  <div style="position:absolute;top:20px;right:24px;z-index:10">
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
+  </div>
   <div class="auth-box">
     <div class="auth-logo">
       <div class="auth-whale-icon"><i class="fa-brands fa-docker"></i></div>
@@ -21,13 +24,27 @@
         </div>
         <label id="idLabel"><i class="fa-solid fa-id-badge"></i> Student ID</label>
         <input type="text" name="identifier" id="idField" placeholder="e.g. STU001" required autofocus>
+        
         <label><i class="fa-solid fa-lock"></i> Password</label>
-        <input type="password" name="password" placeholder="••••••••" required>
+        <div class="password-wrap">
+          <input type="password" name="password" placeholder="••••••••" required>
+          <button type="button" class="password-toggle-btn" onclick="window.togglePassword(this)" title="Toggle password visibility">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:.95rem;padding:12px 20px">
           Sign In to Live Platform <i class="fa-solid fa-arrow-right"></i>
         </button>
       </form>
-      <div style="text-align:center;margin-top:18px;font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border)">
+
+      <div style="display:flex;justify-content:center;align-items:center;margin-top:14px">
+        <a href="{{ url_for('change_password') }}" style="color:var(--blue);font-size:.85rem;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+          <i class="fa-solid fa-key"></i> Need to change your password? Click here
+        </a>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border)">
         <i class="fa-solid fa-shield-halved"></i> Faculty default: <code>faculty</code> / <code>faculty123</code>
       </div>
     </div>
@@ -48,3 +65,4 @@ function updateHint() {
 }
 </script>
 {% endblock %}
+

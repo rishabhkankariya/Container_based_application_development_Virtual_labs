@@ -6,6 +6,7 @@
   <div class="topbar-right">
     <span class="live-badge"><i class="fa-solid fa-signal"></i> LIVE</span>
     <span><i class="fa-solid fa-user-tie"></i> {{ session.get("faculty_username") }}</span>
+    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
     <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
   </div>
 </div>
@@ -17,41 +18,53 @@
     <div class="flash flash-{{ category }}"><i class="fa-solid fa-bell"></i> {{ msg }}</div>
     {% endfor %}{% endif %}
   {% endwith %}
-  <div class="grid-3" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:24px">
+  <div class="grid-4" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));margin-bottom:24px">
     <div class="stat num-blue">
       <div class="num"><i class="fa-solid fa-users" style="font-size:1.4rem;opacity:.5"></i> <span id="statTotal">{{ total_students }}</span></div>
       <div class="lbl">Total Enrolled</div>
       <div class="stat-bar"></div>
     </div>
     <div class="stat num-green">
-      <div class="num"><i class="fa-solid fa-circle-check" style="font-size:1.4rem;opacity:.5"></i> <span id="statDone">{{ lab1_completed }}</span> / {{ total_students }}</div>
+      <div class="num"><i class="fa-solid fa-circle-check" style="font-size:1.4rem;opacity:.5"></i> <span id="statDone">{{ lab1_completed }}</span> / <span class="statTotalDenom">{{ total_students }}</span></div>
       <div class="lbl">Lab 1 Completed</div>
       <div class="stat-bar"></div>
     </div>
-    <div class="stat num-green" style="border-left:4px solid #38bdf8">
-      <div class="num" style="color:#38bdf8"><i class="fa-solid fa-box-archive" style="font-size:1.4rem;opacity:.5"></i> <span id="statLab2Done">{{ lab2_completed }}</span> / {{ total_students }}</div>
+    <div class="stat num-green">
+      <div class="num"><i class="fa-solid fa-box-archive" style="font-size:1.4rem;opacity:.5"></i> <span id="statLab2Done">{{ lab2_completed }}</span> / <span class="statTotalDenom">{{ total_students }}</span></div>
       <div class="lbl">Lab 2 Completed</div>
-      <div class="stat-bar" style="background:#38bdf8"></div>
+      <div class="stat-bar"></div>
+    </div>
+    <div class="stat num-green">
+      <div class="num"><i class="fa-solid fa-terminal" style="font-size:1.4rem;opacity:.5"></i> <span id="statLab3Done">{{ lab3_completed }}</span> / <span class="statTotalDenom">{{ total_students }}</span></div>
+      <div class="lbl">Lab 3 Completed</div>
+      <div class="stat-bar"></div>
+    </div>
+    <div class="stat num-green">
+      <div class="num"><i class="fa-solid fa-calculator" style="font-size:1.4rem;opacity:.5"></i> <span id="statLab4Done">{{ lab4_completed }}</span> / <span class="statTotalDenom">{{ total_students }}</span></div>
+      <div class="lbl">Lab 4 Completed</div>
+      <div class="stat-bar"></div>
     </div>
   </div>
   <!-- Video Lecture Upload Card -->
   <div class="card">
     <h3><i class="fa-solid fa-video"></i> Lecture Video Manager</h3>
     <h2 style="margin-bottom:8px">Upload / Link Lab Video Explanation</h2>
-    <p style="margin-bottom:16px">Faculty can link YouTube/MP4 video tutorials to explain Lab 1 and Lab 2 to students.</p>
+    <p style="margin-bottom:16px">Faculty can link YouTube/MP4 video tutorials to explain Lab 1, Lab 2, and Lab 3 to students.</p>
     <div class="grid-2" style="grid-template-columns:1fr 1fr">
       <div>
         <label>Select Lab Module</label>
         <select id="videoLabSelect">
           <option value="1">Lab 1: Docker Desktop Setup & Verification</option>
           <option value="2">Lab 2: Create Docker Image & Hello World Web App</option>
+          <option value="3">Lab 3: Run hello-world Container & Verify Application</option>
+          <option value="4">Lab 4: Build & Containerize a Sum Microservice</option>
         </select>
         <label>Video Title</label>
-        <input type="text" id="videoTitleInput" placeholder="e.g. Lab 1 Detailed Explanation & Walkthrough">
+        <input type="text" id="videoTitleInput" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="e.g. Lab 1 Detailed Explanation & Walkthrough">
       </div>
       <div>
         <label>Video Embed / Stream URL</label>
-        <input type="text" id="videoUrlInput" placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ">
+        <input type="text" id="videoUrlInput" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ">
         <button type="button" class="btn btn-primary" onclick="saveFacultyVideo()" style="width:100%;margin-top:4px"><i class="fa-solid fa-cloud-arrow-up"></i> Save &amp; Publish Video</button>
       </div>
     </div>
@@ -94,7 +107,36 @@
     <div id="facultyTaskContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px">
       <div style="color:var(--muted);font-size:.82rem;grid-column:1/-1;padding:12px 0">No background execution jobs currently running.</div>
     </div>
+  <!-- Manual Student Enrollment Card -->
+  <div class="card" id="manualAddStudentCard" style="border-top: 3px solid var(--blue);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h3><i class="fa-solid fa-user-plus" style="color:var(--blue)"></i> Manual Enrollment</h3>
+        <h2 style="margin-bottom:4px">Add Student Manually</h2>
+      </div>
+      <span class="badge badge-blue"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generates ID &amp; Default Password</span>
+    </div>
+    <p style="margin-bottom:18px">Enroll a student manually by entering their full name and email (Gmail). Student ID (e.g. <code>STU005</code>) and default password (e.g. <code>Docker@4819</code>) will be generated automatically.</p>
+    <form id="manualStudentForm" method="POST" action="{{ url_for('faculty_add_student') }}" onsubmit="submitManualStudent(event)">
+      <div class="grid-3" style="grid-template-columns:1fr 1fr 220px;gap:14px;align-items:end">
+        <div>
+          <label for="studentNameInput"><i class="fa-solid fa-user"></i> Student Full Name</label>
+          <input type="text" id="studentNameInput" name="name" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="e.g. Aryan Sharma" required style="margin-bottom:0">
+        </div>
+        <div>
+          <label for="studentEmailInput"><i class="fa-solid fa-envelope"></i> Student Email / Gmail</label>
+          <input type="email" id="studentEmailInput" name="email" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="e.g. aryan132@gmail.com" required style="margin-bottom:0">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="width:100%;height:44px;justify-content:center">
+            <i class="fa-solid fa-user-plus"></i> Add Student
+          </button>
+        </div>
+      </div>
+    </form>
+    <div id="addStudentAlert" style="display:none;margin-top:16px" class="flash"></div>
   </div>
+
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div><h3><i class="fa-solid fa-list-ol"></i> Student Roster &amp; All Lab Statuses</h3><h2>Individual Student Progress Across All Labs</h2></div>
@@ -106,17 +148,106 @@
       <div style="color:var(--muted)">No students enrolled yet. Upload a class list above to get started.</div>
     </div>
     {% else %}
+    <!-- Roster Toolbar: Search, Sort, Filters & Accessibility Controls -->
+    <div class="roster-toolbar" role="search" aria-label="Student Roster Search and Filters">
+      <div class="roster-filter-group">
+        <!-- Live Search Input -->
+        <div class="roster-search-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+          <input type="search" id="studentSearchInput" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Search student by name, ID, email..." aria-label="Search student by name, ID, or email" onkeyup="filterAndSortRoster()" onsearch="filterAndSortRoster()">
+          <button type="button" class="clear-search-btn" id="clearSearchBtn" onclick="clearRosterSearch()" title="Clear search" aria-label="Clear search input">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Sort Selection Dropdown -->
+        <select id="studentSortSelect" class="roster-select" aria-label="Sort student roster" onchange="filterAndSortRoster()">
+          <option value="name-asc" selected>Sort: Name (A &rarr; Z)</option>
+          <option value="name-desc">Sort: Name (Z &rarr; A)</option>
+          <option value="id-asc">Sort: Student ID (Asc)</option>
+          <option value="id-desc">Sort: Student ID (Desc)</option>
+          <option value="score-desc">Sort: Overall Score (High &rarr; Low)</option>
+          <option value="score-asc">Sort: Overall Score (Low &rarr; High)</option>
+          <option value="pass-default">Sort: Password (Default First)</option>
+          <option value="pass-changed">Sort: Password (Changed First)</option>
+        </select>
+
+        <!-- Password Status Filter -->
+        <select id="passwordFilterSelect" class="roster-select" aria-label="Filter by password status" onchange="filterAndSortRoster()">
+          <option value="all" selected>Password: All</option>
+          <option value="default">Password: Default Only</option>
+          <option value="changed">Password: Changed Only</option>
+        </select>
+
+        <!-- Lab 1 Progress Filter -->
+        <select id="lab1FilterSelect" class="roster-select" aria-label="Filter by Lab 1 progress" onchange="filterAndSortRoster()">
+          <option value="all" selected>Lab 1: All</option>
+          <option value="completed">Lab 1: Completed</option>
+          <option value="in-progress">Lab 1: In Progress</option>
+          <option value="not-started">Lab 1: Not Started</option>
+        </select>
+
+        <!-- Lab 2 Progress Filter -->
+        <select id="lab2FilterSelect" class="roster-select" aria-label="Filter by Lab 2 progress" onchange="filterAndSortRoster()">
+          <option value="all" selected>Lab 2: All</option>
+          <option value="completed">Lab 2: Completed</option>
+          <option value="in-progress">Lab 2: In Progress</option>
+          <option value="not-started">Lab 2: Not Started</option>
+        </select>
+
+        <!-- Lab 3 Progress Filter -->
+        <select id="lab3FilterSelect" class="roster-select" aria-label="Filter by Lab 3 progress" onchange="filterAndSortRoster()">
+          <option value="all" selected>Lab 3: All</option>
+          <option value="completed">Lab 3: Completed</option>
+          <option value="in-progress">Lab 3: In Progress</option>
+          <option value="not-started">Lab 3: Not Started</option>
+        </select>
+
+        <!-- Reset Button -->
+        <button type="button" class="btn btn-outline btn-sm" id="resetFiltersBtn" onclick="resetRosterFilters()" title="Reset search and active filters">
+          <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+        </button>
+      </div>
+
+      <!-- Live Counter Badge -->
+      <span id="rosterCountBadge" class="roster-count-badge" aria-live="polite">
+        <i class="fa-solid fa-users"></i> Showing <span id="visibleCount">{{ roster|length }}</span> of <span id="totalCount">{{ roster|length }}</span> Students
+      </span>
+    </div>
+
     <div style="overflow-x:auto">
     <table id="rosterTable">
-      <thead><tr>
-        <th>Student ID</th><th>Name</th><th>Email</th>
-        <th>Default Password</th><th>Password Status</th>
-        <th>Lab 1 Progress</th><th>Lab 2 Progress</th><th>Lab 3 (Future)</th><th>Lab 4 (Future)</th>
-        <th>Overall Score</th>
-      </tr></thead>
-      <tbody>
+      <thead>
+        <tr>
+          <th class="sortable-header" tabindex="0" role="button" aria-label="Sort by Student ID" aria-sort="none" onclick="toggleHeaderSort('id')" onkeydown="if(event.key==='Enter'||event.key===' '){toggleHeaderSort('id');event.preventDefault();}">
+            Student ID <i class="fa-solid fa-sort sort-icon" id="sort-icon-id"></i>
+          </th>
+          <th class="sortable-header" tabindex="0" role="button" aria-label="Sort by Name" aria-sort="ascending" onclick="toggleHeaderSort('name')" onkeydown="if(event.key==='Enter'||event.key===' '){toggleHeaderSort('name');event.preventDefault();}">
+            Name <i class="fa-solid fa-sort-up sort-icon" id="sort-icon-name" style="color:var(--blue);opacity:1"></i>
+          </th>
+          <th>Email</th>
+          <th>Default Password</th>
+          <th>Password Status</th>
+          <th>Lab 1 Progress</th>
+          <th>Lab 2 Progress</th>
+          <th>Lab 3 Progress</th>
+          <th>Lab 4 Progress</th>
+          <th class="sortable-header" tabindex="0" role="button" aria-label="Sort by Overall Score" aria-sort="none" onclick="toggleHeaderSort('score')" onkeydown="if(event.key==='Enter'||event.key===' '){toggleHeaderSort('score');event.preventDefault();}">
+            Overall Score <i class="fa-solid fa-sort sort-icon" id="sort-icon-score"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="rosterTbody">
       {% for r in roster %}
-      <tr id="row-{{ r.student_id }}">
+      <tr id="row-{{ r.student_id }}" class="roster-row"
+          data-name="{{ r.name|lower }}"
+          data-id="{{ r.student_id|lower }}"
+          data-email="{{ (r.email or '')|lower }}"
+          data-password-status="{% if r.password_changed %}changed{% else %}default{% endif %}"
+          data-lab1-status="{% if r.lab1.verified %}completed{% elif r.lab1.steps_done > 0 %}in-progress{% else %}not-started{% endif %}"
+          data-lab2-status="{% if r.lab2.verified %}completed{% elif r.lab2.steps_done > 0 %}in-progress{% else %}not-started{% endif %}"
+          data-lab3-status="{% if r.lab3.verified %}completed{% elif r.lab3.steps_done > 0 %}in-progress{% else %}not-started{% endif %}"
+          data-score="{{ r.overall_pct }}">
         <td><code><i class="fa-solid fa-id-badge"></i> {{ r.student_id }}</code></td>
         <td style="font-weight:600">{{ r.name }}</td>
         <td>{{ r.email or "&#x2014;" }}</td>
@@ -126,16 +257,25 @@
           {% else %}<span class="badge badge-amber"><i class="fa-solid fa-key"></i> Default</span>{% endif %}
         </td>
         <td>
-          {% if r.lab1.verified %}<span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Lab 1 Done (7/7)</span>
-          {% elif r.lab1.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab1.steps_done }}/7</span>
+          {% if r.lab1.verified %}<span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Lab 1 Done ({{ r.lab1.total_steps }}/{{ r.lab1.total_steps }})</span>
+          {% elif r.lab1.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab1.steps_done }}/{{ r.lab1.total_steps }}</span>
           {% else %}<span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>{% endif %}
         </td>
         <td>
-          {% if r.lab2.verified %}<span class="badge badge-green" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0"><i class="fa-solid fa-circle-check"></i> Lab 2 Done (5/5)</span>
-          {% elif r.lab2.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab2.steps_done }}/5</span>
+          {% if r.lab2.verified %}<span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Lab 2 Done ({{ r.lab2.total_steps }}/{{ r.lab2.total_steps }})</span>
+          {% elif r.lab2.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab2.steps_done }}/{{ r.lab2.total_steps }}</span>
           {% else %}<span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>{% endif %}
         </td>
-        <td><span class="badge badge-muted" style="opacity:.6"><i class="fa-solid fa-lock"></i> Locked</span></td>
+        <td>
+          {% if r.lab3.verified %}<span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Lab 3 Done ({{ r.lab3.total_steps }}/{{ r.lab3.total_steps }})</span>
+          {% elif r.lab3.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab3.steps_done }}/{{ r.lab3.total_steps }}</span>
+          {% else %}<span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>{% endif %}
+        </td>
+        <td>
+          {% if r.lab4.verified %}<span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Lab 4 Done ({{ r.lab4.total_steps }}/{{ r.lab4.total_steps }})</span>
+          {% elif r.lab4.steps_done > 0 %}<span class="badge badge-amber"><i class="fa-solid fa-spinner"></i> Step {{ r.lab4.steps_done }}/{{ r.lab4.total_steps }}</span>
+          {% else %}<span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span>{% endif %}
+        </td>
         <td><span class="badge badge-muted" style="opacity:.6"><i class="fa-solid fa-lock"></i> Locked</span></td>
         <td>
           <div style="display:flex;align-items:center;gap:8px">
@@ -147,12 +287,20 @@
         </td>
       </tr>
       {% endfor %}
+      <tr id="noResultsRow" style="display:none">
+        <td colspan="10" style="text-align:center;padding:36px 20px;color:var(--muted)">
+          <i class="fa-solid fa-user-slash" style="font-size:2rem;margin-bottom:8px;display:block;color:var(--muted)"></i>
+          No students found matching your search or filter criteria.
+        </td>
+      </tr>
       </tbody>
     </table>
     </div>
     {% endif %}
   </div>
+
 </div>
+
 <script>
 function showFileName(input){
   const d=document.getElementById("fileName");
@@ -180,6 +328,16 @@ function saveFacultyVideo() {
 }
 
 function pollTickets() {
+  const existingDrafts = {};
+  let activeTicketId = null;
+  document.querySelectorAll('[id^="replyInput-"]').forEach(input => {
+    const id = input.id.replace('replyInput-', '');
+    existingDrafts[id] = input.value;
+    if (document.activeElement === input) {
+      activeTicketId = id;
+    }
+  });
+
   fetch('/api/support/tickets/list')
   .then(r => r.json())
   .then(d => {
@@ -193,29 +351,44 @@ function pollTickets() {
     }
     let html = '';
     tickets.forEach(t => {
+      const savedDraft = existingDrafts[t.id] !== undefined ? existingDrafts[t.id] : '';
+      const safeDraft = savedDraft.replace(/"/g, '&quot;');
       html += `
-        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-weight:700;font-size:.9rem;color:var(--text)"><i class="fa-solid fa-circle-question" style="color:var(--blue)"></i> ${t.title} (Lab ${t.lab_number})</span>
+        <div style="background:var(--surface-2);border:1.5px solid var(--border-bright);border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-weight:700;font-size:.95rem;color:var(--text)"><i class="fa-solid fa-circle-question" style="color:var(--blue);margin-right:6px"></i> ${t.title} (Lab ${t.lab_number})</span>
             <span class="badge ${t.status==='OPEN'?'badge-amber':'badge-green'}">${t.status}</span>
           </div>
-          <div style="font-size:.82rem;color:var(--muted);margin-bottom:8px">Reported by <b>${t.student_name}</b> (${t.student_id}) &middot; ${t.created_at.slice(0,10)}</div>
-          <div style="background:var(--surface);padding:10px;border-radius:6px;font-size:.84rem;color:var(--text);margin-bottom:10px;border:1px solid var(--border)">${t.description}</div>
-          ${t.faculty_reply ? `<div style="font-size:.82rem;color:var(--green);font-weight:600;margin-bottom:8px"><i class="fa-solid fa-reply"></i> Faculty Reply: ${t.faculty_reply}</div>` : ''}
-          <div style="display:flex;gap:8px">
-            <input type="text" id="replyInput-${t.id}" placeholder="Type solution / reply for student..." style="margin:0;font-size:.82rem;padding:6px 10px">
-            <button class="btn btn-primary btn-sm" onclick="replyStudentTicket(${t.id})"><i class="fa-solid fa-paper-plane"></i> Send</button>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:10px">Reported by <b style="color:var(--text)">${t.student_name}</b> (${t.student_id}) &middot; ${t.created_at.slice(0,10)}</div>
+          <div style="background:var(--surface);padding:12px 14px;border-radius:8px;font-size:.88rem;color:var(--text);margin-bottom:12px;border:1px solid var(--border);line-height:1.5">${t.description}</div>
+          ${t.faculty_reply ? `<div style="font-size:.84rem;color:var(--green);font-weight:600;margin-bottom:10px;background:rgba(16,185,129,0.08);padding:8px 12px;border-radius:6px;border-left:3px solid var(--green)"><i class="fa-solid fa-reply" style="margin-right:6px"></i> Faculty Reply: ${t.faculty_reply}</div>` : ''}
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" id="replyInput-${t.id}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${safeDraft}" placeholder="Type solution / reply for student..." onkeydown="if(event.key==='Enter') replyStudentTicket(${t.id})" style="margin:0;font-size:.88rem;padding:10px 14px;flex:1;background:var(--surface);color:var(--text);border:1.5px solid var(--border-bright);border-radius:8px;outline:none;box-shadow:inset 0 2px 4px rgba(0,0,0,0.1)">
+            <button class="btn btn-primary" onclick="replyStudentTicket(${t.id})" style="flex-shrink:0;height:42px;padding:0 20px"><i class="fa-solid fa-paper-plane"></i> Send</button>
           </div>
         </div>
       `;
     });
     container.innerHTML = html;
+
+    if (activeTicketId) {
+      const activeInput = document.getElementById('replyInput-' + activeTicketId);
+      if (activeInput) {
+        activeInput.focus();
+        const len = activeInput.value.length;
+        activeInput.setSelectionRange(len, len);
+      }
+    }
   });
 }
 
 function replyStudentTicket(ticketId) {
-  const reply = document.getElementById('replyInput-' + ticketId).value;
-  if (!reply) return;
+  const input = document.getElementById('replyInput-' + ticketId);
+  const reply = input ? input.value.trim() : '';
+  if (!reply) {
+    alert('Please enter a response message before sending.');
+    return;
+  }
   fetch('/api/faculty/reply-ticket', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -224,6 +397,7 @@ function replyStudentTicket(ticketId) {
   .then(r => r.json())
   .then(d => {
     alert(d.message);
+    if (input) input.value = '';
     pollTickets();
   });
 }
@@ -234,8 +408,14 @@ function pollStats(){
     .then(r=>r.json())
     .then(d=>{
       document.getElementById("statTotal").textContent=d.total;
+      document.querySelectorAll('.statTotalDenom').forEach(el => el.textContent = d.total);
       document.getElementById("statDone").textContent=d.completed;
-      document.getElementById("statPending").textContent=d.total-d.completed;
+      const l2 = document.getElementById("statLab2Done");
+      if(l2) l2.textContent = d.lab2_completed || 0;
+      const l3 = document.getElementById("statLab3Done");
+      if(l3) l3.textContent = d.lab3_completed || 0;
+      const l4 = document.getElementById("statLab4Done");
+      if(l4) l4.textContent = d.lab4_completed || 0;
     }).catch(()=>{});
 
   fetch("/api/tasks/list")
@@ -273,6 +453,286 @@ function pollStats(){
 }
 setInterval(pollStats, 5000);
 pollStats();
+
+// ---------------------------------------------------------------------------
+// Student Roster Filter & Sorting Engine
+// ---------------------------------------------------------------------------
+function clearRosterSearch() {
+  const input = document.getElementById('studentSearchInput');
+  if (input) {
+    input.value = '';
+    document.getElementById('clearSearchBtn').style.display = 'none';
+    filterAndSortRoster();
+  }
+}
+
+function resetRosterFilters() {
+  const input = document.getElementById('studentSearchInput');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+
+  const sortSel = document.getElementById('studentSortSelect');
+  if (sortSel) sortSel.value = 'name-asc';
+  const passSel = document.getElementById('passwordFilterSelect');
+  if (passSel) passSel.value = 'all';
+  const lab1Sel = document.getElementById('lab1FilterSelect');
+  if (lab1Sel) lab1Sel.value = 'all';
+  const lab2Sel = document.getElementById('lab2FilterSelect');
+  if (lab2Sel) lab2Sel.value = 'all';
+  const lab3Sel = document.getElementById('lab3FilterSelect');
+  if (lab3Sel) lab3Sel.value = 'all';
+
+  filterAndSortRoster();
+}
+
+function toggleHeaderSort(field) {
+  const sortSelect = document.getElementById('studentSortSelect');
+  if (!sortSelect) return;
+
+  const currentSort = sortSelect.value;
+  if (field === 'name') {
+    sortSelect.value = currentSort === 'name-asc' ? 'name-desc' : 'name-asc';
+  } else if (field === 'id') {
+    sortSelect.value = currentSort === 'id-asc' ? 'id-desc' : 'id-asc';
+  } else if (field === 'score') {
+    sortSelect.value = currentSort === 'score-desc' ? 'score-asc' : 'score-desc';
+  }
+  filterAndSortRoster();
+}
+
+function updateSortIcons(sortVal) {
+  const iconMap = {
+    'id': document.getElementById('sort-icon-id'),
+    'name': document.getElementById('sort-icon-name'),
+    'score': document.getElementById('sort-icon-score')
+  };
+
+  for (let k in iconMap) {
+    if (iconMap[k]) {
+      iconMap[k].className = 'fa-solid fa-sort sort-icon';
+      iconMap[k].style.color = '';
+      iconMap[k].style.opacity = '0.5';
+    }
+  }
+
+  if (sortVal.startsWith('name')) {
+    const icon = iconMap['name'];
+    if (icon) {
+      icon.className = sortVal === 'name-asc' ? 'fa-solid fa-sort-up sort-icon' : 'fa-solid fa-sort-down sort-icon';
+      icon.style.color = 'var(--blue)';
+      icon.style.opacity = '1';
+    }
+  } else if (sortVal.startsWith('id')) {
+    const icon = iconMap['id'];
+    if (icon) {
+      icon.className = sortVal === 'id-asc' ? 'fa-solid fa-sort-up sort-icon' : 'fa-solid fa-sort-down sort-icon';
+      icon.style.color = 'var(--blue)';
+      icon.style.opacity = '1';
+    }
+  } else if (sortVal.startsWith('score')) {
+    const icon = iconMap['score'];
+    if (icon) {
+      icon.className = sortVal === 'score-desc' ? 'fa-solid fa-sort-down sort-icon' : 'fa-solid fa-sort-up sort-icon';
+      icon.style.color = 'var(--blue)';
+      icon.style.opacity = '1';
+    }
+  }
+}
+
+function filterAndSortRoster() {
+  const tbody = document.getElementById('rosterTbody');
+  if (!tbody) return;
+
+  const searchInput = document.getElementById('studentSearchInput');
+  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (clearBtn) {
+    clearBtn.style.display = searchVal ? 'block' : 'none';
+  }
+
+  const sortSelect = document.getElementById('studentSortSelect');
+  const sortVal = sortSelect ? sortSelect.value : 'name-asc';
+  const passFilter = document.getElementById('passwordFilterSelect') ? document.getElementById('passwordFilterSelect').value : 'all';
+  const lab1Filter = document.getElementById('lab1FilterSelect') ? document.getElementById('lab1FilterSelect').value : 'all';
+  const lab2Filter = document.getElementById('lab2FilterSelect') ? document.getElementById('lab2FilterSelect').value : 'all';
+  const lab3Filter = document.getElementById('lab3FilterSelect') ? document.getElementById('lab3FilterSelect').value : 'all';
+
+  updateSortIcons(sortVal);
+
+  const rows = Array.from(tbody.querySelectorAll('.roster-row'));
+  const totalStudentsCount = rows.length;
+  let visibleCount = 0;
+
+  rows.forEach(row => {
+    const name = row.getAttribute('data-name') || '';
+    const id = row.getAttribute('data-id') || '';
+    const email = row.getAttribute('data-email') || '';
+    const passStatus = row.getAttribute('data-password-status') || '';
+    const lab1Status = row.getAttribute('data-lab1-status') || '';
+    const lab2Status = row.getAttribute('data-lab2-status') || '';
+    const lab3Status = row.getAttribute('data-lab3-status') || '';
+
+    // Search filter
+    const matchesSearch = !searchVal || name.includes(searchVal) || id.includes(searchVal) || email.includes(searchVal);
+
+    // Dropdown filters
+    const matchesPass = passFilter === 'all' || passStatus === passFilter;
+    const matchesLab1 = lab1Filter === 'all' || lab1Status === lab1Filter;
+    const matchesLab2 = lab2Filter === 'all' || lab2Status === lab2Filter;
+    const matchesLab3 = lab3Filter === 'all' || lab3Status === lab3Filter;
+
+    if (matchesSearch && matchesPass && matchesLab1 && matchesLab2 && matchesLab3) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+
+  // Sort visible rows
+  rows.sort((a, b) => {
+    if (sortVal === 'name-asc') {
+      return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+    } else if (sortVal === 'name-desc') {
+      return (b.getAttribute('data-name') || '').localeCompare(a.getAttribute('data-name') || '');
+    } else if (sortVal === 'id-asc') {
+      return (a.getAttribute('data-id') || '').localeCompare(b.getAttribute('data-id') || '');
+    } else if (sortVal === 'id-desc') {
+      return (b.getAttribute('data-id') || '').localeCompare(a.getAttribute('data-id') || '');
+    } else if (sortVal === 'score-desc') {
+      return parseFloat(b.getAttribute('data-score') || 0) - parseFloat(a.getAttribute('data-score') || 0);
+    } else if (sortVal === 'score-asc') {
+      return parseFloat(a.getAttribute('data-score') || 0) - parseFloat(b.getAttribute('data-score') || 0);
+    } else if (sortVal === 'pass-default') {
+      return (a.getAttribute('data-password-status') || '').localeCompare(b.getAttribute('data-password-status') || '');
+    } else if (sortVal === 'pass-changed') {
+      return (b.getAttribute('data-password-status') || '').localeCompare(a.getAttribute('data-password-status') || '');
+    }
+    return 0;
+  });
+
+  // Re-append sorted rows to tbody
+  const noResultsRow = document.getElementById('noResultsRow');
+  rows.forEach(r => tbody.appendChild(r));
+  if (noResultsRow) tbody.appendChild(noResultsRow);
+
+  // Toggle no results row
+  if (noResultsRow) {
+    noResultsRow.style.display = visibleCount === 0 && rows.length > 0 ? '' : 'none';
+  }
+
+  // Update visible and total counter badges
+  const visibleCountEl = document.getElementById('visibleCount');
+  if (visibleCountEl) visibleCountEl.textContent = visibleCount;
+
+  const totalCountEl = document.getElementById('totalCount');
+  if (totalCountEl) totalCountEl.textContent = totalStudentsCount;
+}
+
+// Initial sorting on load
+document.addEventListener('DOMContentLoaded', () => {
+  filterAndSortRoster();
+});
+
+// ---------------------------------------------------------------------------
+// Manual Student Enrollment AJAX Handler
+// ---------------------------------------------------------------------------
+function submitManualStudent(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('studentNameInput');
+  const emailInput = document.getElementById('studentEmailInput');
+  const name = nameInput ? nameInput.value.trim() : '';
+  const email = emailInput ? emailInput.value.trim() : '';
+  const alertDiv = document.getElementById('addStudentAlert');
+
+  if (!name || !email) return;
+
+  fetch('/faculty/add-student', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, email: email })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (alertDiv) {
+      alertDiv.style.display = 'flex';
+      if (d.ok) {
+        alertDiv.className = 'flash flash-success';
+        alertDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> <div><b>Success!</b> ${d.message}</div>`;
+        nameInput.value = '';
+        emailInput.value = '';
+
+        // Update Total Students Stat Badges & Denominators
+        const totalStat = document.getElementById('statTotal');
+        if (totalStat) {
+          const currentTotal = parseInt(totalStat.textContent) || 0;
+          totalStat.textContent = currentTotal + 1;
+        }
+        document.querySelectorAll('.statTotalDenom').forEach(el => {
+          const currentTotal = parseInt(el.textContent) || 0;
+          el.textContent = currentTotal + 1;
+        });
+
+        // Dynamically append new student row to roster table
+        const tbody = document.getElementById('rosterTbody');
+        if (tbody) {
+          const tr = document.createElement('tr');
+          tr.id = `row-${d.student_id}`;
+          tr.className = 'roster-row';
+          tr.setAttribute('data-name', d.name.toLowerCase());
+          tr.setAttribute('data-id', d.student_id.toLowerCase());
+          tr.setAttribute('data-email', d.email.toLowerCase());
+          tr.setAttribute('data-password-status', 'default');
+          tr.setAttribute('data-lab1-status', 'not-started');
+          tr.setAttribute('data-lab2-status', 'not-started');
+          tr.setAttribute('data-lab3-status', 'not-started');
+          tr.setAttribute('data-score', '0');
+
+          tr.innerHTML = `
+            <td><code><i class="fa-solid fa-id-badge"></i> ${d.student_id}</code></td>
+            <td style="font-weight:600">${d.name}</td>
+            <td>${d.email}</td>
+            <td><code>${d.default_password}</code></td>
+            <td><span class="badge badge-amber"><i class="fa-solid fa-key"></i> Default</span></td>
+            <td><span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span></td>
+            <td><span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span></td>
+            <td><span class="badge badge-muted"><i class="fa-solid fa-circle-dot"></i> Not started</span></td>
+            <td><span class="badge badge-muted" style="opacity:.6"><i class="fa-solid fa-lock"></i> Locked</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-track" style="width:70px;height:6px">
+                  <div class="progress-fill" style="--pct: 0%;"></div>
+                </div>
+                <span style="font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--text)">0%</span>
+              </div>
+            </td>
+          `;
+
+          const noResultsRow = document.getElementById('noResultsRow');
+          if (noResultsRow) {
+            tbody.insertBefore(tr, noResultsRow);
+          } else {
+            tbody.appendChild(tr);
+          }
+          filterAndSortRoster();
+        }
+      } else {
+        alertDiv.className = 'flash flash-error';
+        alertDiv.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${d.message}`;
+      }
+    }
+  })
+  .catch(err => {
+    if (alertDiv) {
+      alertDiv.style.display = 'flex';
+      alertDiv.className = 'flash flash-error';
+      alertDiv.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Error processing registration.`;
+    }
+  });
+}
 </script>
 {% endblock %}
+
+
 

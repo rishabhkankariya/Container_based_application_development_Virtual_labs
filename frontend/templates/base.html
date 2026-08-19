@@ -10,6 +10,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('vlab-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
 </head>
 <body>
 <canvas id="particles"></canvas>
@@ -18,7 +24,7 @@
 <div id="vlabToastContainer" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
 
 <!-- Custom Alert / Confirm Modal Overlay -->
-<div id="vlabModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;padding:20px">
+<div id="vlabModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:9999999;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border:1.5px solid var(--border-bright);border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3);animation:modalPop .25s cubic-bezier(0.16, 1, 0.3, 1)">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <div id="vlabModalIcon" style="width:36px;height:36px;border-radius:50%;background:rgba(2,132,199,0.1);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-circle-info"></i></div>
@@ -32,20 +38,77 @@
 </div>
 
 <script>
-// Particle system
+// Global Theme Synchronization System
+window.toggleVLabTheme = function() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const target = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', target);
+  localStorage.setItem('vlab-theme', target);
+  updateThemeIcons(target);
+  window.dispatchEvent(new CustomEvent('vlab-theme-change', { detail: { theme: target } }));
+};
+
+function updateThemeIcons(theme) {
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    const icon = btn.querySelector('i');
+    if (theme === 'light') {
+      if (icon) icon.className = 'fa-solid fa-moon';
+      btn.title = 'Switch to Dark Mode';
+    } else {
+      if (icon) icon.className = 'fa-solid fa-sun';
+      btn.title = 'Switch to Light Mode';
+    }
+  });
+}
+
+// Synchronize theme across multiple tabs & windows in real-time
+window.addEventListener('storage', (e) => {
+  if (e.key === 'vlab-theme' && e.newValue) {
+    document.documentElement.setAttribute('data-theme', e.newValue);
+    updateThemeIcons(e.newValue);
+    window.dispatchEvent(new CustomEvent('vlab-theme-change', { detail: { theme: e.newValue } }));
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  updateThemeIcons(theme);
+});
+
+window.togglePassword = function(btn) {
+  const wrap = btn.closest('.password-wrap') || btn.parentElement;
+  const input = wrap.querySelector('input');
+  const icon = btn.querySelector('i');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) { icon.className = 'fa-solid fa-eye-slash'; }
+  } else {
+    input.type = 'password';
+    if (icon) { icon.className = 'fa-solid fa-eye'; }
+  }
+};
+
+// Interactive Mouse-Connected Particle system
 const canvas = document.getElementById('particles');
 const ctx = canvas.getContext('2d');
 let W, H, particles = [];
+let mouse = { x: null, y: null, radius: 150 };
+
 function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
 window.addEventListener('resize', resize);
-for (let i = 0; i < 55; i++) particles.push({
+window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+
+for (let i = 0; i < 60; i++) particles.push({
   x: Math.random()*W, y: Math.random()*H,
-  r: Math.random()*1.5+0.3,
-  vx: (Math.random()-.5)*.25, vy: (Math.random()-.5)*.25,
-  a: Math.random()*.5+.1,
+  r: Math.random()*1.8+0.4,
+  vx: (Math.random()-.5)*.35, vy: (Math.random()-.5)*.35,
+  a: Math.random()*.5+.2,
   c: Math.random()<.6?'45,143,255':'0,229,160'
 });
+
 function drawParticles() {
   ctx.clearRect(0,0,W,H);
   particles.forEach(p => {
@@ -54,14 +117,29 @@ function drawParticles() {
     if(p.y<0)p.y=H; if(p.y>H)p.y=0;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
     ctx.fillStyle=`rgba(${p.c},${p.a})`; ctx.fill();
+
+    // Connect to mouse cursor
+    if (mouse.x !== null && mouse.y !== null) {
+      const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
+      const md = Math.sqrt(mdx*mdx + mdy*mdy);
+      if (md < mouse.radius) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(mouse.x, mouse.y);
+        ctx.strokeStyle = `rgba(45,143,255,${0.25 * (1 - md/mouse.radius)})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+    }
   });
+
   // Connect nearby particles
   for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++){
     const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
     const d=Math.sqrt(dx*dx+dy*dy);
     if(d<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);
       ctx.lineTo(particles[j].x,particles[j].y);
-      ctx.strokeStyle=`rgba(45,143,255,${.08*(1-d/120)})`; ctx.lineWidth=.5; ctx.stroke();}
+      ctx.strokeStyle=`rgba(45,143,255,${.12*(1-d/120)})`; ctx.lineWidth=.5; ctx.stroke();}
   }
   requestAnimationFrame(drawParticles);
 }
@@ -101,9 +179,12 @@ window.showToast = function(msg, type='info') {
   }, 4000);
 };
 
-// Global Custom Alert Override
 window.alert = function(msg) {
-  document.getElementById('vlabModalBody').textContent = msg;
+  const modalBody = document.getElementById('vlabModalBody');
+  if (modalBody) {
+    modalBody.style.whiteSpace = 'pre-wrap';
+    modalBody.innerHTML = typeof msg === 'string' ? msg.replace(/\n/g, '<br>') : msg;
+  }
   document.getElementById('vlabModalOverlay').style.display = 'flex';
 };
 
@@ -113,3 +194,4 @@ function closeVLabModal() {
 </script>
 </body>
 </html>
+

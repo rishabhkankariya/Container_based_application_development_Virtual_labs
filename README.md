@@ -25,11 +25,13 @@ vlab-module1-docker/
 │   └── vlab.db             # SQLite local database (generated on launch)
 ├── backend/
 │   ├── app.py              # Flask Core Backend (Routing, DB Logic, Task Engine)
+│   ├── generate_cert.py    # SSL Self-Signed Certificate Generator
 │   └── requirements.txt    # Production-grade Python Dependencies
+├── deploy_gpo.ps1          # Active Directory GPO SSL Deployment Script
 └── frontend/
     ├── static/
     │   ├── css/
-    │   │   └── style.css   # Core styling & UI Theme
+    │   │   └── style.css   # Core styling & UI Theme (Light & Dark modes)
     │   └── images/
     │       └── logo.png    # Institution / Lab Branding Logo
     └── templates/          # HTML layout and dashboard templates
@@ -39,6 +41,8 @@ vlab-module1-docker/
         ├── faculty_dashboard.html
         ├── lab1.html       # Lab 1: Docker Desktop Installation
         ├── lab2.html       # Lab 2: Nginx Web App Containerization
+        ├── lab3.html       # Lab 3: Run hello-world Container & Verify Application
+        ├── lab4.html       # Lab 4: CI/CD Pipeline & Docker Registry
         └── change_password.html
 ```
 

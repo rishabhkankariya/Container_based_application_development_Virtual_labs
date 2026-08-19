@@ -167,16 +167,40 @@ function toggleInstructionsDrawer(forceState) {
   }
 }
 
+function closeInstructionsDrawer() {
+  const drawer = document.getElementById('instructionsDrawer');
+  if(drawer) {
+    drawer.style.transform = 'translateX(-100%)';
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeInstructionsDrawer();
+  }
+});
+
 function startGuidedTour() {
   alert('Welcome to Lab 1 Guided Tour!\n\n1. Click "Step Instructions & Checkmarks" to view task instructions.\n2. Work through the 7 stages from System Check to Terminal Verification.\n3. Execute docker --version and docker run hello-world in Stage 7.\n4. Click "Submit & Verify Lab 1" to complete the lab module!');
 }
 
 function verifyLab1Completion() {
-  if (stepsDone.length < 7 && !verified) {
-    alert('Please complete all 7 steps before submitting Lab 1!');
+  const missing = [];
+  if (!stepsDone.includes(1)) missing.push('• 1. Check System Requirements (Stage 1)');
+  if (!stepsDone.includes(2)) missing.push('• 2. Download Docker Desktop (Stage 2)');
+  if (!stepsDone.includes(3)) missing.push('• 3. Run the Installer Setup (Stage 3)');
+  if (!stepsDone.includes(4)) missing.push('• 4. Installation Progress (Stage 4)');
+  if (!stepsDone.includes(5)) missing.push('• 5. Restart Your System (Stage 5)');
+  if (!stepsDone.includes(6)) missing.push('• 6. Launch Docker Engine (Stage 6)');
+  if (!stepsDone.includes(7)) missing.push('• 7. Verify Docker Installation (Stage 7 - Run docker --version & docker run hello-world)');
+
+  if (missing.length > 0 && !verified) {
+    const formattedText = '⚠️ <b>Lab 1 Verification Blocked!</b><br><br>You must complete all compulsory steps before completing Lab 1:<br><br>' + missing.join('<br>');
+    alert(formattedText);
     toggleInstructionsDrawer(true);
     return;
   }
+
   fetch('/api/lab1/verify', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -188,10 +212,10 @@ function verifyLab1Completion() {
       verified = true;
       stepsDone = [1,2,3,4,5,6,7];
       updateProgress();
-      alert('🎉 ' + data.message);
+      alert('🎉 Congratulations! You have successfully completed all steps and verified Lab 1!');
       window.location.href = '/student/dashboard';
     } else {
-      alert(data.message || 'Verification failed. Please ensure all steps are completed!');
+      alert('Verification Failed: ' + (data.message || 'Error completing lab.'));
     }
   });
 }
@@ -512,7 +536,7 @@ function stageHTML_6(){return `
           <div style="font-size:.8rem;font-weight:700;color:var(--text)"><i class="fa-solid fa-chart-line" style="color:var(--blue)"></i> Real-time Container Telemetry &amp; Resource Metrics</div>
           <span style="font-size:.72rem;color:var(--green);font-family:var(--mono)"><i class="fa-solid fa-signal"></i> Live Stream</span>
         </div>
-        <canvas id="dockerStatsChart" height="90" style="width:100%;background:var(--surface);border-radius:6px;border:1px solid var(--border)"></canvas>
+        <canvas id="dockerStatsChart" height="140" style="width:100%;height:140px;background:var(--surface);border-radius:6px;border:1px solid var(--border);display:block"></canvas>
       </div>
 
       <div id="launchStatus" style="color:var(--muted);font-family:var(--mono);font-size:.82rem;text-align:center;padding:6px">Docker Engine daemon status: Active</div>
@@ -551,7 +575,7 @@ function wireStage_6(){
     const cvs = document.getElementById('dockerStatsChart');
     if(cvs) {
       const c = cvs.getContext('2d');
-      let pts = Array(40).fill(10);
+      let pts = Array(40).fill(5);
       setInterval(()=>{
         fetch('/api/system-telemetry')
           .then(r => r.json())
@@ -564,22 +588,43 @@ function wireStage_6(){
               if(ramEl) ramEl.textContent = data.ram;
               if(pidEl) pidEl.textContent = data.pid;
 
-              pts.push(data.cpu_num * 1.5 + 5);
+              // Ensure internal pixel canvas resolution matches displayed container size
+              if(cvs.clientWidth && cvs.width !== cvs.clientWidth) {
+                cvs.width = cvs.clientWidth;
+              }
+              if(cvs.clientHeight && cvs.height !== cvs.clientHeight) {
+                cvs.height = cvs.clientHeight;
+              }
+
+              const rawCpu = typeof data.cpu_num === 'number' ? data.cpu_num : parseFloat(data.cpu) || 0;
+              const cpuPct = Math.min(100, Math.max(0, rawCpu));
+              pts.push(cpuPct);
               pts.shift();
 
-              c.clearRect(0,0,cvs.width,cvs.height);
+              const w = cvs.width;
+              const h = cvs.height;
+              c.clearRect(0, 0, w, h);
+
+              // Standardized bounded scaling: 0% CPU at 12% bottom margin, 100% CPU at 85% canvas height max
+              const bottomMargin = h * 0.12;
+              const usableHeight = h * 0.73;
+
               c.beginPath();
               c.strokeStyle = '#38bdf8';
-              c.lineWidth = 2;
-              pts.forEach((y, i)=>{
-                const x = (i / (pts.length-1)) * cvs.width;
-                if(i===0) c.moveTo(x, cvs.height - y);
-                else c.lineTo(x, cvs.height - y);
+              c.lineWidth = 2.5;
+
+              pts.forEach((pct, i)=>{
+                const x = (i / (pts.length - 1)) * w;
+                const yOffset = bottomMargin + (pct / 100) * usableHeight;
+                const y = h - yOffset;
+                if(i === 0) c.moveTo(x, y);
+                else c.lineTo(x, y);
               });
               c.stroke();
-              c.lineTo(cvs.width, cvs.height);
-              c.lineTo(0, cvs.height);
-              c.fillStyle = 'rgba(56,189,248,0.1)';
+
+              c.lineTo(w, h);
+              c.lineTo(0, h);
+              c.fillStyle = 'rgba(56, 189, 248, 0.12)';
               c.fill();
             }
           }).catch(()=>{});
@@ -638,14 +683,17 @@ function stageHTML_7(){return `
 
   <!-- SIMULATED / LIVE SHELL TAB -->
   <div id="panel-sim">
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.78rem;font-family:var(--sans);color:var(--muted);display:flex;align-items:center;justify-content:space-between">
+      <span><i class="fa-solid fa-lightbulb" style="color:var(--amber)"></i> <b>Code &amp; Command Explanations:</b> Hover over suggested commands below for instant details!</span>
+    </div>
     <p style="margin-bottom:10px;color:var(--muted);font-size:.88rem">Execute terminal commands directly on the live platform or test your Docker CLI commands.</p>
     <div style="background:rgba(45,143,255,0.07);border:1px solid rgba(45,143,255,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-family:var(--mono);font-size:.82rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <span>Suggested Verification Commands:</span>
         <button class="btn btn-outline btn-sm" onclick="triggerBgVerificationTask()">&#x26A1; Run in Background Task</button>
       </div>
-      <div>1. <span style="color:#00e5a0">docker --version</span></div>
-      <div style="margin-top:2px">2. <span style="color:#00e5a0">docker run hello-world</span></div>
+      <div>1. <span style="color:#00e5a0" data-vlab-tooltip="Displays the installed Docker Engine client & server version">docker --version</span></div>
+      <div style="margin-top:2px">2. <span style="color:#00e5a0" data-vlab-tooltip="Pulls and executes the standard official Docker test container">docker run hello-world</span></div>
     </div>
     <div class="terminal" id="terminal" style="min-height:220px">
       <div class="line out">Platform Shell Ready. Type commands below (e.g. docker --version, docker run hello-world, hostname):</div>
@@ -672,6 +720,14 @@ function wireStage_7(){
 
   if(input) {
     input.addEventListener('keydown',function(e){
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L' || e.code === 'KeyL')) {
+        e.preventDefault();
+        const lines = term.querySelectorAll('.line');
+        lines.forEach(l => l.remove());
+        this.value = '';
+        return;
+      }
+
       if (e.key === 'ArrowUp') {
         e.preventDefault();
         if (commandHistory.length > 0) {

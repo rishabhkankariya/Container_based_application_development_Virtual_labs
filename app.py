@@ -10,6 +10,8 @@ import shutil
 import hashlib
 import html
 import re
+import time
+import threading
 from datetime import datetime
 from functools import wraps
 
@@ -645,15 +647,62 @@ def get_student_docker_state(student_id):
         }
     return STUDENT_DOCKER_STATE[student_id]
 
-def check_host_docker_status():
-    """Checks if real Docker daemon is running on the host system."""
+AUTO_DOCKER_LAUNCH_ATTEMPTED = False
+
+def auto_start_host_docker():
+    """Attempts to auto-launch Docker Desktop executable if installed on host system."""
+    global AUTO_DOCKER_LAUNCH_ATTEMPTED
+    if AUTO_DOCKER_LAUNCH_ATTEMPTED:
+        return
+    AUTO_DOCKER_LAUNCH_ATTEMPTED = True
+
+    desktop_paths = [
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Docker\Docker\Docker Desktop.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Docker\Docker\Docker Desktop.exe"),
+        r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+        "/Applications/Docker.app/Contents/MacOS/Docker"
+    ]
+    
+    exe_path = None
+    for p in desktop_paths:
+        if os.path.exists(p):
+            exe_path = p
+            break
+
+    if exe_path:
+        try:
+            if platform.system() == "Windows":
+                subprocess.Popen([exe_path], creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW)
+            else:
+                subprocess.Popen([exe_path])
+        except Exception:
+            pass
+
+
+def check_host_docker_status(retry_auto_start=True):
+    """Checks if real Docker daemon is running on the host system. Automatically launches Docker Desktop if installed."""
     try:
-        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=3)
-        if res.returncode == 0:
+        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=4)
+        if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
             return True, "Local Docker Engine (Connected)"
-        return False, "Virtual Docker Simulator (Active)"
     except Exception:
-        return False, "Virtual Docker Simulator (Active)"
+        pass
+
+    # If Docker daemon is not connected, attempt auto-starting Docker Desktop if installed
+    if retry_auto_start:
+        auto_start_host_docker()
+        # Retry polling docker info for a few seconds to allow daemon initialization
+        for _ in range(4):
+            time.sleep(1)
+            try:
+                res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=4)
+                if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
+                    return True, "Local Docker Engine (Connected)"
+            except Exception:
+                pass
+
+    return False, "Virtual Docker Simulator (Active)"
 
 @app.route("/api/terminal/exec", methods=["POST"])
 @login_required_student
@@ -865,29 +914,77 @@ def api_terminal_exec():
                 break
 
             repo_name = target_img.split(":")[0] if target_img else ""
-            is_built = bool(repo_name and repo_name in state["images"])
+            if not repo_name:
+                return jsonify({"ok": False, "output": '"docker run" requires at least 1 argument.\nSee \'docker run --help\'.'})
 
-            # STRICT: ONLY allow images explicitly built by the student!
-            if not repo_name or not is_built:
-                out_name = target_img if target_img else "unknown"
-                out = f"Unable to find image '{out_name}:latest' locally\ndocker: Error response from daemon: No such image: {out_name}:latest."
-                return jsonify({"ok": False, "output": out})
+            was_image_present = (repo_name in state["images"])
+            is_hello_world = (repo_name == "hello-world")
 
+            # If image is not local, auto-pull / register image from registry (standard Docker behavior)
+            if not was_image_present:
+                tag_ver = target_img.split(":")[1] if ":" in target_img else "latest"
+                img_id = hashlib.md5(target_img.encode()).hexdigest()[:12]
+                state["images"][repo_name] = {
+                    "repo": repo_name,
+                    "tag": tag_ver,
+                    "id": img_id,
+                    "created": "Just now",
+                    "size": "13.3kB"
+                }
+
+            # Create container instance
             cnt_id = hashlib.md5((target_img + str(time.time())).encode()).hexdigest()[:12]
             cnt_name = repo_name + "-container"
-
             state["containers"].append({
                 "id": cnt_id,
                 "image": repo_name,
-                "command": '"/docker-entrypoint.…"',
+                "command": '"/hello"' if is_hello_world else '"/docker-entrypoint.…"',
                 "created": "Just now",
-                "status": "Up 1 minute",
-                "ports": "0.0.0.0:8080->80/tcp",
+                "status": "Exited (0) Just now" if is_hello_world else "Up 1 minute",
+                "ports": "" if is_hello_world else "0.0.0.0:8080->80/tcp",
                 "name": cnt_name
             })
 
+            if is_hello_world:
+                pull_prefix = ""
+                if not was_image_present:
+                    pull_prefix = (
+                        "Unable to find image 'hello-world:latest' locally\n"
+                        "latest: Pulling from library/hello-world\n"
+                        "c1ec31b23086: Pull complete\n"
+                        "Digest: sha256:7d92237b5100e2802c89288e285a85532a76f2812480373\n"
+                        "Status: Downloaded newer image for hello-world:latest\n\n"
+                    )
+                hello_msg = (
+                    "Hello from Docker!\n"
+                    "This message shows that your installation appears to be working correctly.\n\n"
+                    "To generate this message, Docker took the following steps:\n"
+                    " 1. The Docker client contacted the Docker daemon.\n"
+                    " 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.\n"
+                    "    (amd64)\n"
+                    " 3. The Docker daemon created a new container from that image which runs the\n"
+                    "    executable that produces the output you are currently reading.\n"
+                    " 4. The Docker daemon streamed that output to the Docker client, which sent it\n"
+                    "    to your terminal.\n\n"
+                    "To run an interactive container, try:\n"
+                    " $ docker run -it ubuntu bash\n\n"
+                    "For more examples and ideas, visit:\n"
+                    " https://docs.docker.com/get-started/"
+                )
+                return jsonify({"ok": True, "output": pull_prefix + hello_msg})
+
             full_hash = cnt_id * 5
-            out = f"{full_hash}\nContainer '{cnt_name}' (Image: {repo_name}) launched in background on http://localhost:8080!"
+            pull_prefix = ""
+            if not was_image_present:
+                tag_ver = target_img.split(":")[1] if ":" in target_img else "latest"
+                pull_prefix = (
+                    f"Unable to find image '{target_img}' locally\n"
+                    f"{tag_ver}: Pulling from library/{repo_name}\n"
+                    f"c1ec31b23086: Pull complete\n"
+                    f"Digest: sha256:{cnt_id}7b92237b5100e2802c89288e285a85532a76f2812480373\n"
+                    f"Status: Downloaded newer image for {repo_name}:{tag_ver}\n\n"
+                )
+            out = f"{pull_prefix}{full_hash}\nContainer '{cnt_name}' (Image: {repo_name}) launched in background on http://localhost:8080!"
             return jsonify({"ok": True, "output": out})
 
         elif cmd_lower.startswith("docker pull"):
@@ -1137,7 +1234,12 @@ def change_password():
         new_pw = request.form.get("new_password", "")
         confirm_pw = request.form.get("confirm_password", "")
 
-        if not identifier and session.get("student_id"):
+        # SECURITY LOCK: If logged in as student, Student ID is permanent & immutable.
+        # Unconditionally force identifier to session student_id to block form tampering or ID alterations.
+        if session.get("student_id") and session.get("role") == "student":
+            role = "student"
+            identifier = session.get("student_id")
+        elif session.get("student_id"):
             role = "student"
             identifier = session.get("student_id")
 
@@ -2062,6 +2164,9 @@ def handle_500_error(e):
 if __name__ == "__main__":
     init_db()
     
+    # Auto-start Docker Desktop in background if installed on system
+    threading.Thread(target=auto_start_host_docker, daemon=True).start()
+
     # In production, use environment variables to configure execution options
     host = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
     port = int(os.environ.get("FLASK_RUN_PORT", 5000))

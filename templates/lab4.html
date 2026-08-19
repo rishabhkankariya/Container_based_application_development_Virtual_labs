@@ -85,7 +85,7 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE FLASK CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /sum returning JSON sum result on port 80">from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br><br>@app.route('/sum', methods=['GET'])<br>def sum_route():<br>&nbsp;&nbsp;a = float(request.args.get('a', 0))<br>&nbsp;&nbsp;b = float(request.args.get('b', 0))<br>&nbsp;&nbsp;return jsonify({"sum": a + b})<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=80)</span></div>
+          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /sum/<float:a>/<float:b> returning JSON sum result on port 80">from flask import Flask<br><br>app = Flask(__name__)<br><br>@app.route('/sum/&lt;float:a&gt;/&lt;float:b&gt;')<br>def get_sum(a, b):<br>&nbsp;&nbsp;return {'sum': a + b}<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=80)</span></div>
         </div>
       </div>
 
@@ -111,7 +111,7 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE DEPENDENCIES FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="requirements.txt: Specifies required Flask & Gunicorn PyPI packages">flask==3.0.0<br>gunicorn==21.2.0</span></div>
+          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="requirements.txt: Specifies required Flask PyPI package">flask==3.0.0</span></div>
         </div>
       </div>
 
@@ -209,7 +209,7 @@
         <div class="vscode-preview-pane">
           <div class="vscode-preview-header">
             <i class="fa-solid fa-rotate-right" style="cursor:pointer;color:var(--blue)" title="Refresh Live Microservice Studio" onclick="refreshPreview()"></i>
-            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> <span id="previewUrlText">http://localhost:8080/sum</span></div>
+            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> <span id="previewUrlText">http://localhost:8080/sum/&lt;float:a&gt;/&lt;float:b&gt;</span></div>
             <span class="badge badge-green" id="previewBadge">Offline</span>
           </div>
           <div class="vscode-preview-body" id="previewContainer">
@@ -382,7 +382,7 @@ const tourSteps = [
   {
     num: 3,
     title: "Step 3: View Live Microservice & Verify Lab 4",
-    desc: "Test numbers A and B on your live Flask Sum Microservice Studio on http://localhost:8080/sum. Click 'Submit & Verify Lab 4' at top right to complete.",
+    desc: "Test numbers A and B on your live Flask Sum Microservice Studio on http://localhost:8080/sum/<a_val>/<b_val>. Click 'Submit & Verify Lab 4' at top right to complete.",
     highlightId: "previewContainer"
   }
 ];
@@ -677,6 +677,29 @@ function checkCodeProgress() {
   updateChecklistStatus('app', hasApp);
   updateChecklistStatus('req', hasReq);
   updateChecklistStatus('dockerfile', hasDockerfile);
+
+  if (hasApp) markStepBackend(1);
+  if (hasDockerfile) markStepBackend(2);
+  if (hasReq) markStepBackend(3);
+
+  refreshPreview();
+}
+
+function checkCompulsoryCommand(cmd) {
+  const c = cmd.toLowerCase().trim();
+  
+  if (c.includes('docker build')) {
+    testedState.build = true;
+    updateChecklistUI('build');
+    markStepBackend(4);
+  }
+  if (c.includes('docker run')) {
+    testedState.run = true;
+    updateChecklistUI('run');
+    markStepBackend(5);
+    containerRunning = true;
+    refreshPreview();
+  }
 }
 
 function markStepBackend(stepId) {
@@ -1122,12 +1145,20 @@ function calculateSumInStudio() {
   const aVal = aInput ? aInput.value.trim() : '';
   const bVal = bInput ? bInput.value.trim() : '';
 
+  const appCode = (currentFile === 'app.py' ? (document.getElementById('codeEditor') ? document.getElementById('codeEditor').value : '') : (files['app.py'] || ''));
+
+  if (!appCode || appCode.trim() === '') {
+    const resBox = document.getElementById('microserviceJsonResponse');
+    if (resBox) resBox.textContent = JSON.stringify({ message: "app.py is empty. Write Flask code in app.py to compute sum!" }, null, 2);
+    return;
+  }
+
   const urlText = document.getElementById('previewUrlText');
   if (urlText) {
     if (aVal !== '' || bVal !== '') {
-      urlText.textContent = `http://localhost:8080/sum?a=${aVal}&b=${bVal}`;
+      urlText.textContent = `http://localhost:8080/sum/${aVal}/${bVal}`;
     } else {
-      urlText.textContent = 'http://localhost:8080/sum';
+      urlText.textContent = 'http://localhost:8080/sum/<float:a>/<float:b>';
     }
   }
 
@@ -1155,11 +1186,11 @@ function insertBoilerplateCode() {
   const fn = currentFile.toLowerCase();
 
   if (fn === 'app.py' || fn.endsWith('.py')) {
-    files[currentFile] = `from flask import Flask, request, jsonify\n\napp = Flask(__name__)\n\n@app.route('/sum', methods=['GET'])\ndef sum_route():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({"sum": a + b})\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=80)`;
+    files[currentFile] = `from flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/sum/<float:a>/<float:b>')\ndef get_sum(a, b):\n    return {'sum': a + b}\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=80)`;
   } else if (fn === 'dockerfile' || fn.includes('docker')) {
     files[currentFile] = `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 80\nCMD ["python", "app.py"]`;
   } else if (fn === 'requirements.txt' || fn.includes('req')) {
-    files[currentFile] = `flask==3.0.0\ngunicorn==21.2.0`;
+    files[currentFile] = `flask==3.0.0`;
   } else if (fn === 'index.html' || fn.endsWith('.html')) {
     files[currentFile] = `<!DOCTYPE html>\n<html>\n<head>\n  <title>Lab 4 Microservice</title>\n</head>\n<body>\n  <h1>Sum Microservice Studio</h1>\n  <p>Flask microservice running on port 80.</p>\n</body>\n</html>`;
   }
@@ -1198,12 +1229,25 @@ function refreshPreview() {
     badge.textContent = '• Live (Port 80)';
   }
 
+  const appCode = (currentFile === 'app.py' ? (document.getElementById('codeEditor') ? document.getElementById('codeEditor').value : '') : (files['app.py'] || ''));
+
+  if (!appCode || appCode.trim() === '') {
+    container.innerHTML = `
+      <div class="offline-placeholder">
+        <i class="fa-solid fa-file-code" style="color:#d97706 !important"></i>
+        <div class="offline-title" style="color:#0f172a !important;font-weight:700 !important;font-size:1.1rem !important">app.py is empty</div>
+        <div class="offline-desc" style="color:#475569 !important">Write your Flask microservice code in <code style="background:#f1f5f9 !important;padding:2px 6px !important;border-radius:4px !important;color:#0f172a !important;border:1px solid #cbd5e1 !important">app.py</code> to see live HTTP JSON output!</div>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = `
     <div style="padding:6px;color:var(--text);font-family:var(--sans);height:100%;box-sizing:border-box">
       <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px">
-        <div style="font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-          <span><i class="fa-solid fa-globe"></i> HTTP GET Request Parameters</span>
-          <span style="color:#10b981;font-size:.74rem;font-family:var(--mono)">HTTP 200 OK</span>
+        <div style="font-size:.84rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+          <span style="color:#ffffff !important;font-weight:700 !important;font-size:.88rem !important;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-globe" style="color:#38bdf8 !important"></i> HTTP GET Request Parameters</span>
+          <span style="color:#10b981 !important;font-size:.74rem !important;font-family:var(--mono)">HTTP 200 OK</span>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -1450,94 +1494,74 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      if (e.key === 'Enter') {
-        const cmd = this.value.trim();
-        if (!cmd) return;
+      if (e.key !== 'Enter') return;
+      const val = this.value.trim();
+      if (!val) return;
 
-        if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== cmd) {
-          commandHistory.push(cmd);
+      if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== val) {
+        commandHistory.push(val);
+      }
+      historyIndex = -1;
+
+      const cursorRow = input.closest('.cursor-row') || term.querySelector('.cursor-row');
+      const echo = document.createElement('div');
+      echo.className = 'line';
+      echo.style.color = '#38bdf8';
+      echo.innerHTML = '<span class="prompt">student@docker-host:~$</span>&nbsp;' + val.replace(/</g, '&lt;');
+      term.insertBefore(echo, cursorRow);
+      this.value = '';
+
+      fetch('/api/terminal/exec', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ command: val, files: files })
+      })
+      .then(r => {
+        if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
+          return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
         }
-        historyIndex = -1;
-        this.value = '';
-
-        const cursorRow = term.querySelector('.cursor-row');
-        const cmdLine = document.createElement('div');
-        cmdLine.className = 'line';
-        cmdLine.innerHTML = `<span class="prompt">student@docker-host:~$</span>&nbsp;<span class="cmd">${cmd.replace(/</g, '&lt;')}</span>`;
-        term.insertBefore(cmdLine, cursorRow);
-
-        const outLine = document.createElement('div');
-        outLine.className = 'line out';
-
-        const cleanCmd = cmd.toLowerCase().trim();
-        if (cleanCmd.includes('docker build')) {
-          testedState.build = true;
-          updateChecklistUI('build');
-          markStepBackend(1);
-
-          let tagMatch = cmd.match(/-t\s+([^\s]+)/i) || cmd.match(/--tag\s+([^\s]+)/i);
-          let buildTag = tagMatch ? tagMatch[1] : 'sum-microservice';
-          let repoName = buildTag.split(':')[0];
-          builtImages.add(repoName);
-
-          outLine.innerHTML = `[+] Building 1.2s (6/6) FINISHED<br> => [internal] load build definition from Dockerfile<br> => => transferring dockerfile: 135B<br> => [1/3] FROM docker.io/library/python:3.9-slim<br> => [2/3] WORKDIR /app<br> => [3/3] RUN pip install flask<br> => naming to docker.io/library/${buildTag}<br><span style="color:var(--green)">Successfully built ${buildTag}</span>`;
-        } else if (cleanCmd.includes('docker run')) {
-          let portMatch = cmd.match(/-p\s+([^\s]+)/i);
-          let portStr = portMatch ? portMatch[1] : '8080:8080';
-          let parts = cmd.trim().split(/\s+/);
-          let runTag = parts[parts.length - 1] || 'sum-microservice';
-          if (runTag.startsWith('-')) runTag = 'sum-microservice';
-          let repoName = runTag.split(':')[0];
-
-          if (!builtImages.has(repoName)) {
-            outLine.className = 'line err';
-            outLine.innerHTML = `Unable to find image '${runTag}:latest' locally<br>docker: Error response from daemon: No such image: ${runTag}:latest.`;
-          } else {
-            testedState.run = true;
-            updateChecklistUI('run');
-            markStepBackend(2);
-            containerRunning = true;
-            refreshPreview();
-
-            runningContainers.push({ id: 'e7a9c31b8f42', image: repoName, ports: portStr, status: 'Up 1 minute' });
-            let portDisplay = portStr.includes(':') ? portStr.replace(':', ' -> ') + '/tcp' : '8080 -> 8080/tcp';
-            outLine.className = 'line success-line';
-            outLine.innerHTML = `e7a9c31b8f42d90a12f5a6b0c9d8e7f6a5b4c3d2e1<br><span style="color:var(--green)">Container ${repoName} started in background on 0.0.0.0:${portDisplay}</span>`;
-          }
-        } else if (cleanCmd.includes('docker images')) {
-          let imgLines = ["REPOSITORY".padEnd(20) + "TAG".padEnd(10) + "IMAGE ID".padEnd(15) + "CREATED".padEnd(15) + "SIZE"];
-          if (builtImages.size === 0) {
-            outLine.innerHTML = "REPOSITORY   TAG   IMAGE ID   CREATED   SIZE";
-          } else {
-            builtImages.forEach(img => {
-              imgLines.push(img.padEnd(20) + "latest".padEnd(10) + "d2c45389635d".padEnd(15) + "Just now".padEnd(15) + "128MB");
-            });
-            outLine.innerHTML = imgLines.join('<br>');
-          }
-        } else if (cleanCmd.includes('docker ps')) {
-          let psLines = ["CONTAINER ID".padEnd(15) + "IMAGE".padEnd(20) + "COMMAND".padEnd(25) + "CREATED".padEnd(15) + "STATUS".padEnd(15) + "PORTS".padEnd(22) + "NAMES"];
-          if (runningContainers.length === 0) {
-            outLine.innerHTML = "CONTAINER ID   IMAGE   COMMAND   CREATED   STATUS   PORTS   NAMES";
-          } else {
-            runningContainers.forEach(cnt => {
-              psLines.push(cnt.id.padEnd(15) + cnt.image.padEnd(20) + '"python app.py"'.padEnd(25) + "Just now".padEnd(15) + cnt.status.padEnd(15) + cnt.ports.padEnd(22) + (cnt.image + "-app"));
-            });
-            outLine.innerHTML = psLines.join('<br>');
-          }
-        } else if (cleanCmd === 'clear' || cleanCmd === 'cls') {
+        return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
+      })
+      .then(res => {
+        if (res.action === 'clear') {
           term.querySelectorAll('.line').forEach(l => l.remove());
-          this.value = '';
-          setTimeout(() => { term.scrollTop = 0; }, 20);
           return;
-        } else {
-          outLine.innerHTML = `Command executed: ${cmd.replace(/</g, '&lt;')}`;
+        }
+        if (res.ok) {
+          checkCompulsoryCommand(val);
         }
 
-        term.insertBefore(outLine, cursorRow);
+        const out = document.createElement('div');
+        out.className = 'line';
+        out.style.whiteSpace = 'pre-wrap';
+
+        const cleanOutput = res.output ? res.output.trim() : '';
+        const firstLine = cleanOutput.split('\n')[0].trim();
+        const isContainerId = /^[a-f0-9]{12,64}$/i.test(firstLine);
+
+        if (res.ok && (isContainerId || cleanOutput.toLowerCase().includes('container launched') || cleanOutput.toLowerCase().includes('successfully built') || cleanOutput.toLowerCase().includes('started in background'))) {
+          out.className = 'line success-line';
+          out.style.color = '#38bdf8';
+          out.textContent = cleanOutput;
+        } else {
+          out.className = res.ok ? 'line success-line' : 'line err';
+          out.textContent = cleanOutput || 'Command executed with no output.';
+        }
+
+        term.insertBefore(out, cursorRow);
         setTimeout(() => {
           term.scrollTop = term.scrollHeight;
         }, 10);
-      }
+      })
+      .catch(err => {
+        const out = document.createElement('div');
+        out.className = 'line err';
+        out.textContent = 'Execution error: ' + err.message;
+        term.insertBefore(out, cursorRow);
+        setTimeout(() => {
+          term.scrollTop = term.scrollHeight;
+        }, 10);
+      });
     });
   }
 });

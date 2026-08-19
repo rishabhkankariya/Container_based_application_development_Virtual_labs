@@ -80,9 +80,9 @@ LAB3_STEPS = [
 ]
 
 LAB4_STEPS = [
-    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask to receive two numbers 'a' and 'b' and return their sum as JSON."},
+    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask path parameters '/sum/<float:a>/<float:b>' returning their sum as JSON."},
     {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 80."},
-    {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask and gunicorn dependency packages."},
+    {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask dependency package."},
     {"id": 4, "title": "Build Microservice Docker Image", "desc": "Run 'docker build -t sum-microservice .' in the integrated VS Code terminal."},
     {"id": 5, "title": "Run Microservice Container", "desc": "Run 'docker run -d -p 8080:80 sum-microservice' to start your calculator microservice."},
 ]
@@ -760,12 +760,13 @@ def api_terminal_exec():
             else:
                 res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
             
-            # Auto-healing: If port allocation failed (e.g. port 8080 already bound by old container), auto-free port 8080 and retry!
-            if res.returncode != 0 and ("port is already allocated" in res.stderr.lower() or "port is already allocated" in res.stdout.lower()):
+            # Auto-healing: If port allocation failed (e.g. port 8080 or 80 already bound by old container), auto-free port and retry!
+            err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
+            if res.returncode != 0 and ("port is already allocated" in err_lower or "address already in use" in err_lower):
                 ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True)
                 if ps_res.stdout:
                     for line in ps_res.stdout.splitlines():
-                        if "8080" in line:
+                        if "8080" in line or "80" in line:
                             cnt_id = line.split()[0]
                             subprocess.run(f"docker rm -f {cnt_id}", shell=True, capture_output=True)
                 res = subprocess.run(cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
@@ -1403,11 +1404,17 @@ def api_lab4_verify():
     data = request.get_json(force=True) or {}
     tested = data.get("tested", {})
     
-    req_keys = ["build", "run"]
+    req_keys = ["app", "dockerfile", "req", "build", "run"]
     missing = [k for k in req_keys if not tested.get(k)]
     
     if missing:
         missing_labels = []
+        if not tested.get("app"):
+            missing_labels.append("Create 'app.py' Flask microservice logic")
+        if not tested.get("dockerfile"):
+            missing_labels.append("Configure 'Dockerfile' for Python container")
+        if not tested.get("req"):
+            missing_labels.append("Create 'requirements.txt' with flask dependency")
         if not tested.get("build"):
             missing_labels.append("Run 'docker build -t sum-microservice .' in terminal")
         if not tested.get("run"):

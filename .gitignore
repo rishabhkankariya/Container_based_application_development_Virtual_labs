@@ -64,6 +64,11 @@ db.sqlite3-journal
 # Flask / Database stuff:
 database/*.db
 database/*.db-journal
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+instance/
 .webassets-cache
 
 # Scrapy stuff:

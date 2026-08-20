@@ -83,7 +83,11 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE HTML CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
+<<<<<<< HEAD:frontend/templates/lab3.html
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Portal: Defines root web page title, heading and paragraph text for multi-step Docker lab">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;title&gt;Lab 3 Web Server&lt;/title&gt;&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to Lab 3 Containerized Portal&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;p&gt;Multi-step Docker lifecycle&lt;/p&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</span></div>
+=======
+          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Portal: Defines root web page title, heading and paragraph text for Lab 3">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;title&gt;Lab 3 Web Server&lt;/title&gt;&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to Lab 3 Containerized Portal&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;p&gt;Multi-step Docker lifecycle&lt;/p&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</span></div>
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab3.html
         </div>
       </div>
 
@@ -1232,7 +1236,12 @@ function refreshPreview() {
     const iframe = document.getElementById('livePreviewIframe');
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     doc.open();
-    doc.write(currentContent || '<html><body style="font-family:sans-serif;padding:20px;color:#000"><h3>No index.html content written yet.</h3></body></html>');
+    const hasContent = currentContent && currentContent.trim() !== '';
+    if (hasContent) {
+      doc.write(currentContent);
+    } else {
+      doc.write(`<html><body style="font-family:sans-serif;padding:40px 20px;color:#0f172a;background:#ffffff;text-align:center"><h2 style="font-size:1.5rem;font-weight:700;margin-top:20px">No index.html content written yet.</h2></body></html>`);
+    }
     doc.close();
   }
 }

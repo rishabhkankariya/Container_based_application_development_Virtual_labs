@@ -43,7 +43,7 @@
     <div style="color:var(--green);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
     <div style="background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(5,150,105,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 3 details & verification">
       <span style="background:var(--green);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">3</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">View Live Microservice &amp; Verify <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Test sum app on port 8080 &amp; submit</span></div>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">View Live Microservice &amp; Verify <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Test sum app on port 5000 &amp; submit</span></div>
     </div>
   </div>
 
@@ -85,7 +85,11 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE FLASK CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
+<<<<<<< HEAD:frontend/templates/lab4.html
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /sum/<float:a>/<float:b> returning JSON sum result on port 80">from flask import Flask<br><br>app = Flask(__name__)<br><br>@app.route('/sum/&lt;float:a&gt;/&lt;float:b&gt;')<br>def get_sum(a, b):<br>&nbsp;&nbsp;return {'sum': a + b}<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=80)</span></div>
+=======
+          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /add returning number1, number2, and sum on port 5000">from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br><br>@app.route('/add', methods=['GET'])<br>def add_numbers():<br>&nbsp;&nbsp;try:<br>&nbsp;&nbsp;&nbsp;&nbsp;a = float(request.args.get('a'))<br>&nbsp;&nbsp;&nbsp;&nbsp;b = float(request.args.get('b'))<br>&nbsp;&nbsp;&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b})<br>&nbsp;&nbsp;except (TypeError, ValueError):<br>&nbsp;&nbsp;&nbsp;&nbsp;return jsonify({"error": "Please provide two valid numbers"}), 400<br><br>@app.route('/')<br>def home():<br>&nbsp;&nbsp;return "Addition Microservice is Running"<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</span></div>
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
         </div>
       </div>
 
@@ -98,7 +102,7 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + TO CREATE DOCKERFILE WITH PYTHON MICROSERVICE INSTRUCTIONS:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies official Python 3.9 Linux base image">FROM python:3.9-slim</span><br><span class="vlab-hover-target" data-vlab-tooltip="WORKDIR /app: Sets container app directory">WORKDIR /app</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY requirements.txt & RUN pip: Installs Python dependencies inside container">COPY requirements.txt .<br>RUN pip install -r requirements.txt</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY app.py .: Copies application code into container">COPY app.py .</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE 80 & CMD: Opens port 80 and executes Flask app">EXPOSE 80<br>CMD ["python", "app.py"]</span></div>
+          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies official Python 3.9 Linux base image">FROM python:3.9-slim</span><br><span class="vlab-hover-target" data-vlab-tooltip="WORKDIR /app: Sets container app directory">WORKDIR /app</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY requirements.txt & RUN pip: Installs Python dependencies inside container">COPY requirements.txt .<br>RUN pip install -r requirements.txt</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY app.py .: Copies application code into container">COPY app.py .</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE 5000 & CMD: Opens port 5000 and executes Flask app">EXPOSE 5000<br>CMD ["python", "app.py"]</span></div>
         </div>
       </div>
 
@@ -132,7 +136,7 @@
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399"><span class="vlab-hover-target" data-vlab-tooltip="docker run: Launches microservice in background (-d) mapping host port 8080 to container port 80 (-p)">docker run -d -p 8080:80 sum-microservice</span></div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399"><span class="vlab-hover-target" data-vlab-tooltip="docker run: Launches microservice in background (-d) mapping host port 5000 to container port 5000 (-p)">docker run -d -p 5000:5000 sum-microservice</span></div>
       </div>
     </div>
 
@@ -209,14 +213,18 @@
         <div class="vscode-preview-pane">
           <div class="vscode-preview-header">
             <i class="fa-solid fa-rotate-right" style="cursor:pointer;color:var(--blue)" title="Refresh Live Microservice Studio" onclick="refreshPreview()"></i>
+<<<<<<< HEAD:frontend/templates/lab4.html
             <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> <span id="previewUrlText">http://localhost:8080/sum/&lt;float:a&gt;/&lt;float:b&gt;</span></div>
+=======
+            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> <span id="previewUrlText">http://localhost:5000/add?a=10&b=20</span></div>
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
             <span class="badge badge-green" id="previewBadge">Offline</span>
           </div>
-          <div class="vscode-preview-body" id="previewContainer">
+          <div class="vscode-preview-body" id="previewContainer" style="overflow:hidden;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;height:100%">
             <div style="text-align:center;padding:60px 20px;color:#64748b">
               <i class="fa-solid fa-server" style="font-size:2.5rem;margin-bottom:12px;display:block"></i>
               <div style="font-weight:600;font-size:.95rem">Web Server Container Not Running</div>
-              <div style="font-size:.82rem;margin-top:4px">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 8080.</div>
+              <div style="font-size:.82rem;margin-top:4px">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 5000.</div>
             </div>
           </div>
         </div>
@@ -233,7 +241,7 @@
           <div class="line out">VS Code Integrated Terminal [bash/cmd]. Type docker commands below:</div>
           <div class="cursor-row">
             <span class="prompt">sum-microservice$&nbsp;</span>
-            <input type="text" id="vsTermInput" autocomplete="off" placeholder="type docker build -t sum-microservice . or docker run -d -p 8080:8080 sum-microservice">
+            <input type="text" id="vsTermInput" autocomplete="off" placeholder="type docker build -t sum-microservice . or docker run -d -p 5000:5000 sum-microservice">
           </div>
         </div>
       </div>
@@ -351,7 +359,6 @@ const isAlreadyVerified = document.getElementById('labConfig').dataset.verified 
 let files = {
   'app.py': ''
 };
-
 let currentFile = 'app.py';
 let containerRunning = false;
 
@@ -376,13 +383,17 @@ const tourSteps = [
   {
     num: 2,
     title: "Step 2: Test Compulsory Docker Commands",
-    desc: "Click inside the Integrated Terminal at the bottom and test compulsory Docker commands:\n1) docker build -t sum-microservice .\n2) docker run -d -p 8080:8080 sum-microservice",
+    desc: "Click inside the Integrated Terminal at the bottom and test compulsory Docker commands:\n1) docker build -t sum-microservice .\n2) docker run -d -p 5000:5000 sum-microservice",
     highlightId: "vsTerminal"
   },
   {
     num: 3,
     title: "Step 3: View Live Microservice & Verify Lab 4",
+<<<<<<< HEAD:frontend/templates/lab4.html
     desc: "Test numbers A and B on your live Flask Sum Microservice Studio on http://localhost:8080/sum/<a_val>/<b_val>. Click 'Submit & Verify Lab 4' at top right to complete.",
+=======
+    desc: "Test numbers A and B on your live Flask Sum Microservice Studio on http://localhost:5000/add?a=10&b=20. Click 'Submit & Verify Lab 4' at top right to complete.",
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
     highlightId: "previewContainer"
   }
 ];
@@ -596,7 +607,7 @@ function switchActivityTab(tabName) {
           <div style="font-weight:700;color:${containerRunning ? '#34d399' : '#94a3b8'};font-size:.82rem">
             ${containerRunning ? '🟢 sum-microservice:latest (Active)' : '⚪ sum-microservice (Stopped)'}
           </div>
-          <div style="font-size:.74rem;color:#94a3b8;margin-top:4px">Port Mapping: 0.0.0.0:8080 &rarr; 8080/tcp</div>
+          <div style="font-size:.74rem;color:#94a3b8;margin-top:4px">Port Mapping: 0.0.0.0:5000 &rarr; 5000/tcp</div>
         </div>
 
         <div style="font-weight:700;margin-bottom:6px;color:#38bdf8"><i class="fa-solid fa-chart-pie"></i> Resource Stats</div>
@@ -647,6 +658,20 @@ function updateChecklistStatus(type, isCompleted) {
 
 function updateChecklistUI(type) {
   updateChecklistStatus(type, true);
+}
+
+function checkCompulsoryCommand(cmd) {
+  const c = cmd.toLowerCase().trim();
+  if (c.includes('docker build')) {
+    testedState.build = true;
+    updateChecklistUI('build');
+    markStepBackend(4);
+  }
+  if (c.includes('docker run')) {
+    testedState.run = true;
+    updateChecklistUI('run');
+    markStepBackend(5);
+  }
 }
 
 function updateProgressTrack() {
@@ -1094,6 +1119,77 @@ function onCodeInput() {
   if (currentFile && files[currentFile] !== undefined) {
     files[currentFile] = document.getElementById('codeEditor').value;
   }
+  if (typeof pushUndoState === 'function') pushUndoState();
+  if (typeof checkCodeProgress === 'function') checkCodeProgress();
+  refreshPreview();
+}
+
+function refreshPreview() {
+  const container = document.getElementById('previewContainer');
+  const previewBadge = document.getElementById('previewBadge');
+  if (!container) return;
+
+  if (containerRunning) {
+    if (previewBadge) {
+      previewBadge.textContent = 'Live on Port 5000';
+      previewBadge.className = 'badge badge-green';
+    }
+
+    const appContent = (currentFile === 'app.py' ? document.getElementById('codeEditor').value : files['app.py']) || '';
+    const cleanAppContent = appContent.replace(/#.*/g, '').trim();
+    const hasFlaskCode = cleanAppContent && (cleanAppContent.toLowerCase().includes('flask') || cleanAppContent.toLowerCase().includes('@app.route'));
+
+    if (!hasFlaskCode) {
+      container.innerHTML = `
+        <div style="background:#ffffff;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:40px 20px;box-sizing:border-box">
+          <h2 style="font-size:1.5rem;font-weight:700;color:#0f172a;margin:0;font-family:sans-serif;text-align:center">No app.py content written yet.</h2>
+        </div>
+      `;
+    } else {
+      const hasStudio = document.getElementById('numAInput');
+      if (!hasStudio) {
+        container.innerHTML = `
+          <div style="padding:10px;color:var(--text);font-family:var(--sans);height:100%;box-sizing:border-box">
+            <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;box-sizing:border-box">
+              <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+                <span style="display:flex;align-items:center;color:#ffffff !important;font-weight:700;font-size:.88rem"><i class="fa-solid fa-globe" style="color:#38bdf8;margin-right:8px;font-size:1rem"></i> HTTP GET Request Parameters</span>
+                <span style="color:#34d399 !important;font-size:.72rem;font-weight:700;font-family:var(--mono);background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:4px;border:1px solid rgba(52,211,153,0.3)">HTTP 200 OK</span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div>
+                  <label style="font-size:.75rem;color:#cbd5e1 !important;display:block;margin-bottom:4px;font-weight:700">PARAM A</label>
+                  <input type="number" id="numAInput" value="" placeholder="e.g. 10" oninput="calculateSumInStudio()" style="width:100%;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:#ffffff !important;border-radius:6px;outline:none;font-family:var(--mono);box-sizing:border-box;font-size:.84rem;font-weight:600">
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:#cbd5e1 !important;display:block;margin-bottom:4px;font-weight:700">PARAM B</label>
+                  <input type="number" id="numBInput" value="" placeholder="e.g. 20" oninput="calculateSumInStudio()" style="width:100%;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:#ffffff !important;border-radius:6px;outline:none;font-family:var(--mono);box-sizing:border-box;font-size:.84rem;font-weight:600">
+                </div>
+              </div>
+
+              <div style="font-size:.8rem;font-weight:700;color:#ffffff !important;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <i class="fa-solid fa-code" style="color:#38bdf8;font-size:.95rem"></i> JSON Response Payload:
+              </div>
+              <pre id="microserviceJsonResponse" style="background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:14px 16px;color:#38bdf8;font-family:var(--mono);font-size:.85rem;line-height:1.5;font-weight:600;margin:0;box-sizing:border-box">{\n  "number1": 10,\n  "number2": 20,\n  "sum": 30\n}</pre>
+            </div>
+          </div>
+        `;
+      }
+      calculateSumInStudio();
+    }
+  } else {
+    if (previewBadge) {
+      previewBadge.textContent = 'Offline';
+      previewBadge.className = 'badge badge-muted';
+    }
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:#64748b">
+        <i class="fa-solid fa-server" style="font-size:2.5rem;margin-bottom:12px;display:block"></i>
+        <div style="font-weight:600;font-size:.95rem">Web Server Container Not Running</div>
+        <div style="font-size:.82rem;margin-top:4px">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 5000.</div>
+      </div>
+    `;
+  }
 }
 
 function highlightSyntax(code, filename) {
@@ -1155,19 +1251,41 @@ function calculateSumInStudio() {
 
   const urlText = document.getElementById('previewUrlText');
   if (urlText) {
+<<<<<<< HEAD:frontend/templates/lab4.html
     if (aVal !== '' || bVal !== '') {
       urlText.textContent = `http://localhost:8080/sum/${aVal}/${bVal}`;
     } else {
       urlText.textContent = 'http://localhost:8080/sum/<float:a>/<float:b>';
+=======
+    if (aVal !== '' && bVal !== '') {
+      urlText.textContent = `http://localhost:5000/add?a=${aVal}&b=${bVal}`;
+    } else if (aVal !== '') {
+      urlText.textContent = `http://localhost:5000/add?a=${aVal}&b=`;
+    } else if (bVal !== '') {
+      urlText.textContent = `http://localhost:5000/add?a=&b=${bVal}`;
+    } else {
+      urlText.textContent = 'http://localhost:5000/add?a=10&b=20';
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
     }
   }
 
-  if (aVal !== '' || bVal !== '') {
-    testedState.tested_sum = true;
-    markStepBackend(7);
+  if (aVal === '' && bVal === '') {
+    const resBox = document.getElementById('microserviceJsonResponse');
+    if (resBox) resBox.textContent = JSON.stringify({
+      "number1": 10,
+      "number2": 20,
+      "sum": 30
+    }, null, 2);
+    return;
   }
 
-  fetch(`/api/calculator/sum?a=${aVal}&b=${bVal}`)
+  testedState.tested_sum = true;
+  markStepBackend(7);
+
+  const numA = aVal !== '' ? aVal : '0';
+  const numB = bVal !== '' ? bVal : '0';
+
+  fetch(`/api/calculator/add?a=${numA}&b=${numB}`)
     .then(r => r.json())
     .then(d => {
       const resBox = document.getElementById('microserviceJsonResponse');
@@ -1175,7 +1293,9 @@ function calculateSumInStudio() {
     })
     .catch(err => {
       const resBox = document.getElementById('microserviceJsonResponse');
-      if (resBox) resBox.textContent = JSON.stringify({ sum: 0 }, null, 2);
+      if (resBox) resBox.textContent = JSON.stringify({
+        "error": "Please provide two valid numbers"
+      }, null, 2);
     });
 }
 
@@ -1186,13 +1306,17 @@ function insertBoilerplateCode() {
   const fn = currentFile.toLowerCase();
 
   if (fn === 'app.py' || fn.endsWith('.py')) {
+<<<<<<< HEAD:frontend/templates/lab4.html
     files[currentFile] = `from flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/sum/<float:a>/<float:b>')\ndef get_sum(a, b):\n    return {'sum': a + b}\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=80)`;
+=======
+    files[currentFile] = `from flask import Flask, request, jsonify\n\napp = Flask(__name__)\n\n@app.route('/add', methods=['GET'])\ndef add_numbers():\n    try:\n        a = float(request.args.get('a'))\n        b = float(request.args.get('b'))\n\n        return jsonify({\n            "number1": a,\n            "number2": b,\n            "sum": a + b\n        })\n\n    except (TypeError, ValueError):\n        return jsonify({\n            "error": "Please provide two valid numbers"\n        }), 400\n\n\n@app.route('/')\ndef home():\n    return "Addition Microservice is Running"\n\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)`;
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
   } else if (fn === 'dockerfile' || fn.includes('docker')) {
-    files[currentFile] = `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 80\nCMD ["python", "app.py"]`;
+    files[currentFile] = `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD ["python", "app.py"]`;
   } else if (fn === 'requirements.txt' || fn.includes('req')) {
     files[currentFile] = `flask==3.0.0`;
   } else if (fn === 'index.html' || fn.endsWith('.html')) {
-    files[currentFile] = `<!DOCTYPE html>\n<html>\n<head>\n  <title>Lab 4 Microservice</title>\n</head>\n<body>\n  <h1>Sum Microservice Studio</h1>\n  <p>Flask microservice running on port 80.</p>\n</body>\n</html>`;
+    files[currentFile] = `<!DOCTYPE html>\n<html>\n<head>\n  <title>Lab 4 Microservice</title>\n</head>\n<body>\n  <h1>Addition Microservice is Running</h1>\n  <p>Flask microservice running on port 5000.</p>\n</body>\n</html>`;
   }
 
   editor.value = files[currentFile] || '';
@@ -1204,11 +1328,8 @@ function insertBoilerplateCode() {
   }, 10);
 }
 
-function refreshPreview() {
-  const container = document.getElementById('previewContainer');
-  const badge = document.getElementById('previewBadge');
-  if (!container) return;
 
+<<<<<<< HEAD:frontend/templates/lab4.html
   if (!containerRunning) {
     if (badge) {
       badge.className = 'badge badge-muted';
@@ -1272,6 +1393,8 @@ function refreshPreview() {
   `;
   calculateSumInStudio();
 }
+=======
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
 
 function openInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
@@ -1286,7 +1409,7 @@ function submitLab4Completion() {
   if (!testedState.dockerfile) missing.push('• 2. Configure Microservice Dockerfile');
   if (!testedState.req) missing.push('• 3. Create Dependencies Specification (requirements.txt)');
   if (!testedState.build) missing.push('• 4. docker build -t sum-microservice .');
-  if (!testedState.run) missing.push('• 5. docker run -d -p 8080:80 sum-microservice');
+  if (!testedState.run) missing.push('• 5. docker run -d -p 5000:5000 sum-microservice');
 
   if (missing.length > 0) {
     const formattedText = '⚠️ Lab 4 Verification Blocked!\n\nYou must complete all compulsory tasks before completing Lab 4:\n\n' + missing.join('\n');
@@ -1314,7 +1437,7 @@ function submitLab4Completion() {
 document.addEventListener('DOMContentLoaded', function() {
   renderFileTree();
   renderTabs();
-  switchFile('app.py');
+  if (currentFile) switchFile(currentFile);
   refreshPreview();
 
   checkCodeProgress();
@@ -1520,6 +1643,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
           return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
         }
+<<<<<<< HEAD:frontend/templates/lab4.html
         return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
       })
       .then(res => {
@@ -1562,6 +1686,63 @@ document.addEventListener('DOMContentLoaded', function() {
           term.scrollTop = term.scrollHeight;
         }, 10);
       });
+=======
+        historyIndex = -1;
+        this.value = '';
+
+        const cursorRow = term.querySelector('.cursor-row');
+        const cmdLine = document.createElement('div');
+        cmdLine.className = 'line';
+        cmdLine.innerHTML = `<span class="prompt">student@docker-host:~$</span>&nbsp;<span class="cmd">${cmd.replace(/</g, '&lt;')}</span>`;
+        term.insertBefore(cmdLine, cursorRow);
+
+        const cleanCmd = cmd.toLowerCase().trim();
+        if (cleanCmd === 'clear' || cleanCmd === 'cls') {
+          const lines = term.querySelectorAll('.line');
+          lines.forEach(l => l.remove());
+          return;
+        }
+
+        // Trigger real backend shell execution (Docker Desktop / V-Lab Engine)
+        fetch('/api/terminal/exec', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ command: cmd, files: files })
+        })
+        .then(r => {
+          if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
+            return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
+          }
+          return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
+        })
+        .then(data => {
+          if (data.action === 'clear') {
+            const lines = term.querySelectorAll('.line');
+            lines.forEach(l => l.remove());
+            return;
+          }
+          if (data.ok) {
+            checkCompulsoryCommand(cmd);
+            if (cleanCmd.includes('docker run')) {
+              containerRunning = true;
+              refreshPreview();
+            }
+          }
+          const outLine = document.createElement('div');
+          outLine.className = data.ok ? 'line success-line' : 'line err';
+          outLine.innerHTML = (data.output || 'Command executed with no output.').replace(/\n/g, '<br>');
+          term.insertBefore(outLine, cursorRow);
+          term.scrollTop = term.scrollHeight;
+        })
+        .catch(err => {
+          const outLine = document.createElement('div');
+          outLine.className = 'line err';
+          outLine.textContent = 'Execution error: ' + (err.message || 'Unknown network error.');
+          term.insertBefore(outLine, cursorRow);
+          term.scrollTop = term.scrollHeight;
+        });
+      }
+>>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
     });
   }
 });

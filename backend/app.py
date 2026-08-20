@@ -84,11 +84,17 @@ LAB3_STEPS = [
 ]
 
 LAB4_STEPS = [
+<<<<<<< HEAD:backend/app.py
     {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask path parameters '/sum/<float:a>/<float:b>' returning their sum as JSON."},
     {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 80."},
     {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask dependency package."},
+=======
+    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask to receive two numbers 'a' and 'b' via route '/add' (e.g. /add?a=10&b=20) and return number1, number2, and sum as JSON."},
+    {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 5000."},
+    {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask==3.0.0 dependency package."},
+>>>>>>> 5cc487e (Updated changes and fixed errors):app.py
     {"id": 4, "title": "Build Microservice Docker Image", "desc": "Run 'docker build -t sum-microservice .' in the integrated VS Code terminal."},
-    {"id": 5, "title": "Run Microservice Container", "desc": "Run 'docker run -d -p 8080:80 sum-microservice' to start your calculator microservice."},
+    {"id": 5, "title": "Run Microservice Container", "desc": "Run 'docker run -d -p 5000:5000 sum-microservice' to start your calculator microservice."},
 ]
 
 
@@ -684,27 +690,14 @@ def auto_start_host_docker():
             pass
 
 
-def check_host_docker_status(retry_auto_start=True):
-    """Checks if real Docker daemon is running on the host system. Automatically launches Docker Desktop if installed."""
+def check_host_docker_status(retry_auto_start=False):
+    """Checks if real Docker daemon is running on the host system cleanly and quickly."""
     try:
-        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=4)
+        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=2)
         if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
             return True, "Local Docker Engine (Connected)"
     except Exception:
         pass
-
-    # If Docker daemon is not connected, attempt auto-starting Docker Desktop if installed
-    if retry_auto_start:
-        auto_start_host_docker()
-        # Retry polling docker info for a few seconds to allow daemon initialization
-        for _ in range(4):
-            time.sleep(1)
-            try:
-                res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=4)
-                if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
-                    return True, "Local Docker Engine (Connected)"
-            except Exception:
-                pass
 
     return False, "Virtual Docker Simulator (Active)"
 
@@ -727,6 +720,19 @@ def api_terminal_exec():
     student_id = session.get("student_id", "guest")
     workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
     os.makedirs(workspace_dir, exist_ok=True)
+    state = get_student_docker_state(student_id)
+
+    # Clean workspace directory on disk so it strictly matches active browser workspace
+    if os.path.exists(workspace_dir):
+        for item in os.listdir(workspace_dir):
+            item_path = os.path.join(workspace_dir, item)
+            try:
+                if os.path.isfile(item_path) or os.path.islink(item_path):
+                    os.unlink(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+            except Exception:
+                pass
 
     # Clean and write client workspace files passed from browser
     client_files = data.get("files", {})
@@ -740,7 +746,46 @@ def api_terminal_exec():
                 with open(fpath, "w", encoding="utf-8") as f:
                     f.write(clean_text)
 
-    state = get_student_docker_state(student_id)
+    # Ensure required build files exist in workspace_dir so docker build always succeeds seamlessly
+    df_path = os.path.join(workspace_dir, "Dockerfile")
+    if not os.path.exists(df_path) or os.path.getsize(df_path) == 0:
+        with open(df_path, "w", encoding="utf-8") as f:
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 80\nCMD [\"python\", \"app.py\"]")
+
+    app_file_path = os.path.join(workspace_dir, "app.py")
+    if not os.path.exists(app_file_path):
+        with open(app_file_path, "w", encoding="utf-8") as f:
+            f.write("# app.py\n")
+
+    req_file_path = os.path.join(workspace_dir, "requirements.txt")
+    if not os.path.exists(req_file_path):
+        with open(req_file_path, "w", encoding="utf-8") as f:
+            f.write("flask==3.0.0\n")
+
+    # Pre-validation for docker run: check if target image exists
+    if cmd_lower.startswith("docker run"):
+        tokens = cmd.split()
+        target_img = ""
+        skip_next = False
+        for i in range(2, len(tokens)):
+            if skip_next:
+                skip_next = False
+                continue
+            tok = tokens[i]
+            if tok in ("-p", "--name", "-e", "-v", "--port", "--publish", "--net", "--network", "--restart", "-u", "--user", "-w", "--workdir"):
+                skip_next = True
+                continue
+            if tok.startswith("-"):
+                continue
+            target_img = tok.strip()
+            break
+
+        repo_name = target_img.split(":")[0] if target_img else ""
+        if repo_name and repo_name != "hello-world":
+            image_exists = (repo_name in state.get("images", {}))
+            if not image_exists:
+                out = f"Unable to find image '{target_img}:latest' locally\ndocker: Error response from daemon: No such image: {target_img}:latest.\nRun 'docker build -t {target_img} .' first!"
+                return jsonify({"ok": False, "output": out})
 
     # Hybrid Docker Execution Selector: Real System Docker vs Virtual Docker Simulator
     has_real_docker, docker_msg = check_host_docker_status()
@@ -753,27 +798,33 @@ def api_terminal_exec():
 
             # Handle placeholder <container_id> cleanly to prevent Windows Shell redirect error
             if "<container_id>" in cmd_lower or "<container" in cmd_lower or ("<" in cmd and ">" in cmd):
-                ps_res = subprocess.run("docker ps -a --format \"{{.ID}}\"", shell=True, capture_output=True, text=True)
+                ps_res = subprocess.run("docker ps -a --format \"{{.ID}}\"", shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
                 container_ids = [line.strip() for line in ps_res.stdout.splitlines() if line.strip()]
                 if container_ids:
                     real_id = container_ids[0]
                     exec_cmd = re.sub(r'<[^>]+>', real_id, exec_cmd)
-                    res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
+                    res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
                 else:
                     return jsonify({"ok": True, "output": "e7a9c31b8f42", "docker_engine": "local"})
             else:
-                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
             
+<<<<<<< HEAD:backend/app.py
             # Auto-healing: If port allocation failed (e.g. port 8080 or 80 already bound by old container), auto-free port and retry!
             err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
             if res.returncode != 0 and ("port is already allocated" in err_lower or "address already in use" in err_lower):
                 ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True)
+=======
+            # Auto-healing: If port allocation failed (e.g. port 8080 already bound by old container), auto-free port 8080 and retry!
+            if res.returncode != 0 and ("port is already allocated" in res.stderr.lower() or "port is already allocated" in res.stdout.lower()):
+                ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
+>>>>>>> 5cc487e (Updated changes and fixed errors):app.py
                 if ps_res.stdout:
                     for line in ps_res.stdout.splitlines():
                         if "8080" in line or "80" in line:
                             cnt_id = line.split()[0]
-                            subprocess.run(f"docker rm -f {cnt_id}", shell=True, capture_output=True)
-                res = subprocess.run(cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
+                            subprocess.run(f"docker rm -f {cnt_id}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+                res = subprocess.run(cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
 
             is_ok = (res.returncode == 0)
             stdout_text = res.stdout.strip() if res.stdout else ""
@@ -813,6 +864,18 @@ def api_terminal_exec():
                         "created": "Just now",
                         "size": "13.3kB"
                     }
+                    if not out or out.strip() == "Command executed successfully.":
+                        out = (
+                            f"[+] Building 1.4s (6/6) FINISHED\n"
+                            f" => [internal] load build definition from Dockerfile\n"
+                            f" => => transferring dockerfile: 210B\n"
+                            f" => [1/4] FROM docker.io/library/python:3.9-slim\n"
+                            f" => [2/4] WORKDIR /app\n"
+                            f" => [3/4] COPY requirements.txt . && RUN pip install -r requirements.txt\n"
+                            f" => [4/4] COPY app.py .\n"
+                            f" => exporting to image {repo_name}:{tag_ver}\n"
+                            f"Successfully built docker image {repo_name}:{tag_ver}"
+                        )
                 elif cmd_lower.startswith("docker run"):
                     tokens = cmd.split()
                     target_img = ""
@@ -856,283 +919,17 @@ def api_terminal_exec():
             # Seamless fallback to Virtual Docker Simulator if system Docker encounters an issue
             pass
 
-    # Intercept all Docker CLI commands directly in Python for deterministic, strict per-student validation
-    if cmd_lower.startswith("docker"):
-        if cmd_lower.startswith("docker build"):
-            df_path = os.path.join(workspace_dir, "Dockerfile")
-            if not os.path.exists(df_path) or os.path.getsize(df_path) == 0:
-                out = "ERROR: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory\nPlease click + in VS Code Explorer to create a Dockerfile first!"
-                return jsonify({"ok": False, "output": out})
-
-            tag_name = ""
-            tokens = cmd.split()
-            for i, tok in enumerate(tokens):
-                if tok in ("-t", "--tag") and i + 1 < len(tokens):
-                    tag_name = tokens[i + 1].strip()
-                    break
-                elif tok.startswith("-t=") or tok.startswith("--tag="):
-                    tag_name = tok.split("=", 1)[1].strip()
-                    break
-            
-            if not tag_name:
-                tag_name = "hello-web:latest"
-
-            repo_name = tag_name.split(":")[0]
-            tag_ver = tag_name.split(":")[1] if ":" in tag_name else "latest"
-            img_id = hashlib.md5(tag_name.encode()).hexdigest()[:12]
-
-            state["images"][repo_name] = {
-                "repo": repo_name,
-                "tag": tag_ver,
-                "id": img_id,
-                "created": "Just now",
-                "size": "13.3kB"
-            }
-
-            out = (
-                f"[+] Building 1.2s (4/4) FINISHED\n"
-                f" => [internal] load build definition from Dockerfile\n"
-                f" => => transferring dockerfile: 210B\n"
-                f" => [internal] load .dockerignore\n"
-                f" => [1/2] FROM docker.io/library/nginx:alpine\n"
-                f" => [2/2] COPY index.html /usr/share/nginx/html/index.html\n"
-                f" => exporting to image {repo_name}:{tag_ver}\n"
-                f"Successfully built docker image {repo_name}:{tag_ver}"
-            )
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker run"):
-            tokens = cmd.split()
-            target_img = ""
-            skip_next = False
-            for i in range(2, len(tokens)):
-                if skip_next:
-                    skip_next = False
-                    continue
-                tok = tokens[i]
-                if tok in ("-p", "--name", "-e", "-v", "--port", "--publish", "--net", "--network", "--restart", "-u", "--user", "-w", "--workdir"):
-                    skip_next = True
-                    continue
-                if tok.startswith("-"):
-                    continue
-                target_img = tok.strip()
-                break
-
-            repo_name = target_img.split(":")[0] if target_img else ""
-            if not repo_name:
-                return jsonify({"ok": False, "output": '"docker run" requires at least 1 argument.\nSee \'docker run --help\'.'})
-
-            was_image_present = (repo_name in state["images"])
-            is_hello_world = (repo_name == "hello-world")
-
-            # If image is not local, auto-pull / register image from registry (standard Docker behavior)
-            if not was_image_present:
-                tag_ver = target_img.split(":")[1] if ":" in target_img else "latest"
-                img_id = hashlib.md5(target_img.encode()).hexdigest()[:12]
-                state["images"][repo_name] = {
-                    "repo": repo_name,
-                    "tag": tag_ver,
-                    "id": img_id,
-                    "created": "Just now",
-                    "size": "13.3kB"
-                }
-
-            # Create container instance
-            cnt_id = hashlib.md5((target_img + str(time.time())).encode()).hexdigest()[:12]
-            cnt_name = repo_name + "-container"
-            state["containers"].append({
-                "id": cnt_id,
-                "image": repo_name,
-                "command": '"/hello"' if is_hello_world else '"/docker-entrypoint.…"',
-                "created": "Just now",
-                "status": "Exited (0) Just now" if is_hello_world else "Up 1 minute",
-                "ports": "" if is_hello_world else "0.0.0.0:8080->80/tcp",
-                "name": cnt_name
-            })
-
-            if is_hello_world:
-                pull_prefix = ""
-                if not was_image_present:
-                    pull_prefix = (
-                        "Unable to find image 'hello-world:latest' locally\n"
-                        "latest: Pulling from library/hello-world\n"
-                        "c1ec31b23086: Pull complete\n"
-                        "Digest: sha256:7d92237b5100e2802c89288e285a85532a76f2812480373\n"
-                        "Status: Downloaded newer image for hello-world:latest\n\n"
-                    )
-                hello_msg = (
-                    "Hello from Docker!\n"
-                    "This message shows that your installation appears to be working correctly.\n\n"
-                    "To generate this message, Docker took the following steps:\n"
-                    " 1. The Docker client contacted the Docker daemon.\n"
-                    " 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.\n"
-                    "    (amd64)\n"
-                    " 3. The Docker daemon created a new container from that image which runs the\n"
-                    "    executable that produces the output you are currently reading.\n"
-                    " 4. The Docker daemon streamed that output to the Docker client, which sent it\n"
-                    "    to your terminal.\n\n"
-                    "To run an interactive container, try:\n"
-                    " $ docker run -it ubuntu bash\n\n"
-                    "For more examples and ideas, visit:\n"
-                    " https://docs.docker.com/get-started/"
-                )
-                return jsonify({"ok": True, "output": pull_prefix + hello_msg})
-
-            full_hash = cnt_id * 5
-            pull_prefix = ""
-            if not was_image_present:
-                tag_ver = target_img.split(":")[1] if ":" in target_img else "latest"
-                pull_prefix = (
-                    f"Unable to find image '{target_img}' locally\n"
-                    f"{tag_ver}: Pulling from library/{repo_name}\n"
-                    f"c1ec31b23086: Pull complete\n"
-                    f"Digest: sha256:{cnt_id}7b92237b5100e2802c89288e285a85532a76f2812480373\n"
-                    f"Status: Downloaded newer image for {repo_name}:{tag_ver}\n\n"
-                )
-            out = f"{pull_prefix}{full_hash}\nContainer '{cnt_name}' (Image: {repo_name}) launched in background on http://localhost:8080!"
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker pull"):
-            tokens = cmd.split()
-            pulled_img = "hello-world"
-            for tok in tokens[2:]:
-                if not tok.startswith("-"):
-                    pulled_img = tok.strip()
-                    break
-
-            repo_name = pulled_img.split(":")[0]
-            tag_ver = pulled_img.split(":")[1] if ":" in pulled_img else "latest"
-            img_id = hashlib.md5(pulled_img.encode()).hexdigest()[:12]
-
-            state["images"][repo_name] = {
-                "repo": repo_name,
-                "tag": tag_ver,
-                "id": img_id,
-                "created": "Just now",
-                "size": "13.3kB"
-            }
-
-            out = (
-                f"Using default tag: {tag_ver}\n"
-                f"{tag_ver}: Pulling from library/{repo_name}\n"
-                f"c1ec31b23086: Pull complete\n"
-                f"Digest: sha256:{img_id}7b92237b5100e2802c89288e285a85532a76f2812480373\n"
-                f"Status: Downloaded newer image for {repo_name}:{tag_ver}\n"
-                f"docker.io/library/{repo_name}:{tag_ver}"
-            )
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker images"):
-            images_db = state["images"]
-            lines = [f"{'REPOSITORY':<20}{'TAG':<10}{'IMAGE ID':<15}{'CREATED':<15}{'SIZE'}"]
-            if not images_db:
-                out = "REPOSITORY           TAG        IMAGE ID       CREATED        SIZE"
-            else:
-                for img in images_db.values():
-                    lines.append(f"{img['repo']:<20}{img['tag']:<10}{img['id']:<15}{img['created']:<15}{img['size']}")
-                out = "\n".join(lines)
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker ps"):
-            containers_db = state["containers"]
-            lines = [f"{'CONTAINER ID':<15}{'IMAGE':<20}{'COMMAND':<25}{'CREATED':<15}{'STATUS':<15}{'PORTS':<22}{'NAMES'}"]
-            if not containers_db:
-                out = "CONTAINER ID   IMAGE   COMMAND   CREATED   STATUS   PORTS   NAMES"
-            else:
-                for cnt in containers_db:
-                    lines.append(f"{cnt['id']:<15}{cnt['image']:<20}{cnt['command']:<25}{cnt['created']:<15}{cnt['status']:<15}{cnt['ports']:<22}{cnt['name']}")
-                out = "\n".join(lines)
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker stop"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            found_id = ""
-            for cnt in state["containers"]:
-                if not target or target in (cnt["id"], cnt["name"], cnt["image"]) or target.startswith("<"):
-                    cnt["status"] = "Exited (0) Just now"
-                    found_id = cnt["id"]
-                    break
-            out = found_id if found_id else (target if (target and not target.startswith("<")) else "e7a9c31b8f42")
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker start"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            found_id = ""
-            for cnt in state["containers"]:
-                if not target or target in (cnt["id"], cnt["name"], cnt["image"]) or target.startswith("<"):
-                    cnt["status"] = "Up 1 minute"
-                    found_id = cnt["id"]
-                    break
-            out = found_id if found_id else (target if (target and not target.startswith("<")) else "e7a9c31b8f42")
-            return jsonify({"ok": True, "output": out})
-
-        elif "system prune" in cmd_lower or "docker prune" in cmd_lower:
-            state["containers"] = [c for c in state["containers"] if "Exited" not in c.get("status", "")]
-            out = (
-                "WARNING! This will remove:\n"
-                "  - all stopped containers\n"
-                "  - all networks not used by at least one container\n"
-                "  - all dangling images\n"
-                "  - all dangling build cache\n\n"
-                "Deleted Containers:\n"
-                "e7a9c31b8f42d90a12f5a6b0c9d8e7f6a5b4c3d2e1\n\n"
-                "Total reclaimed space: 14.8MB"
-            )
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker rmi") or cmd_lower.startswith("docker image rm"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            repo_name = target.split(":")[0] if target else ""
-            is_force = "-f" in tokens or "--force" in tokens
-
-            if not repo_name or repo_name not in state["images"]:
-                return jsonify({"ok": False, "output": f"Error response from daemon: No such image: {target}:latest"})
-
-            # Check if container is running from this image
-            using_containers = [c for c in state["containers"] if c["image"] == repo_name]
-            if using_containers and not is_force:
-                cnt_id = using_containers[0]["id"]
-                out = f"Error response from daemon: conflict: unable to remove repository reference \"{repo_name}\" (must force -f) - container {cnt_id} is using its referenced image"
-                return jsonify({"ok": False, "output": out})
-
-            # Remove image
-            img_data = state["images"].pop(repo_name, {})
-            if is_force and using_containers:
-                state["containers"] = [c for c in state["containers"] if c["image"] != repo_name]
-
-            out = f"Untagged: {repo_name}:latest\nDeleted: sha256:{img_data.get('id', 'd2c45389635d')}7b92237b5100e2802c89288e285a85532a76f2812480373"
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker rm") or cmd_lower.startswith("docker container rm"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            is_force = "-f" in tokens or "--force" in tokens
-            
-            new_containers = []
-            removed = []
-            for cnt in state["containers"]:
-                if target and (target in cnt["id"] or target in cnt["name"] or target in cnt["image"] or target.startswith("<")):
-                    removed.append(cnt["id"])
-                else:
-                    new_containers.append(cnt)
-            
-            if removed:
-                state["containers"] = new_containers
-                return jsonify({"ok": True, "output": "\n".join(removed)})
-            elif state["containers"]:
-                cnt = state["containers"].pop(0)
-                return jsonify({"ok": True, "output": cnt["id"]})
-            else:
-                return jsonify({"ok": True, "output": "e7a9c31b8f42"})
-
-        elif cmd_lower.startswith("docker info"):
-            cnt_count = len(state["containers"])
-            img_count = len(state["images"])
-            out = f"Client:\n Context:    default\n Debug Mode: false\n\nServer:\n Containers: {cnt_count}\n  Running: {cnt_count}\n  Paused: 0\n  Stopped: 0\n Images: {img_count}\n Server Version: 27.3.1\n Storage Driver: overlay2"
-            return jsonify({"ok": True, "output": out})
+    # Require real Docker Desktop daemon to be running for all Docker CLI execution
+    if cmd_lower.startswith("docker") and not has_real_docker:
+        out = (
+            "ERROR: Cannot connect to the Docker daemon.\n"
+            "----------------------------------------------------------------------\n"
+            "Docker Desktop is NOT running on your machine.\n"
+            "Please first launch Docker Desktop on your computer, wait for the\n"
+            "whale icon to show 'Docker Desktop is running', and then try again.\n"
+            "----------------------------------------------------------------------"
+        )
+        return jsonify({"ok": False, "output": out})
 
     # Run non-docker command in subshell with timeout inside workspace directory
     try:
@@ -1422,7 +1219,7 @@ def api_lab4_verify():
         if not tested.get("build"):
             missing_labels.append("Run 'docker build -t sum-microservice .' in terminal")
         if not tested.get("run"):
-            missing_labels.append("Run 'docker run -d -p 8080:80 sum-microservice' in terminal")
+            missing_labels.append("Run 'docker run -d -p 5000:5000 sum-microservice' in terminal")
             
         msg = "Verification failed! You must complete all required tasks:\n" + "\n".join(f"• {lbl}" for lbl in missing_labels)
         return jsonify({"ok": False, "message": msg})
@@ -1450,27 +1247,44 @@ def api_lab4_verify():
     return jsonify({"ok": True, "message": "Lab 4 Verification Passed! Sum Microservice created, containerized, and verified successfully."})
 
 
+@app.route("/api/calculator/add", methods=["GET", "POST"])
+@app.route("/api/calculator/sum/<path:a_val>/<path:b_val>", methods=["GET", "POST"])
 @app.route("/api/calculator/sum", methods=["GET", "POST"])
-def api_calculator_sum():
+def api_calculator_sum(a_val=None, b_val=None):
     """Live Sum Microservice API Endpoint for Lab 4 container testing."""
-    if request.method == "POST":
-        data = request.get_json(silent=True) or request.form
-        a_val = data.get("a", "")
-        b_val = data.get("b", "")
-    else:
-        a_val = request.args.get("a", "")
-        b_val = request.args.get("b", "")
+    student_id = session.get("student_id", "guest")
+    app_path = os.path.join(app.root_path, "workspaces", str(student_id), "app.py")
+    
+    app_has_code = False
+    if os.path.exists(app_path):
+        try:
+            with open(app_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content and "flask" in content.lower():
+                    app_has_code = True
+        except Exception:
+            pass
 
-    if a_val == "" or b_val == "":
-        return jsonify({"sum": 0})
+    if a_val is None or b_val is None:
+        if request.method == "POST":
+            data = request.get_json(silent=True) or request.form
+            a_val = data.get("a")
+            b_val = data.get("b")
+        else:
+            a_val = request.args.get("a")
+            b_val = request.args.get("b")
 
     try:
         a = float(a_val)
         b = float(b_val)
         res_sum = a + b
-        return jsonify({"sum": int(res_sum) if res_sum.is_integer() else res_sum})
+        return jsonify({
+            "number1": a,
+            "number2": b,
+            "sum": int(res_sum) if res_sum.is_integer() else res_sum
+        })
     except (ValueError, TypeError):
-        return jsonify({"sum": 0})
+        return jsonify({"error": "Please provide two valid numbers"}), 400
 
 
 @app.route("/student/lab3")

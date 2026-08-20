@@ -118,7 +118,7 @@
   </div>
 
   <!-- Lab 2 card -->
-  <div class="card fade-in {% if verified2 %}card-success{% endif %}" style="animation-delay:.25s{% if not verified %};opacity:0.85{% endif %}">
+  <div class="card fade-in {% if verified2 %}card-success{% endif %} {% if not verified %}card-locked{% endif %}" style="animation-delay:.25s">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
       <div style="flex:1;min-width:240px">
         <h3><i class="fa-solid fa-code"></i> CO1 &middot; Module 2</h3>
@@ -160,7 +160,7 @@
   </div>
 
   <!-- Lab 3 card (Experiment 3) -->
-  <div class="card fade-in {% if verified3 %}card-success{% endif %}" style="animation-delay:.3s{% if not verified2 %};opacity:0.85{% endif %}">
+  <div class="card fade-in {% if verified3 %}card-success{% endif %} {% if not verified2 %}card-locked{% endif %}" style="animation-delay:.3s">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
       <div style="flex:1;min-width:240px">
         <h3><i class="fa-brands fa-docker"></i> CO1 &middot; Module 3</h3>
@@ -202,12 +202,12 @@
   </div>
 
   <!-- Lab 4 card -->
-  <div class="card fade-in {% if verified4 %}card-success{% endif %}" style="animation-delay:.35s{% if not verified3 %};opacity:0.85{% endif %}">
+  <div class="card fade-in {% if verified4 %}card-success{% endif %} {% if not verified3 %}card-locked{% endif %}" style="animation-delay:.35s">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
       <div style="flex:1;min-width:240px">
         <h3><i class="fa-solid fa-calculator"></i> CO1 &middot; Module 4</h3>
         <h2 style="font-size:1.3rem">Build &amp; Containerize a Sum Microservice</h2>
-        <p style="margin:8px 0 14px">Develop a Python Flask microservice that accepts two numbers <code>a</code> and <code>b</code> and returns their sum as JSON. Write code, configure Dockerfile, build container image, run on port 8080, and test calculation live.</p>
+        <p style="margin:8px 0 14px">Develop a Python Flask microservice that accepts two numbers <code>a</code> and <code>b</code> and returns their sum as JSON. Write code, configure Dockerfile, build container image, run on port 5000, and test calculation live.</p>
         {% if verified4 %}
           <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> Completed</span>
         {% elif steps_done4|length > 0 %}

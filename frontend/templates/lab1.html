@@ -1,26 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Lab 1 - Install Docker Desktop{% endblock %}
 {% block body %}
-<div class="topbar">
-  <div class="brand">
-    <span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span>
-    <span>V-Lab &middot; Docker Desktop Setup &amp; Verification Studio</span>
-    <span class="live-dot"></span>
-  </div>
-  <div class="topbar-right">
-    <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
-    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
-    <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
-  </div>
-</div>
 
-<div class="wrap" style="max-width:100%;padding:16px 24px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="wrap" style="max-width:100%;padding:0 0 40px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
     <div>
       <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
       <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 1: Install Docker Desktop &amp; Verify Environment</h2>
     </div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
       <button class="btn btn-outline" onclick="showLabVideoModal(1)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
       <button class="btn btn-outline" onclick="showTicketModal(1)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>

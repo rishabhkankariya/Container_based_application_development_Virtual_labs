@@ -1,0 +1,650 @@
+{% extends "base.html" %}
+
+{% block title %}Container-Based Application Development | Virtual Labs{% endblock %}
+
+{% block body %}
+{% set score_data = score_data if (score_data is defined and score_data and score_data.skills) else {
+  'is_logged_in': False,
+  'student_name': '',
+  'overall_pct': 0,
+  'level': 'Novice Level',
+  'skills': [
+    {'id': 'l1_s1', 'title': 'Virtualization & Specs Audit (Lab 1)', 'done': False},
+    {'id': 'l1_s2', 'title': 'Running First Container (<code>docker run hello-world</code>)', 'done': False},
+    {'id': 'l2_s1', 'title': 'Writing Custom Nginx Dockerfiles (Lab 2)', 'done': False},
+    {'id': 'l2_s2', 'title': 'Port Binding & Mapping (<code>8080:80</code>)', 'done': False},
+    {'id': 'l3_s1', 'title': 'Detached Execution Mode (<code>docker run -d</code>) (Lab 3)', 'done': False},
+    {'id': 'l3_s2', 'title': 'System Resource Pruning (<code>docker system prune</code>)', 'done': False},
+    {'id': 'l4_s1', 'title': 'Flask Microservice API Packaging (Lab 4)', 'done': False},
+    {'id': 'l4_s2', 'title': 'Docker Hub Authentication & Image Registry Push', 'done': False}
+  ]
+} %}
+<!-- Ambient Living Background Glow Orbs -->
+<div class="living-bg-orb orb-cyan"></div>
+<div class="living-bg-orb orb-purple"></div>
+
+<!-- Hero Section (Clean Meridian Aesthetic) -->
+<section class="hero-wrapper">
+  <div class="hero-content flex flex-col items-center text-center">
+    <div class="hero-badge-pill">
+      <span class="hero-badge-dot"></span>
+      <span>Virtual Docker Engine 27.x Active • Zero Local Setup Needed</span>
+    </div>
+
+    <h1 class="hero-title">
+      Master Docker in <span class="gradient-text">Virtual Labs</span>
+    </h1>
+
+    <p class="hero-description">
+      An ultra-clean, browser-native virtual learning environment. Practice image construction, Nginx port mapping, container lifecycle states, and REST microservices with live host subprocess telemetry.
+    </p>
+
+    <div class="hero-cta-buttons">
+      <a href="#curriculum" class="btn-hero-primary">
+        <i class="fa-solid fa-compass"></i>
+        <span>Explore Virtual Labs</span>
+      </a>
+      <button class="btn-hero-secondary" onclick="openLoginRoleModal()">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Portal Login</span>
+      </button>
+    </div>
+
+    <!-- Component 1: Interactive Living Terminal Simulator (Hero) -->
+    <div class="sandbox-preview-container interactive-terminal-card" style="max-width:980px;margin:0 auto">
+      <div class="term-topbar">
+        <div class="term-controls">
+          <span class="term-control-dot term-dot-red"></span>
+          <span class="term-control-dot term-dot-yellow"></span>
+          <span class="term-control-dot term-dot-green"></span>
+        </div>
+        <div style="font-family:var(--mono);font-size:.78rem;color:var(--muted);font-weight:600">
+          <i class="fa-solid fa-terminal" style="margin-right:6px;color:var(--blue)"></i>Interactive Command Playground
+        </div>
+        <div class="term-demo-tabs">
+          <button class="term-demo-btn active" onclick="runTermDemo('run', this)">docker run</button>
+          <button class="term-demo-btn" onclick="runTermDemo('build', this)">docker build</button>
+          <button class="term-demo-btn" onclick="runTermDemo('ps', this)">docker ps</button>
+          <button class="term-demo-btn" onclick="runTermDemo('prune', this)">system prune</button>
+        </div>
+      </div>
+      <div class="term-output-area" id="interactiveTermOutput">
+        <!-- Default Content -->
+        <div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker run -d -p 8080:80 nginx:latest</span></div>
+        <div class="output-dim">Unable to find image 'nginx:latest' locally...</div>
+        <div class="output-dim">latest: Pulling from library/nginx</div>
+        <div class="output-dim">a2abf6c4d29d: Pull complete [===================>] 31.5MB/31.5MB</div>
+        <div class="output-success">Status: Downloaded newer image for nginx:latest</div>
+        <div style="color:var(--purple);font-weight:700">7f9c8d1e2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d</div>
+        <div style="margin-top:6px"><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker ps</span></div>
+        <div style="color:var(--blue)">CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS</div>
+        <div>7f9c8d1e2a3b   nginx:latest   "/docker-entrypoint.…"   2 seconds ago   Up 2 seconds   0.0.0.0:8080->80/tcp</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<section style="padding:0 24px 60px">
+  <div class="clean-container">
+    <div class="hero-stats-grid motion-stagger-group">
+      <div class="hero-stat-card">
+        <div class="stat-icon" style="color:var(--blue)"><i class="fa-solid fa-cubes"></i></div>
+        <div class="stat-val">4</div>
+        <div class="stat-lbl">Interactive Lab Modules</div>
+        <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--blue),#0072ff)"></div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="stat-icon" style="color:var(--green)"><i class="fa-solid fa-list-check"></i></div>
+        <div class="stat-val">26+</div>
+        <div class="stat-lbl">Guided Hands-on Tasks</div>
+        <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--green),#059669)"></div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="stat-icon" style="color:var(--purple)"><i class="fa-solid fa-bolt"></i></div>
+        <div class="stat-val">100%</div>
+        <div class="stat-lbl">Subprocess Telemetry</div>
+        <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--purple),#7c3aed)"></div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="stat-icon" style="color:var(--amber)"><i class="fa-solid fa-cloud"></i></div>
+        <div class="stat-val">0</div>
+        <div class="stat-lbl">Installs Required</div>
+        <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--amber),#d97706)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Component 2: Side-by-Side Interactive Curriculum Explorer (Meridian Style) -->
+<section id="curriculum" class="section-padding" style="background:rgba(15, 23, 42, 0.3)">
+  <div class="clean-container">
+    <div class="section-header">
+      <span class="meridian-pill">Interactive Syllabus</span>
+      <h2 class="meridian-heading">Curriculum Explorer</h2>
+      <p class="meridian-subheading">Select any lab module to explore learning objectives, compulsory terminal commands, and estimated completion time.</p>
+    </div>
+
+    <div class="curriculum-explorer-grid">
+      <!-- Selector List Left -->
+      <div class="lab-selector-list">
+        <div class="lab-select-tab active" onclick="switchLabExplorer(1, this)">
+          <div>
+            <span class="lab-tab-num">Lab 01</span>
+            <div class="lab-tab-title">Docker Desktop & System Audit</div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color:var(--muted)"></i>
+        </div>
+
+        <div class="lab-select-tab" onclick="switchLabExplorer(2, this)">
+          <div>
+            <span class="lab-tab-num">Lab 02</span>
+            <div class="lab-tab-title">Nginx Web Containerization</div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color:var(--muted)"></i>
+        </div>
+
+        <div class="lab-select-tab" onclick="switchLabExplorer(3, this)">
+          <div>
+            <span class="lab-tab-num">Lab 03</span>
+            <div class="lab-tab-title">Container Lifecycle & Pruning</div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color:var(--muted)"></i>
+        </div>
+
+        <div class="lab-select-tab" onclick="switchLabExplorer(4, this)">
+          <div>
+            <span class="lab-tab-num">Lab 04</span>
+            <div class="lab-tab-title">Microservice REST API & Registry</div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color:var(--muted)"></i>
+        </div>
+      </div>
+
+      <!-- Display Panel Right -->
+      <div class="explorer-display-panel" id="labExplorerDisplay">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <span class="tag-diff-easy" id="expDiff">Beginner Level</span>
+            <span style="font-size:.85rem;color:var(--muted);font-weight:600"><i class="fa-regular fa-clock" style="margin-right:6px"></i><span id="expTime">20 Minutes</span></span>
+          </div>
+
+          <h3 id="expTitle" style="font-size:1.6rem;font-weight:800;color:var(--text);margin-bottom:12px">Lab 1: Docker Desktop Setup & Hardware Audit</h3>
+          <p id="expDesc" style="font-size:.95rem;color:var(--muted);line-height:1.6;margin-bottom:24px">Verify hardware virtualization compatibility, audit available RAM and CPU cores, install Docker Desktop, and execute your first container verification.</p>
+
+          <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);font-weight:800;margin-bottom:12px">Compulsory Learning Outcomes:</h4>
+          <ul class="lab-topics-list" id="expTopics">
+            <li><i class="fa-solid fa-circle-check"></i> System Hardware & Virtualization Spec Check</li>
+            <li><i class="fa-solid fa-circle-check"></i> Docker Desktop Installation & Backend Setup</li>
+            <li><i class="fa-solid fa-circle-check"></i> Executing `docker --version` & Daemon Checks</li>
+            <li><i class="fa-solid fa-circle-check"></i> Running First Container (`docker run hello-world`)</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--border)">
+          <div style="font-size:.85rem;color:var(--muted)">Prerequisite: <strong style="color:var(--green)">None</strong></div>
+          <button class="btn btn-primary" onclick="openLoginRoleModal()" style="border-radius:30px;padding:10px 24px">
+            <span>Launch Lab Module</span>
+            <i class="fa-solid fa-arrow-right" style="margin-left:8px"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Component 3: Features Grid with Filter Tabs -->
+<section id="features" class="section-padding">
+  <div class="clean-container">
+    <div class="section-header">
+      <span class="meridian-pill">Platform Capabilities</span>
+      <h2 class="meridian-heading">Engineered for Container Learning</h2>
+      <p class="meridian-subheading">Discover the underlying infrastructure powering real-time terminal sandboxing and automated progress tracking.</p>
+    </div>
+
+    <!-- Feature Filter Bar -->
+    <div class="feature-filter-bar">
+      <button class="filter-btn active" onclick="filterFeatures('all', this)">All Features</button>
+      <button class="filter-btn" onclick="filterFeatures('engine', this)">Container Engine</button>
+      <button class="filter-btn" onclick="filterFeatures('telemetry', this)">Telemetry & Diagnostics</button>
+      <button class="filter-btn" onclick="filterFeatures('faculty', this)">Faculty Tools</button>
+    </div>
+
+    <div class="features-container-grid" id="featuresGrid">
+      <div class="feature-box" data-category="engine">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-terminal"></i></div>
+        <h3 class="feature-title">Integrated Terminal Engine</h3>
+        <p style="font-size:.9rem;color:var(--muted)">Run real or simulated Docker CLI instructions directly from your browser with live streaming stdout and stderr logs.</p>
+      </div>
+
+      <div class="feature-box" data-category="telemetry">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-chart-line"></i></div>
+        <h3 class="feature-title">Real-Time Telemetry</h3>
+        <p style="font-size:.9rem;color:var(--muted)">Monitor CPU usage, RAM allocations, disk space, and process PIDs live using Python's `psutil` integration.</p>
+      </div>
+
+      <div class="feature-box" data-category="engine">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-circle-check"></i></div>
+        <h3 class="feature-title">Automated Verification</h3>
+        <p style="font-size:.9rem;color:var(--muted)">Instant automated verification engines validate command outputs and automatically award completion status in the database.</p>
+      </div>
+
+      <div class="feature-box" data-category="faculty">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-users-gear"></i></div>
+        <h3 class="feature-title">Faculty Control Center</h3>
+        <p style="font-size:.9rem;color:var(--muted)">Educators can bulk-import student rosters via Excel (.xlsx), monitor student progress, and publish lecture videos.</p>
+      </div>
+
+      <div class="feature-box" data-category="engine">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-rotate"></i></div>
+        <h3 class="feature-title">Dual Execution Sandbox</h3>
+        <p style="font-size:.9rem;color:var(--muted)">Seamlessly switches between host system Docker Desktop and virtual sandbox engine so every student can complete labs.</p>
+      </div>
+
+      <div class="feature-box" data-category="faculty">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-headset"></i></div>
+        <h3 class="feature-title">Support Ticket Portal</h3>
+        <p style="font-size:.9rem;color:var(--muted)">Students can submit support tickets for specific lab steps directly to faculty for feedback and resolution.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Component 4: Live Animated Hardware Telemetry Gauges -->
+<section id="telemetry" class="section-padding" style="background:rgba(15, 23, 42, 0.4);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="clean-container">
+    <div class="section-header">
+      <span class="meridian-pill">Live Diagnostics</span>
+      <h2 class="meridian-heading">Real-Time Host Subprocess Telemetry</h2>
+      <p class="meridian-subheading">Live system telemetry polling directly from the virtual lab backend host environment.</p>
+    </div>
+
+    <div class="grid-4" style="max-width:1000px;margin:0 auto">
+      <!-- CPU Gauge -->
+      <div class="telemetry-gauge-card">
+        <div class="gauge-circle-wrap">
+          <svg class="gauge-circle-svg" viewBox="0 0 100 100">
+            <circle class="gauge-bg-ring" cx="50" cy="50" r="41"></circle>
+            <circle class="gauge-fill-ring" id="cpuRing" cx="50" cy="50" r="41" style="stroke:var(--blue);stroke-dashoffset:180"></circle>
+          </svg>
+          <div class="gauge-val-text" id="teleCpuVal">--%</div>
+        </div>
+        <div style="font-weight:800;font-size:1.05rem;color:var(--text);margin-bottom:4px">CPU Utilization</div>
+        <div style="font-size:.8rem;color:var(--muted)">Host Processor Load</div>
+      </div>
+
+      <!-- RAM Gauge -->
+      <div class="telemetry-gauge-card">
+        <div class="gauge-circle-wrap">
+          <svg class="gauge-circle-svg" viewBox="0 0 100 100">
+            <circle class="gauge-bg-ring" cx="50" cy="50" r="41"></circle>
+            <circle class="gauge-fill-ring" id="ramRing" cx="50" cy="50" r="41" style="stroke:var(--green);stroke-dashoffset:120"></circle>
+          </svg>
+          <div class="gauge-val-text" id="teleRamVal">-- GB</div>
+        </div>
+        <div style="font-weight:800;font-size:1.05rem;color:var(--text);margin-bottom:4px">RAM Memory</div>
+        <div style="font-size:.8rem;color:var(--muted)">Active Allocations</div>
+      </div>
+
+      <!-- Disk Gauge -->
+      <div class="telemetry-gauge-card">
+        <div class="gauge-circle-wrap">
+          <svg class="gauge-circle-svg" viewBox="0 0 100 100">
+            <circle class="gauge-bg-ring" cx="50" cy="50" r="41"></circle>
+            <circle class="gauge-fill-ring" id="diskRing" cx="50" cy="50" r="41" style="stroke:var(--purple);stroke-dashoffset:90"></circle>
+          </svg>
+          <div class="gauge-val-text" id="teleDiskVal">-- GB</div>
+        </div>
+        <div style="font-weight:800;font-size:1.05rem;color:var(--text);margin-bottom:4px">Disk Storage</div>
+        <div style="font-size:.8rem;color:var(--muted)">Capacity Usage</div>
+      </div>
+
+      <!-- Docker Heartbeat Gauge -->
+      <div class="telemetry-gauge-card">
+        <div class="gauge-circle-wrap">
+          <div style="width:100%;height:100%;border-radius:50%;background:var(--surface-2);border:2px solid var(--border-bright);display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:var(--blue)">
+            <i class="fa-brands fa-docker"></i>
+          </div>
+        </div>
+        <div style="font-weight:800;font-size:1.05rem;color:var(--text);margin-bottom:4px" id="teleEngineTitle">Docker Daemon</div>
+        <div style="font-size:.8rem;color:var(--green);font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px" id="teleEngineSub"><i class="fa-solid fa-circle-check"></i>Engine Connected</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Component 5: Dynamic Student Lab Readiness Score (Read-Only) -->
+<section id="readiness" class="section-padding">
+  <div class="clean-container">
+    <div class="section-header">
+      <span class="meridian-pill">Verified Competency Tracker</span>
+      <h2 class="meridian-heading">Docker Competency & Progress Score</h2>
+      <p class="meridian-subheading">Automatically synchronized in real-time with your verified lab progress record.</p>
+    </div>
+
+    <div class="proficiency-calculator-box" style="max-width:860px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+        <div>
+          <h3 style="font-size:1.25rem;color:var(--text);margin:0;display:flex;align-items:center;gap:8px">
+            <span>Docker Competency Score</span>
+            {% if score_data.is_logged_in %}
+              <span class="badge badge-sm badge-success gap-1 text-[11px] py-1 px-2 font-bold"><i class="fa-solid fa-circle-check"></i> {{ score_data.student_name }}</span>
+            {% else %}
+              <span class="badge badge-sm badge-ghost opacity-70 text-[11px] py-1 px-2 font-semibold"><i class="fa-solid fa-lock"></i> Log in for live sync</span>
+            {% endif %}
+          </h3>
+          <p style="font-size:.85rem;color:var(--muted);margin-top:4px">Verified practical skills from your lab step records (Read-Only)</p>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:2.2rem;font-weight:800;color:var(--blue);line-height:1" id="calcScoreText">{{ score_data.overall_pct }}%</div>
+          <div style="font-size:.78rem;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:4px" id="calcScoreLabel">{{ score_data.level }}</div>
+        </div>
+      </div>
+
+      <div class="proficiency-bar-bg">
+        <div class="proficiency-bar-fill" id="calcProgressBar" style="width: {{ score_data.overall_pct }}%;"></div>
+      </div>
+
+      <div class="proficiency-checklist">
+        {% for item in score_data.skills %}
+          <label class="checklist-item opacity-95 cursor-default select-none pointer-events-none" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(15,28,63,0.4);border-radius:12px;border:1px solid var(--border-bright);">
+            <div style="display:flex;align-items:center;gap:12px">
+              <input type="checkbox" {% if item.done %}checked{% endif %} disabled readonly style="width:18px;height:18px;accent-color:var(--blue);cursor:not-allowed">
+              <span style="font-size:.9rem;font-weight:600;color:var(--text)">{{ item.title|safe }}</span>
+            </div>
+            {% if item.done %}
+              <span class="badge badge-sm badge-success gap-1 text-[10px] font-bold">
+                <i class="fa-solid fa-check"></i> Completed
+              </span>
+            {% else %}
+              <span class="badge badge-sm badge-ghost opacity-50 text-[10px]">
+                Pending
+              </span>
+            {% endif %}
+          </label>
+        {% endfor %}
+      </div>
+
+      <div style="text-align:center;margin-top:24px">
+        {% if session.get('student_id') %}
+          <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary" style="border-radius:30px;padding:12px 28px">
+            <i class="fa-solid fa-gauge" style="margin-right:8px"></i>
+            <span>Continue Your Virtual Labs</span>
+            <i class="fa-solid fa-arrow-right" style="margin-left:8px"></i>
+          </a>
+        {% else %}
+          <button class="btn btn-primary" onclick="openLoginRoleModal()" style="border-radius:30px;padding:12px 28px">
+            <i class="fa-solid fa-right-to-bracket" style="margin-right:8px"></i>
+            <span>Sign In to Track Dynamic Progress</span>
+            <i class="fa-solid fa-arrow-right" style="margin-left:8px"></i>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Accordion -->
+<section id="faq" class="section-padding" style="background:rgba(15,28,63,0.2)">
+  <div class="clean-container">
+    <div class="section-header">
+      <span class="meridian-pill">Support & Answers</span>
+      <h2 class="meridian-heading">Frequently Asked Questions</h2>
+      <p class="meridian-subheading">Everything you need to know about navigating the Container Virtual Labs platform.</p>
+    </div>
+
+    <div class="faq-accordion-wrap">
+      <details class="faq-item" open>
+        <summary class="faq-summary">Do students need Docker Desktop installed on their local computers?</summary>
+        <div class="faq-content">
+          No! Our Virtual Lab suite includes a dual execution engine. If Docker is running locally on the machine, real container commands execute. If Docker is closed or not installed, our Virtual Sandbox Engine seamlessly simulates all command executions, container outputs, and verifications.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-summary">How do students log into the virtual lab portal?</summary>
+        <div class="faq-content">
+          Students can log in using their assigned Student ID (e.g. <code>STU001</code>) or registered email address. Faculty members can manually enroll students or bulk-import student rosters from Excel spreadsheets, which automatically generates default credentials.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-summary">How is student lab progress saved?</summary>
+        <div class="faq-content">
+          Progress is tracked step-by-step and automatically stored in the local SQLite relational database (<code>vlab.db</code>). When a student completes tasks or passes verification tests, their progress updates in real-time across both student and faculty dashboards.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-summary">Can faculty members upload lecture videos and course materials?</summary>
+        <div class="faq-content">
+          Yes! The Faculty Control Center allows instructors to publish video lecture URLs for each lab module, review support tickets submitted by students, download credential spreadsheets, and view detailed progress analytics.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="border-top:1px solid var(--border);padding:50px 24px;text-align:center;color:var(--muted);font-size:.9rem">
+  <div class="clean-container">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;font-weight:800;color:var(--text);font-size:1.2rem">
+      <i class="fa-brands fa-docker" style="color:var(--blue)"></i>
+      <span>Container-Based Application Development Virtual Labs</span>
+    </div>
+    <p>© 2026 Virtual Labs Initiative. Designed for Interactive Engineering Education.</p>
+  </div>
+</footer>
+
+<!-- Accessible Native Role Selection Dialog Modal -->
+<dialog id="loginRoleModal" closedby="any" aria-labelledby="modalRoleTitle">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <h3 id="modalRoleTitle" style="margin:0;font-size:1.3rem;color:var(--text)">Select Portal Role</h3>
+    <button onclick="closeLoginRoleModal()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:20px">Choose your role to proceed to the secure portal login page.</p>
+
+  <div class="modal-role-grid">
+    <a href="{{ url_for('login') }}?role=student" class="role-card-select">
+      <div class="role-icon"><i class="fa-solid fa-user-graduate"></i></div>
+      <div class="role-name">Student Portal</div>
+      <div class="role-desc">Access interactive container labs & track progress</div>
+    </a>
+
+    <a href="{{ url_for('login') }}?role=faculty" class="role-card-select">
+      <div class="role-icon" style="color:var(--purple)"><i class="fa-solid fa-chalkboard-user"></i></div>
+      <div class="role-name">Faculty Portal</div>
+      <div class="role-desc">Manage student rosters, analytics & support tickets</div>
+    </a>
+  </div>
+</dialog>
+
+<!-- Interactive Living Scripts -->
+<script>
+// Data for Interactive Lab Explorer (Component 2)
+const LAB_EXPLORER_DATA = {
+  1: {
+    diff: "Beginner Level",
+    diffClass: "tag-diff-easy",
+    time: "20 Minutes",
+    title: "Lab 1: Docker Desktop Setup & Hardware Audit",
+    desc: "Verify hardware virtualization compatibility, audit available RAM and CPU cores, install Docker Desktop, and execute your first container verification.",
+    topics: [
+      "System Hardware & Virtualization Spec Check",
+      "Docker Desktop Installation & Backend Setup",
+      "Executing `docker --version` & Daemon Checks",
+      "Running First Container (`docker run hello-world`)"
+    ]
+  },
+  2: {
+    diff: "Intermediate Level",
+    diffClass: "tag-diff-med",
+    time: "35 Minutes",
+    title: "Lab 2: Nginx Web Application Containerization",
+    desc: "Construct customized web applications from scratch by writing HTML, configuring Dockerfiles, and mapping external network ports.",
+    topics: [
+      "Creating Web Frontend Assets (`index.html`)",
+      "Writing Production Nginx `Dockerfile` Specifications",
+      "Building Container Images (`docker build -t hello-web .`)",
+      "Port Mapping & Live Browser Verification (`8080:80`)"
+    ]
+  },
+  3: {
+    diff: "Intermediate Level",
+    diffClass: "tag-diff-med",
+    time: "45 Minutes",
+    title: "Lab 3: Container Lifecycle & Pruning",
+    desc: "Master container state management, pulling registry images, inspecting background logs, stopping/starting containers, and cache cleanup.",
+    topics: [
+      "Pulling Official Registry Images (`docker pull`)",
+      "Detached Execution Mode (`docker run -d`)",
+      "State Control (`docker stop`, `docker start`, `docker rm -f`)",
+      "Cache & Resource Pruning (`docker system prune`)"
+    ]
+  },
+  4: {
+    diff: "Advanced Level",
+    diffClass: "tag-diff-hard",
+    time: "60 Minutes",
+    title: "Lab 4: Microservice REST API & Registry Push",
+    desc: "Build Python Flask microservice REST APIs inside containers, manage dependencies, expose custom API endpoints, and push to registries.",
+    topics: [
+      "Writing Python REST APIs (`app.py` & `requirements.txt`)",
+      "Exposing Microservice Container Ports (`5000:5000`)",
+      "Validating JSON Endpoint Responses (`/add?a=10&b=20`)",
+      "Docker Hub Authentication & Image Registry Push"
+    ]
+  }
+};
+
+function switchLabExplorer(labNum, tabEl) {
+  document.querySelectorAll('.lab-select-tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+
+  const data = LAB_EXPLORER_DATA[labNum];
+  if (!data) return;
+
+  const diffEl = document.getElementById('expDiff');
+  diffEl.textContent = data.diff;
+  diffEl.className = data.diffClass;
+
+  document.getElementById('expTime').textContent = data.time;
+  document.getElementById('expTitle').textContent = data.title;
+  document.getElementById('expDesc').textContent = data.desc;
+
+  const topicsList = document.getElementById('expTopics');
+  topicsList.innerHTML = data.topics.map(t => `<li><i class="fa-solid fa-circle-check"></i> ${t}</li>`).join('');
+}
+
+// Data for Hero Terminal Demo Switcher (Component 1)
+const TERM_DEMOS = {
+  run: `<div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker run -d -p 8080:80 nginx:latest</span></div>
+<div class="output-dim">Unable to find image 'nginx:latest' locally...</div>
+<div class="output-dim">latest: Pulling from library/nginx</div>
+<div class="output-dim">a2abf6c4d29d: Pull complete [===================>] 31.5MB/31.5MB</div>
+<div class="output-success">Status: Downloaded newer image for nginx:latest</div>
+<div style="color:var(--purple);font-weight:700">7f9c8d1e2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d</div>
+<div style="margin-top:6px"><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker ps</span></div>
+<div style="color:var(--blue)">CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS</div>
+<div>7f9c8d1e2a3b   nginx:latest   "/docker-entrypoint.…"   2 seconds ago   Up 2 seconds   0.0.0.0:8080->80/tcp</div>`,
+
+  build: `<div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker build -t sum-microservice .</span></div>
+<div class="output-dim">[+] Building 2.4s (8/8) FINISHED</div>
+<div class="output-dim"> => [internal] load build definition from Dockerfile</div>
+<div class="output-dim"> => => transferring dockerfile: 145B</div>
+<div class="output-dim"> => [1/3] FROM python:3.9-slim</div>
+<div class="output-dim"> => [2/3] RUN pip install flask==3.0.0</div>
+<div class="output-success">Successfully built 3a9e1d8f5c2b</div>
+<div class="output-success">Successfully tagged sum-microservice:latest</div>`,
+
+  ps: `<div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker ps -a</span></div>
+<div style="color:var(--blue)">CONTAINER ID   IMAGE              COMMAND                  CREATED        STATUS          NAMES</div>
+<div>e1a2b3c4d5e6   hello-world        "/hello"                 10 mins ago    Exited (0)      heuristic_vlab</div>
+<div>7f9c8d1e2a3b   nginx:latest       "/docker-entrypoint.…"   2 mins ago     Up 2 minutes    my-web-app</div>
+<div>3a9e1d8f5c2b   sum-microservice   "python app.py"          30 secs ago    Up 30 seconds   sum-api-service</div>`,
+
+  prune: `<div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker system prune -f</span></div>
+<div class="output-dim">Deleted Containers:</div>
+<div class="output-dim">e1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0</div>
+<div class="output-dim">Total reclaimed space: 142.8MB</div>
+<div class="output-success">System prune clean! All stopped containers and unused build caches removed.</div>`
+};
+
+function runTermDemo(demoKey, btn) {
+  document.querySelectorAll('.term-demo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const termArea = document.getElementById('interactiveTermOutput');
+  termArea.innerHTML = TERM_DEMOS[demoKey] || TERM_DEMOS.run;
+}
+
+// Feature Filtering (Component 3)
+function filterFeatures(category, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.querySelectorAll('#featuresGrid .feature-box').forEach(box => {
+    if (category === 'all' || box.getAttribute('data-category') === category) {
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
+  });
+}
+
+// Live Telemetry & Gauge Animator (Component 4)
+async function fetchLiveTelemetry() {
+  try {
+    const res = await fetch('/api/system-telemetry');
+    const data = await res.json();
+    if (data.ok) {
+      const cpuVal = data.cpu_num || 12;
+      document.getElementById('teleCpuVal').textContent = (data.cpu || '12%');
+      const cpuOffset = 258 - (258 * (cpuVal / 100));
+      if (document.getElementById('cpuRing')) document.getElementById('cpuRing').style.strokeDashoffset = cpuOffset;
+
+      if (document.getElementById('teleRamVal')) document.getElementById('teleRamVal').textContent = data.ram || '512 MB';
+      const ramPct = parseInt(data.ram_pct) || 35;
+      const ramOffset = 258 - (258 * (ramPct / 100));
+      if (document.getElementById('ramRing')) document.getElementById('ramRing').style.strokeDashoffset = ramOffset;
+
+      if (document.getElementById('teleDiskVal')) document.getElementById('teleDiskVal').textContent = data.disk || '15 GB';
+
+      const engineTitle = document.getElementById('teleEngineTitle');
+      const engineSub = document.getElementById('teleEngineSub');
+      if (engineTitle && engineSub) {
+        if (data.docker_engine === 'local') {
+          engineTitle.textContent = 'Local Docker Host';
+          engineSub.innerHTML = '<i class="fa-solid fa-circle-check"></i>Engine Connected';
+          engineSub.style.color = 'var(--green)';
+        } else {
+          engineTitle.textContent = 'Virtual Sandbox';
+          engineSub.innerHTML = '<i class="fa-solid fa-bolt"></i>Simulator Active';
+          engineSub.style.color = 'var(--blue)';
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Telemetry fetch error:', e);
+  }
+}
+
+function openLoginRoleModal() {
+  const modal = document.getElementById('loginRoleModal');
+  if (modal && modal.showModal) modal.showModal();
+  else window.location.href = "{{ url_for('login') }}";
+}
+
+function closeLoginRoleModal() {
+  const modal = document.getElementById('loginRoleModal');
+  if (modal) modal.close();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  fetchLiveTelemetry();
+  setInterval(fetchLiveTelemetry, 4000);
+});
+</script>
+{% endblock %}

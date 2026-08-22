@@ -1,26 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Lab 4: Build & Containerize a Sum Microservice - Container Virtual Labs{% endblock %}
 {% block body %}
-<div class="topbar">
-  <div class="brand">
-    <span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span>
-    <span>V-Lab &middot; VS Code Web IDE</span>
-    <span class="live-dot"></span>
-  </div>
-  <div class="topbar-right">
-    <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
-    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
-    <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
-  </div>
-</div>
 
-<div class="wrap" style="max-width:100%;padding:16px 24px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="wrap" style="max-width:100%;padding:0 0 40px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
     <div>
       <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
       <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-solid fa-calculator" style="color:var(--purple)"></i> Lab 4: Build &amp; Containerize a Sum Microservice</h2>
     </div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
       <button class="btn btn-outline" onclick="showLabVideoModal(4)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
       <button class="btn btn-outline" onclick="showTicketModal(4)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
@@ -85,11 +73,7 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE FLASK CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-<<<<<<< HEAD:frontend/templates/lab4.html
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /sum/<float:a>/<float:b> returning JSON sum result on port 80">from flask import Flask<br><br>app = Flask(__name__)<br><br>@app.route('/sum/&lt;float:a&gt;/&lt;float:b&gt;')<br>def get_sum(a, b):<br>&nbsp;&nbsp;return {'sum': a + b}<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=80)</span></div>
-=======
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /add returning number1, number2, and sum on port 5000">from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br><br>@app.route('/add', methods=['GET'])<br>def add_numbers():<br>&nbsp;&nbsp;try:<br>&nbsp;&nbsp;&nbsp;&nbsp;a = float(request.args.get('a'))<br>&nbsp;&nbsp;&nbsp;&nbsp;b = float(request.args.get('b'))<br>&nbsp;&nbsp;&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b})<br>&nbsp;&nbsp;except (TypeError, ValueError):<br>&nbsp;&nbsp;&nbsp;&nbsp;return jsonify({"error": "Please provide two valid numbers"}), 400<br><br>@app.route('/')<br>def home():<br>&nbsp;&nbsp;return "Addition Microservice is Running"<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</span></div>
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
         </div>
       </div>
 
@@ -213,11 +197,7 @@
         <div class="vscode-preview-pane">
           <div class="vscode-preview-header">
             <i class="fa-solid fa-rotate-right" style="cursor:pointer;color:var(--blue)" title="Refresh Live Microservice Studio" onclick="refreshPreview()"></i>
-<<<<<<< HEAD:frontend/templates/lab4.html
-            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> <span id="previewUrlText">http://localhost:8080/sum/&lt;float:a&gt;/&lt;float:b&gt;</span></div>
-=======
             <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> <span id="previewUrlText">http://localhost:5000/add?a=10&b=20</span></div>
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
             <span class="badge badge-green" id="previewBadge">Offline</span>
           </div>
           <div class="vscode-preview-body" id="previewContainer" style="overflow:hidden;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;height:100%">
@@ -389,11 +369,7 @@ const tourSteps = [
   {
     num: 3,
     title: "Step 3: View Live Microservice & Verify Lab 4",
-<<<<<<< HEAD:frontend/templates/lab4.html
-    desc: "Test numbers A and B on your live Flask Sum Microservice Studio on http://localhost:8080/sum/<a_val>/<b_val>. Click 'Submit & Verify Lab 4' at top right to complete.",
-=======
     desc: "Test numbers A and B on your live Flask Sum Microservice Studio on http://localhost:5000/add?a=10&b=20. Click 'Submit & Verify Lab 4' at top right to complete.",
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
     highlightId: "previewContainer"
   }
 ];
@@ -1053,10 +1029,12 @@ function switchFile(filename) {
     updateLineNumbers();
     updateBreadcrumb();
     syncHighlight();
-    checkCodeProgress();
     editor.focus();
     const len = editor.value.length;
     editor.setSelectionRange(len, len);
+    if (window.VLabMotion) {
+      window.VLabMotion.animate(editor, { opacity: [0.85, 1], scale: [0.995, 1] }, { duration: 0.2 });
+    }
   }
 }
 
@@ -1231,6 +1209,12 @@ function highlightSyntax(code, filename) {
       return tempLine;
     });
     return hlLines.join('\n');
+  } else if (filename && (filename.endsWith('.html') || filename.endsWith('.htm'))) {
+    escaped = escaped.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-comment">$1</span>');
+    escaped = escaped.replace(/(&lt;\/?)([a-zA-Z0-9\!\-]+)([\s\S]*?)(&gt;)/g, function(match, p1, p2, p3, p4) {
+      let attrs = p3.replace(/([a-zA-Z0-9\-]+)=("[^"]*"|'[^']*'|[^\s&>]+)/g, '<span class="hl-attr-name">$1</span>=<span class="hl-attr-value">$2</span>');
+      return `<span class="hl-tag-bracket">${p1}</span><span class="hl-tag-name">${p2}</span>${attrs}<span class="hl-tag-bracket">${p4}</span>`;
+    });
   }
   return escaped;
 }
@@ -1251,12 +1235,6 @@ function calculateSumInStudio() {
 
   const urlText = document.getElementById('previewUrlText');
   if (urlText) {
-<<<<<<< HEAD:frontend/templates/lab4.html
-    if (aVal !== '' || bVal !== '') {
-      urlText.textContent = `http://localhost:8080/sum/${aVal}/${bVal}`;
-    } else {
-      urlText.textContent = 'http://localhost:8080/sum/<float:a>/<float:b>';
-=======
     if (aVal !== '' && bVal !== '') {
       urlText.textContent = `http://localhost:5000/add?a=${aVal}&b=${bVal}`;
     } else if (aVal !== '') {
@@ -1265,7 +1243,6 @@ function calculateSumInStudio() {
       urlText.textContent = `http://localhost:5000/add?a=&b=${bVal}`;
     } else {
       urlText.textContent = 'http://localhost:5000/add?a=10&b=20';
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
     }
   }
 
@@ -1306,11 +1283,7 @@ function insertBoilerplateCode() {
   const fn = currentFile.toLowerCase();
 
   if (fn === 'app.py' || fn.endsWith('.py')) {
-<<<<<<< HEAD:frontend/templates/lab4.html
-    files[currentFile] = `from flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/sum/<float:a>/<float:b>')\ndef get_sum(a, b):\n    return {'sum': a + b}\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=80)`;
-=======
     files[currentFile] = `from flask import Flask, request, jsonify\n\napp = Flask(__name__)\n\n@app.route('/add', methods=['GET'])\ndef add_numbers():\n    try:\n        a = float(request.args.get('a'))\n        b = float(request.args.get('b'))\n\n        return jsonify({\n            "number1": a,\n            "number2": b,\n            "sum": a + b\n        })\n\n    except (TypeError, ValueError):\n        return jsonify({\n            "error": "Please provide two valid numbers"\n        }), 400\n\n\n@app.route('/')\ndef home():\n    return "Addition Microservice is Running"\n\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)`;
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
   } else if (fn === 'dockerfile' || fn.includes('docker')) {
     files[currentFile] = `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD ["python", "app.py"]`;
   } else if (fn === 'requirements.txt' || fn.includes('req')) {
@@ -1329,7 +1302,11 @@ function insertBoilerplateCode() {
 }
 
 
-<<<<<<< HEAD:frontend/templates/lab4.html
+function refreshPreview() {
+  const container = document.getElementById('previewContainer');
+  const badge = document.getElementById('previewBadge');
+  if (!container) return;
+
   if (!containerRunning) {
     if (badge) {
       badge.className = 'badge badge-muted';
@@ -1339,7 +1316,7 @@ function insertBoilerplateCode() {
       <div class="offline-placeholder">
         <i class="fa-solid fa-server"></i>
         <div class="offline-title">Web Server Container Not Running</div>
-        <div class="offline-desc">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 80.</div>
+        <div class="offline-desc">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 5000.</div>
       </div>
     `;
     return;
@@ -1347,7 +1324,7 @@ function insertBoilerplateCode() {
 
   if (badge) {
     badge.className = 'badge badge-green';
-    badge.textContent = '• Live (Port 80)';
+    badge.textContent = '• Live (Port 5000)';
   }
 
   const appCode = (currentFile === 'app.py' ? (document.getElementById('codeEditor') ? document.getElementById('codeEditor').value : '') : (files['app.py'] || ''));
@@ -1393,8 +1370,6 @@ function insertBoilerplateCode() {
   `;
   calculateSumInStudio();
 }
-=======
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
 
 function openInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
@@ -1466,6 +1441,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     } else if (isCmdOrCtrl && isS) {
       e.preventDefault();
+      e.stopPropagation();
       saveCurrentFile();
       return;
     }
@@ -1546,6 +1522,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Global Ctrl+S Keyboard Shortcut
   document.addEventListener('keydown', function(e) {
+    if (e.defaultPrevented) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
       saveCurrentFile();
@@ -1634,115 +1611,50 @@ document.addEventListener('DOMContentLoaded', function() {
       term.insertBefore(echo, cursorRow);
       this.value = '';
 
+      const cleanCmd = val.toLowerCase().trim();
+      if (cleanCmd === 'clear' || cleanCmd === 'cls') {
+        const lines = term.querySelectorAll('.line');
+        lines.forEach(l => l.remove());
+        return;
+      }
+
       fetch('/api/terminal/exec', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ command: val, files: files })
       })
       .then(r => {
         if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
           return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
         }
-<<<<<<< HEAD:frontend/templates/lab4.html
         return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
       })
-      .then(res => {
-        if (res.action === 'clear') {
-          term.querySelectorAll('.line').forEach(l => l.remove());
-          return;
-        }
-        if (res.ok) {
-          checkCompulsoryCommand(val);
-        }
-
-        const out = document.createElement('div');
-        out.className = 'line';
-        out.style.whiteSpace = 'pre-wrap';
-
-        const cleanOutput = res.output ? res.output.trim() : '';
-        const firstLine = cleanOutput.split('\n')[0].trim();
-        const isContainerId = /^[a-f0-9]{12,64}$/i.test(firstLine);
-
-        if (res.ok && (isContainerId || cleanOutput.toLowerCase().includes('container launched') || cleanOutput.toLowerCase().includes('successfully built') || cleanOutput.toLowerCase().includes('started in background'))) {
-          out.className = 'line success-line';
-          out.style.color = '#38bdf8';
-          out.textContent = cleanOutput;
-        } else {
-          out.className = res.ok ? 'line success-line' : 'line err';
-          out.textContent = cleanOutput || 'Command executed with no output.';
-        }
-
-        term.insertBefore(out, cursorRow);
-        setTimeout(() => {
-          term.scrollTop = term.scrollHeight;
-        }, 10);
-      })
-      .catch(err => {
-        const out = document.createElement('div');
-        out.className = 'line err';
-        out.textContent = 'Execution error: ' + err.message;
-        term.insertBefore(out, cursorRow);
-        setTimeout(() => {
-          term.scrollTop = term.scrollHeight;
-        }, 10);
-      });
-=======
-        historyIndex = -1;
-        this.value = '';
-
-        const cursorRow = term.querySelector('.cursor-row');
-        const cmdLine = document.createElement('div');
-        cmdLine.className = 'line';
-        cmdLine.innerHTML = `<span class="prompt">student@docker-host:~$</span>&nbsp;<span class="cmd">${cmd.replace(/</g, '&lt;')}</span>`;
-        term.insertBefore(cmdLine, cursorRow);
-
-        const cleanCmd = cmd.toLowerCase().trim();
-        if (cleanCmd === 'clear' || cleanCmd === 'cls') {
+      .then(data => {
+        if (data.action === 'clear') {
           const lines = term.querySelectorAll('.line');
           lines.forEach(l => l.remove());
           return;
         }
-
-        // Trigger real backend shell execution (Docker Desktop / V-Lab Engine)
-        fetch('/api/terminal/exec', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ command: cmd, files: files })
-        })
-        .then(r => {
-          if (!r.ok && r.headers.get('content-type') && r.headers.get('content-type').includes('text/html')) {
-            return { ok: false, output: 'Session expired or not logged in. Please refresh the page and log in.' };
+        if (data.ok) {
+          checkCompulsoryCommand(val);
+          if (cleanCmd.includes('docker run')) {
+            containerRunning = true;
+            refreshPreview();
           }
-          return r.json().catch(() => ({ ok: false, output: 'Session expired or server returned invalid response. Please refresh.' }));
-        })
-        .then(data => {
-          if (data.action === 'clear') {
-            const lines = term.querySelectorAll('.line');
-            lines.forEach(l => l.remove());
-            return;
-          }
-          if (data.ok) {
-            checkCompulsoryCommand(cmd);
-            if (cleanCmd.includes('docker run')) {
-              containerRunning = true;
-              refreshPreview();
-            }
-          }
-          const outLine = document.createElement('div');
-          outLine.className = data.ok ? 'line success-line' : 'line err';
-          outLine.innerHTML = (data.output || 'Command executed with no output.').replace(/\n/g, '<br>');
-          term.insertBefore(outLine, cursorRow);
-          term.scrollTop = term.scrollHeight;
-        })
-        .catch(err => {
-          const outLine = document.createElement('div');
-          outLine.className = 'line err';
-          outLine.textContent = 'Execution error: ' + (err.message || 'Unknown network error.');
-          term.insertBefore(outLine, cursorRow);
-          term.scrollTop = term.scrollHeight;
-        });
-      }
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab4.html
+        }
+        const outLine = document.createElement('div');
+        outLine.className = data.ok ? 'line success-line' : 'line err';
+        outLine.innerHTML = (data.output || 'Command executed with no output.').replace(/\n/g, '<br>');
+        term.insertBefore(outLine, cursorRow);
+        term.scrollTop = term.scrollHeight;
+      })
+      .catch(err => {
+        const outLine = document.createElement('div');
+        outLine.className = 'line err';
+        outLine.textContent = 'Execution error: ' + (err.message || 'Unknown network error.');
+        term.insertBefore(outLine, cursorRow);
+        term.scrollTop = term.scrollHeight;
+      });
     });
   }
 });

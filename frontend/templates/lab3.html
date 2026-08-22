@@ -1,26 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Lab 3 - Run Hello World Container & Verify Application{% endblock %}
 {% block body %}
-<div class="topbar">
-  <div class="brand">
-    <span class="brand-whale-icon"><i class="fa-brands fa-docker"></i></span>
-    <span>V-Lab &middot; VS Code Web IDE</span>
-    <span class="live-dot"></span>
-  </div>
-  <div class="topbar-right">
-    <span><i class="fa-solid fa-user"></i> {{ student.name }} <span class="mono" style="color:var(--muted)">({{ student.student_id }})</span></span>
-    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
-    <a class="logout-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Log out</a>
-  </div>
-</div>
 
-<div class="wrap" style="max-width:100%;padding:16px 24px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="wrap" style="max-width:100%;padding:0 0 40px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
     <div>
       <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
       <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 3: Build Custom "Hello World!" Web App &amp; Run Container</h2>
     </div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
       <button class="btn btn-outline" onclick="showLabVideoModal(3)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
       <button class="btn btn-outline" onclick="showTicketModal(3)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
@@ -83,11 +71,7 @@
         <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE HTML CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-<<<<<<< HEAD:frontend/templates/lab3.html
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Portal: Defines root web page title, heading and paragraph text for multi-step Docker lab">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;title&gt;Lab 3 Web Server&lt;/title&gt;&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to Lab 3 Containerized Portal&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;p&gt;Multi-step Docker lifecycle&lt;/p&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</span></div>
-=======
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Portal: Defines root web page title, heading and paragraph text for Lab 3">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;title&gt;Lab 3 Web Server&lt;/title&gt;&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to Lab 3 Containerized Portal&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;p&gt;Multi-step Docker lifecycle&lt;/p&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</span></div>
->>>>>>> 5cc487e (Updated changes and fixed errors):templates/lab3.html
         </div>
       </div>
 
@@ -1181,7 +1165,7 @@ function highlightSyntax(code, filename) {
 
   if (filename && (filename.endsWith('.html') || filename.endsWith('.htm'))) {
     escaped = escaped.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-comment">$1</span>');
-    escaped = escaped.replace(/(&lt;\/?)([a-zA-Z0-9\-]+)([\s\S]*?)(&gt;)/g, function(match, p1, p2, p3, p4) {
+    escaped = escaped.replace(/(&lt;\/?)([a-zA-Z0-9\!\-]+)([\s\S]*?)(&gt;)/g, function(match, p1, p2, p3, p4) {
       let attrs = p3.replace(/([a-zA-Z0-9\-]+)=("[^"]*"|'[^']*'|[^\s&>]+)/g, '<span class="hl-attr-name">$1</span>=<span class="hl-attr-value">$2</span>');
       return `<span class="hl-tag-bracket">${p1}</span><span class="hl-tag-name">${p2}</span>${attrs}<span class="hl-tag-bracket">${p4}</span>`;
     });
@@ -1321,6 +1305,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     } else if (isCmdOrCtrl && isS) {
       e.preventDefault();
+      e.stopPropagation();
       saveCurrentFile();
       return;
     }
@@ -1401,6 +1386,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Global Ctrl+S Keyboard Shortcut
   document.addEventListener('keydown', function(e) {
+    if (e.defaultPrevented) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
       saveCurrentFile();

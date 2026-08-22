@@ -1,43 +1,280 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}V-Lab | Virtual Docker Laboratory Suite{% endblock %}</title>
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+
+<!-- Tailwind CSS & DaisyUI via CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+<!-- Font Awesome & Google Fonts -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<!-- Custom Project Stylesheet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.0">
+
 <script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          mono: ['"Fira Code"', 'monospace'],
+        },
+      }
+    }
+  };
+
   (function() {
-    const savedTheme = localStorage.getItem('vlab-theme') || 'light';
+    const savedTheme = localStorage.getItem('vlab-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
   })();
 </script>
 </head>
-<body>
-{% block body %}{% endblock %}
-<!-- Toast Notification Container -->
-<div id="vlabToastContainer" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
+<body class="bg-base-200 text-base-content font-sans antialiased min-h-screen relative flex flex-col">
 
-<!-- Custom Alert / Confirm Modal Overlay -->
-<div id="vlabModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:9999999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--surface);border:1.5px solid var(--border-bright);border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3);animation:modalPop .25s cubic-bezier(0.16, 1, 0.3, 1)">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-      <div id="vlabModalIcon" style="width:36px;height:36px;border-radius:50%;background:rgba(2,132,199,0.1);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><i class="fa-solid fa-circle-info"></i></div>
-      <h3 id="vlabModalTitle" style="margin:0;font-size:1.1rem;color:var(--text)">V-Lab Notification</h3>
+<!-- Top Enterprise Navbar -->
+<header class="navbar bg-base-100/90 backdrop-blur-md border-b border-base-300 sticky top-0 z-30 px-4 sm:px-6 shadow-sm">
+  <div class="flex items-center gap-3">
+    <!-- Three Dots Navigation Toggle Button -->
+    <button id="vlabNavToggleBtn" onclick="toggleVLabSidebar()" class="btn btn-ghost btn-circle hover:bg-base-200 transition-transform active:scale-95" title="Open Navigation Menu">
+      <i class="fa-solid fa-ellipsis-vertical text-xl text-primary"></i>
+    </button>
+
+    <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 font-extrabold text-lg text-primary tracking-tight">
+      <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xl">
+        <i class="fa-brands fa-docker"></i>
+      </div>
+      <span>Container<span class="text-secondary">V-Lab</span></span>
+      <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+    </a>
+  </div>
+
+  <!-- Central Nav Links -->
+  <div class="hidden lg:flex items-center gap-6 text-sm font-semibold text-base-content/80 mx-auto">
+    <a href="/#curriculum" class="hover:text-primary transition-colors">Curriculum Explorer</a>
+    <a href="/#features" class="hover:text-primary transition-colors">Capabilities</a>
+    <a href="/#telemetry" class="hover:text-primary transition-colors">Live Telemetry</a>
+    <a href="/#readiness" class="hover:text-primary transition-colors">Skill Calculator</a>
+    <a href="/#faq" class="hover:text-primary transition-colors">FAQ</a>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <!-- Theme Switcher Button -->
+    <button class="btn btn-ghost btn-circle theme-toggle-btn" onclick="toggleVLabTheme()" title="Toggle Dark/Light Mode">
+      <i class="fa-solid fa-moon text-lg"></i>
+    </button>
+
+    {% if session.get('student_id') or session.get('faculty_user') %}
+      <!-- User Profile Dropdown -->
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar border border-primary/30">
+          <div class="w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <i class="fa-solid fa-user-gear"></i>
+          </div>
+        </div>
+        <ul tabindex="0" class="mt-3 z-[1] p-2 shadow-2xl menu menu-sm dropdown-content bg-base-100 rounded-box w-56 border border-base-300">
+          <li class="menu-title px-4 py-2 text-xs opacity-70">
+            Logged in as <strong class="text-primary">{{ session.get('student_name') or session.get('student_id') or session.get('faculty_user') }}</strong>
+          </li>
+          <div class="divider my-0"></div>
+          <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-gauge text-info"></i> Dashboard</a></li>
+          <li><a href="{{ url_for('change_password') }}"><i class="fa-solid fa-key text-warning"></i> Change Password</a></li>
+          <li><a href="{{ url_for('logout') }}" class="text-error"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
+        </ul>
+      </div>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm rounded-full gap-2 px-5">
+        <i class="fa-solid fa-right-to-bracket"></i> Portal Login
+      </a>
+    {% endif %}
+  </div>
+</header>
+
+<!-- Main Workspace Content Container -->
+<main class="flex-1 w-full max-w-[1680px] mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-8">
+  {% block content %}{% block body %}{% endblock %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="footer footer-center p-4 bg-base-100 text-base-content border-t border-base-300 text-xs">
+  <aside>
+    <p>Copyright © 2026 Container V-Lab Suite • Virtual Docker Laboratory Management System</p>
+  </aside>
+</footer>
+
+<!-- Motion Animated Navigation Backdrop Overlay -->
+<div id="vlabNavOverlay" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[99990] hidden transition-opacity duration-300 opacity-0" onclick="closeVLabSidebar()"></div>
+
+<!-- Motion Animated Sidebar Navigation Panel (Hidden by Default) -->
+<aside id="vlabSidebarPanel" class="fixed top-0 left-0 bottom-0 w-80 bg-base-100 border-r border-base-300 z-[99995] flex flex-col justify-between p-5 shadow-2xl transition-transform duration-300 -translate-x-full" style="will-change: transform, opacity;">
+  <div>
+    <!-- Sidebar Header -->
+    <div class="flex items-center justify-between px-2 py-3 border-b border-base-300 mb-4">
+      <a href="{{ url_for('index') }}" class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-2xl font-black shadow-lg">
+          <i class="fa-brands fa-docker"></i>
+        </div>
+        <div>
+          <div class="font-extrabold text-base tracking-tight leading-none">Container <span class="text-primary">V-Lab</span></div>
+          <div class="text-[10px] text-base-content/60 font-semibold mt-1 uppercase tracking-wider">Virtual Suite v2.5</div>
+        </div>
+      </a>
+      <button onclick="closeVLabSidebar()" class="btn btn-sm btn-circle btn-ghost" title="Close Sidebar">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
     </div>
-    <div id="vlabModalBody" style="font-size:.9rem;color:var(--muted);line-height:1.5;margin-bottom:20px"></div>
-    <div style="display:flex;justify-content:flex-end;gap:10px" id="vlabModalActions">
-      <button class="btn btn-primary btn-sm" onclick="closeVLabModal()">OK</button>
+
+    <!-- Navigation Menu -->
+    <ul id="vlabNavMenuList" class="menu menu-md w-full gap-1 p-0">
+      <li class="menu-title text-[11px] font-bold uppercase tracking-wider text-base-content/50 px-3 py-1">Overview</li>
+      <li>
+        <a href="{{ url_for('index') }}" class="gap-3 active:bg-primary font-medium">
+          <i class="fa-solid fa-house text-primary"></i> Home Portal
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('dashboard') }}" class="gap-3 active:bg-primary font-medium">
+          <i class="fa-solid fa-gauge-high text-info"></i> Control Panel
+        </a>
+      </li>
+
+      <li class="menu-title text-[11px] font-bold uppercase tracking-wider text-base-content/50 px-3 py-1 mt-4">Lab Modules</li>
+      <li>
+        <a href="{{ url_for('lab1') }}" class="gap-3 font-medium">
+          <i class="fa-solid fa-cubes text-blue-500"></i> Lab 01: Docker Setup & Audit
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('lab2') }}" class="gap-3 font-medium">
+          <i class="fa-solid fa-server text-emerald-500"></i> Lab 02: Nginx Web Container
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('lab3') }}" class="gap-3 font-medium">
+          <i class="fa-solid fa-terminal text-sky-400"></i> Lab 03: Lifecycle & Pruning
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('lab4') }}" class="gap-3 font-medium">
+          <i class="fa-solid fa-calculator text-purple-400"></i> Lab 04: Microservice REST API
+        </a>
+      </li>
+
+      <li class="menu-title text-[11px] font-bold uppercase tracking-wider text-base-content/50 px-3 py-1 mt-4">Account & Settings</li>
+      <li>
+        <a href="{{ url_for('change_password') }}" class="gap-3 font-medium">
+          <i class="fa-solid fa-key text-amber-500"></i> Security & Password
+        </a>
+      </li>
+      {% if session.get('student_id') or session.get('faculty_user') %}
+        <li>
+          <a href="{{ url_for('logout') }}" class="gap-3 text-error font-medium">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+
+  <!-- Sidebar Footer Info Box -->
+  <div class="bg-base-200 p-3 rounded-2xl border border-base-300 text-xs flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="font-semibold text-base-content/70">Engine Connected</span>
+    </div>
+    <button onclick="toggleVLabTheme()" class="btn btn-ghost btn-xs btn-square theme-toggle-btn">
+      <i class="fa-solid fa-sun"></i>
+    </button>
+  </div>
+</aside>
+
+<!-- Toast Notification Container -->
+<div id="vlabToastContainer" class="fixed bottom-6 right-6 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
+
+<!-- Custom Alert Modal Overlay -->
+<div id="vlabModalOverlay" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[9999999] items-center justify-center p-4">
+  <div class="bg-base-100 border border-base-300 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <div class="flex items-center gap-3 mb-3">
+      <div id="vlabModalIcon" class="w-10 h-10 rounded-full bg-info/10 text-info flex items-center justify-center text-xl flex-shrink-0">
+        <i class="fa-solid fa-circle-info"></i>
+      </div>
+      <h3 id="vlabModalTitle" class="text-base font-bold text-base-content">V-Lab System Message</h3>
+    </div>
+    <div id="vlabModalBody" class="text-sm text-base-content/70 leading-relaxed mb-6"></div>
+    <div class="flex justify-end gap-2" id="vlabModalActions">
+      <button class="btn btn-primary btn-sm rounded-xl px-5" onclick="closeVLabModal()">OK</button>
     </div>
   </div>
 </div>
 
 <script>
-// Global Theme Synchronization System
+// Sidebar Toggle & Motion Animation System
+let isSidebarOpen = false;
+
+window.toggleVLabSidebar = function(e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  if (isSidebarOpen) {
+    closeVLabSidebar();
+  } else {
+    openVLabSidebar();
+  }
+};
+
+window.openVLabSidebar = function() {
+  const panel = document.getElementById('vlabSidebarPanel');
+  const overlay = document.getElementById('vlabNavOverlay');
+  if (!panel || !overlay) return;
+
+  isSidebarOpen = true;
+  overlay.style.display = 'block';
+  panel.style.display = 'flex';
+  panel.classList.remove('-translate-x-full');
+  overlay.classList.remove('hidden', 'opacity-0');
+
+  if (window.VLabMotion && window.VLabMotion.animate) {
+    window.VLabMotion.animate(overlay, { opacity: [0, 1] }, { duration: 0.2 });
+    window.VLabMotion.animate(panel, { transform: ['translateX(-100%)', 'translateX(0%)'] }, { duration: 0.35, easing: window.VLabMotion.spring({ stiffness: 350, damping: 28 }) });
+    window.VLabMotion.staggerChildren('#vlabNavMenuList', 'li', { stagger: 0.03 });
+  } else {
+    overlay.style.opacity = '1';
+    panel.style.transform = 'translateX(0%)';
+  }
+};
+
+window.closeVLabSidebar = function() {
+  const panel = document.getElementById('vlabSidebarPanel');
+  const overlay = document.getElementById('vlabNavOverlay');
+  if (!panel || !overlay) return;
+
+  isSidebarOpen = false;
+  if (window.VLabMotion && window.VLabMotion.animate) {
+    window.VLabMotion.animate(overlay, { opacity: [1, 0] }, { duration: 0.2 });
+    window.VLabMotion.animate(panel, { transform: ['translateX(0%)', 'translateX(-100%)'] }, { duration: 0.25, easing: [0.16, 1, 0.3, 1] }).then(() => {
+      overlay.style.display = 'none';
+      panel.style.transform = 'translateX(-100%)';
+    });
+  } else {
+    overlay.style.opacity = '0';
+    panel.style.transform = 'translateX(-100%)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 200);
+  }
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isSidebarOpen) {
+    closeVLabSidebar();
+  }
+});
+
+// Theme Synchronization & Toggle System
 window.toggleVLabTheme = function() {
   const current = document.documentElement.getAttribute('data-theme') || 'dark';
   const target = current === 'dark' ? 'light' : 'dark';
@@ -51,16 +288,15 @@ function updateThemeIcons(theme) {
   document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
     const icon = btn.querySelector('i');
     if (theme === 'light') {
-      if (icon) icon.className = 'fa-solid fa-moon';
+      if (icon) icon.className = 'fa-solid fa-moon text-lg';
       btn.title = 'Switch to Dark Mode';
     } else {
-      if (icon) icon.className = 'fa-solid fa-sun';
+      if (icon) icon.className = 'fa-solid fa-sun text-lg';
       btn.title = 'Switch to Light Mode';
     }
   });
 }
 
-// Synchronize theme across multiple tabs & windows in real-time
 window.addEventListener('storage', (e) => {
   if (e.key === 'vlab-theme' && e.newValue) {
     document.documentElement.setAttribute('data-theme', e.newValue);
@@ -88,31 +324,24 @@ window.togglePassword = function(btn) {
   }
 };
 
-// Global Toaster Helper
+// Global Toast Helper (with deduplication guard)
+window._lastToastMsg = '';
+window._lastToastTime = 0;
 window.showToast = function(msg, type='info') {
+  const now = Date.now();
+  if (window._lastToastMsg === msg && (now - window._lastToastTime) < 500) {
+    return;
+  }
+  window._lastToastMsg = msg;
+  window._lastToastTime = now;
+
   const container = document.getElementById('vlabToastContainer');
+  if (!container) return;
   const toast = document.createElement('div');
-  toast.style.cssText = `
-    pointer-events: auto;
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border-bright);
-    border-left: 4px solid ${type==='success'?'var(--green)':(type==='error'?'var(--red)':'var(--blue)')};
-    padding: 12px 18px;
-    border-radius: 8px;
-    font-size: .88rem;
-    font-weight: 600;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 280px;
-    max-width: 420px;
-    animation: toastIn .3s cubic-bezier(0.16, 1, 0.3, 1);
-  `;
+  const borderClass = type === 'success' ? 'alert-success' : (type === 'error' ? 'alert-error' : 'alert-info');
+  toast.className = `alert ${borderClass} shadow-xl border border-base-300 py-3 px-4 text-sm font-semibold pointer-events-auto flex items-center gap-3 min-w-[280px] max-w-[420px]`;
   const icon = type==='success'?'fa-circle-check':(type==='error'?'fa-circle-xmark':'fa-circle-info');
-  const iconColor = type==='success'?'var(--green)':(type==='error'?'var(--red)':'var(--blue)');
-  toast.innerHTML = `<i class="fa-solid ${icon}" style="color:${iconColor};font-size:1.1rem"></i><span>${msg}</span>`;
+  toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i><span>${msg}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -132,9 +361,76 @@ window.alert = function(msg) {
 };
 
 function closeVLabModal() {
-  document.getElementById('vlabModalOverlay').style.display = 'none';
+  const modalContent = document.querySelector('#vlabModalOverlay > div');
+  if (modalContent && window.VLabMotion) {
+    window.VLabMotion.animate(modalContent, { opacity: 0, scale: 0.9 }, { duration: 0.2 }).then(() => {
+      document.getElementById('vlabModalOverlay').style.display = 'none';
+    });
+  } else {
+    document.getElementById('vlabModalOverlay').style.display = 'none';
+  }
 }
+</script>
+
+<!-- Motion JS Library Integration -->
+<script type="module">
+  import { animate, inView, stagger, spring } from 'https://cdn.jsdelivr.net/npm/motion@latest/+esm';
+
+  window.VLabMotion = {
+    animate,
+    inView,
+    stagger,
+    spring,
+    fadeInUp: (target, options = {}) => {
+      return animate(
+        target,
+        { opacity: [0, 1], y: [24, 0] },
+        { duration: options.duration || 0.6, easing: options.easing || [0.16, 1, 0.3, 1], delay: options.delay || 0 }
+      );
+    },
+    popIn: (target, options = {}) => {
+      return animate(
+        target,
+        { opacity: [0, 1], scale: [0.88, 1] },
+        { duration: options.duration || 0.5, easing: spring({ stiffness: 300, damping: 20 }), delay: options.delay || 0 }
+      );
+    },
+    staggerChildren: (container, selector, options = {}) => {
+      const items = typeof container === 'string' ? document.querySelectorAll(container) : (container ? container.querySelectorAll(selector) : document.querySelectorAll(selector));
+      if (!items || !items.length) return;
+      return animate(
+        items,
+        { opacity: [0, 1], y: [20, 0] },
+        { delay: stagger(options.stagger || 0.08), duration: options.duration || 0.5, easing: [0.16, 1, 0.3, 1] }
+      );
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const interactiveElements = document.querySelectorAll('.btn, .theme-toggle-btn, .btn-primary, .btn-secondary, .lab-card, .stat-card, .feature-card, .card');
+    interactiveElements.forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        animate(el, { scale: 1.015, y: -2 }, { duration: 0.2, easing: spring({ stiffness: 400, damping: 25 }) });
+      });
+      el.addEventListener('mouseleave', () => {
+        animate(el, { scale: 1, y: 0 }, { duration: 0.2, easing: spring({ stiffness: 400, damping: 25 }) });
+      });
+      el.addEventListener('mousedown', () => {
+        animate(el, { scale: 0.98 }, { duration: 0.1, easing: spring({ stiffness: 500, damping: 30 }) });
+      });
+      el.addEventListener('mouseup', () => {
+        animate(el, { scale: 1.015 }, { duration: 0.15, easing: spring({ stiffness: 400, damping: 25 }) });
+      });
+    });
+
+    inView('.motion-fade-up', (info) => {
+      animate(info.target, { opacity: [0, 1], y: [28, 0] }, { duration: 0.6, easing: [0.16, 1, 0.3, 1] });
+    });
+
+    inView('.motion-scale-in', (info) => {
+      animate(info.target, { opacity: [0, 1], scale: [0.9, 1] }, { duration: 0.5, easing: spring({ stiffness: 300, damping: 22 }) });
+    });
+  });
 </script>
 </body>
 </html>
-

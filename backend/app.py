@@ -84,15 +84,9 @@ LAB3_STEPS = [
 ]
 
 LAB4_STEPS = [
-<<<<<<< HEAD:backend/app.py
-    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask path parameters '/sum/<float:a>/<float:b>' returning their sum as JSON."},
-    {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 80."},
-    {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask dependency package."},
-=======
     {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask to receive two numbers 'a' and 'b' via route '/add' (e.g. /add?a=10&b=20) and return number1, number2, and sum as JSON."},
     {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 5000."},
     {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask==3.0.0 dependency package."},
->>>>>>> 5cc487e (Updated changes and fixed errors):app.py
     {"id": 4, "title": "Build Microservice Docker Image", "desc": "Run 'docker build -t sum-microservice .' in the integrated VS Code terminal."},
     {"id": 5, "title": "Run Microservice Container", "desc": "Run 'docker run -d -p 5000:5000 sum-microservice' to start your calculator microservice."},
 ]
@@ -809,16 +803,10 @@ def api_terminal_exec():
             else:
                 res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
             
-<<<<<<< HEAD:backend/app.py
-            # Auto-healing: If port allocation failed (e.g. port 8080 or 80 already bound by old container), auto-free port and retry!
+            # Auto-healing: If port allocation failed (e.g. port 8080, 5000 or 80 already bound by old container), auto-free port and retry!
             err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
             if res.returncode != 0 and ("port is already allocated" in err_lower or "address already in use" in err_lower):
-                ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True)
-=======
-            # Auto-healing: If port allocation failed (e.g. port 8080 already bound by old container), auto-free port 8080 and retry!
-            if res.returncode != 0 and ("port is already allocated" in res.stderr.lower() or "port is already allocated" in res.stdout.lower()):
                 ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
->>>>>>> 5cc487e (Updated changes and fixed errors):app.py
                 if ps_res.stdout:
                     for line in ps_res.stdout.splitlines():
                         if "8080" in line or "80" in line:
@@ -964,6 +952,76 @@ def api_terminal_exec():
 # ---------------------------------------------------------------------------
 @app.route("/", methods=["GET"])
 def index():
+    student_id = session.get("student_id")
+    role = session.get("role")
+
+    score_data = {
+        "is_logged_in": False,
+        "student_name": "",
+        "overall_pct": 0,
+        "level": "Novice Level",
+        "skills": [
+            {"id": "l1_s1", "title": "Virtualization & Specs Audit (Lab 1)", "done": False},
+            {"id": "l1_s2", "title": "Running First Container (<code>docker run hello-world</code>)", "done": False},
+            {"id": "l2_s1", "title": "Writing Custom Nginx Dockerfiles (Lab 2)", "done": False},
+            {"id": "l2_s2", "title": "Port Binding & Mapping (<code>8080:80</code>)", "done": False},
+            {"id": "l3_s1", "title": "Detached Execution Mode (<code>docker run -d</code>) (Lab 3)", "done": False},
+            {"id": "l3_s2", "title": "System Resource Pruning (<code>docker system prune</code>)", "done": False},
+            {"id": "l4_s1", "title": "Flask Microservice API Packaging (Lab 4)", "done": False},
+            {"id": "l4_s2", "title": "Docker Hub Authentication & Image Registry Push", "done": False},
+        ]
+    }
+
+    if role == "student" and student_id:
+        student = get_student(student_id)
+        p1 = get_progress(student_id, 1)
+        p2 = get_progress(student_id, 2)
+        p3 = get_progress(student_id, 3)
+        p4 = get_progress(student_id, 4)
+
+        steps1 = json.loads(p1["steps_completed"]) if p1 else []
+        v1 = bool(p1["verification_passed"]) if p1 else False
+
+        steps2 = json.loads(p2["steps_completed"]) if p2 else []
+        v2 = bool(p2["verification_passed"]) if p2 else False
+
+        steps3 = json.loads(p3["steps_completed"]) if p3 else []
+        v3 = bool(p3["verification_passed"]) if p3 else False
+
+        steps4 = json.loads(p4["steps_completed"]) if p4 else []
+        v4 = bool(p4["verification_passed"]) if p4 else False
+
+        total_done = len(steps1) + len(steps2) + len(steps3) + len(steps4)
+        total_possible = len(LAB1_STEPS) + len(LAB2_STEPS) + len(LAB3_STEPS) + len(LAB4_STEPS)
+        score_pct = int(round((total_done / total_possible) * 100)) if total_possible > 0 else 0
+
+        level = "Novice Level"
+        if score_pct >= 75:
+            level = "Master Docker Engineer"
+        elif score_pct >= 50:
+            level = "Advanced Level"
+        elif score_pct >= 25:
+            level = "Practitioner Level"
+
+        score_data["is_logged_in"] = True
+        score_data["student_name"] = student["name"] if student else student_id
+        score_data["overall_pct"] = score_pct
+        score_data["level"] = level
+
+        score_data["skills"][0]["done"] = len(steps1) >= 1 or v1
+        score_data["skills"][1]["done"] = len(steps1) >= len(LAB1_STEPS) or v1
+        score_data["skills"][2]["done"] = len(steps2) >= 1 or v2
+        score_data["skills"][3]["done"] = len(steps2) >= len(LAB2_STEPS) or v2
+        score_data["skills"][4]["done"] = len(steps3) >= 1 or v3
+        score_data["skills"][5]["done"] = len(steps3) >= len(LAB3_STEPS) or v3
+        score_data["skills"][6]["done"] = len(steps4) >= 1 or v4
+        score_data["skills"][7]["done"] = len(steps4) >= len(LAB4_STEPS) or v4
+
+    return render_template("home.html", score_data=score_data)
+
+
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
     if session.get("role") == "student":
         return redirect(url_for("student_dashboard"))
     if session.get("role") == "faculty":
@@ -1964,14 +2022,23 @@ def api_system_telemetry():
         disk = psutil.disk_usage("/")
         pid = os.getpid()
         has_docker, docker_msg = check_host_docker_status()
+        ram_mb = mem.used / (1024 * 1024)
+        if ram_mb >= 1024:
+            ram_str = f"{(ram_mb / 1024):.1f} GB"
+        else:
+            ram_str = f"{ram_mb:.0f} MB"
+
+        disk_gb = disk.used / (1024 * 1024 * 1024)
+        disk_str = f"{disk_gb:.1f} GB"
+
         return jsonify({
             "ok": True,
             "pid": pid,
             "cpu": f"{cpu_pct:.1f}%",
             "cpu_num": cpu_pct,
-            "ram": f"{(mem.used / (1024 * 1024)):.1f} MB",
+            "ram": ram_str,
             "ram_pct": f"{mem.percent}%",
-            "disk": f"{(disk.used / (1024 * 1024 * 1024)):.2f} GB",
+            "disk": disk_str,
             "docker_engine": "local" if has_docker else "virtual",
             "docker_status_text": docker_msg
         })
@@ -1997,39 +2064,45 @@ if __name__ == "__main__":
     port = int(os.environ.get("FLASK_RUN_PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "false").lower() in ("true", "1", "t")
     
+    use_ssl = os.environ.get("FLASK_USE_SSL", "false").lower() in ("true", "1", "t")
     ssl_context = None
-    # Check in the same directory as app.py
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    cert_path = os.path.join(current_dir, "cert.pem")
-    key_path = os.path.join(current_dir, "key.pem")
-    
-    # Automatically generate SSL certificates on startup if missing
-    if not (os.path.exists(cert_path) and os.path.exists(key_path)):
-        try:
-            print("SSL Certificates missing. Auto-generating self-signed certificates...")
-            import subprocess
-            subprocess.run(
-                ["python", os.path.join(current_dir, "generate_cert.py")],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-        except Exception as e:
-            print(f"Warning: Could not auto-generate SSL certificates: {e}")
+    if use_ssl:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        cert_path = os.path.join(current_dir, "cert.pem")
+        key_path = os.path.join(current_dir, "key.pem")
+        if not (os.path.exists(cert_path) and os.path.exists(key_path)):
+            base_cert = os.path.join(BASE_DIR, "cert.pem")
+            base_key = os.path.join(BASE_DIR, "key.pem")
+            if os.path.exists(base_cert) and os.path.exists(base_key):
+                cert_path, key_path = base_cert, base_key
+            else:
+                try:
+                    print("SSL Certificates missing. Auto-generating self-signed certificates...")
+                    import subprocess
+                    subprocess.run(
+                        ["python", os.path.join(current_dir, "generate_cert.py")],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
+                    if os.path.exists(base_cert) and os.path.exists(base_key):
+                        cert_path, key_path = base_cert, base_key
+                except Exception as e:
+                    print(f"Warning: Could not auto-generate SSL certificates: {e}")
 
-    if os.path.exists(cert_path) and os.path.exists(key_path):
-        ssl_context = (cert_path, key_path)
-        print(f"Loading SSL certificate from {cert_path}")
-        
-        # Automatically trust the certificate in the local Windows store on startup
-        try:
-            import subprocess
-            subprocess.run(
-                ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\CurrentUser\Root"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-            print("Successfully verified/registered SSL certificate in Windows Root Store.")
-        except Exception as e:
-            print(f"Warning: Auto-trust registration failed: {e}")
-        
+        if os.path.exists(cert_path) and os.path.exists(key_path):
+            ssl_context = (cert_path, key_path)
+            print(f"Loading SSL certificate from {cert_path}")
+            
+            try:
+                import subprocess
+                subprocess.run(
+                    ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\\CurrentUser\\Root"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=2
+                )
+                print("Successfully verified/registered SSL certificate in Windows Root Store.")
+            except Exception as e:
+                print(f"Warning: Auto-trust registration skipped or timed out: {e}")
+
     app.run(host=host, port=port, debug=debug, ssl_context=ssl_context)

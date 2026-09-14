@@ -9,7 +9,7 @@
       <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-solid fa-calculator" style="color:var(--purple)"></i> Lab 4: Build &amp; Containerize a Sum Microservice</h2>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
+      <button class="btn btn-blue" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
       <button class="btn btn-outline" onclick="showLabVideoModal(4)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
       <button class="btn btn-outline" onclick="showTicketModal(4)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
       <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:var(--purple)"></i> Interactive Tour</button>
@@ -59,18 +59,18 @@
       <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
     </div>
     
-    <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;flex-shrink:0">
+    <div class="drawer-subtitle">
       Complete these tasks in the VS Code Web IDE to package and deploy your Flask Sum Microservice container:
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
       <!-- Step 1: CREATE APP.PY -->
-      <div id="checkCard-app" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-app" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-python" style="color:#38bdf8"></i> 1. CREATE APP.PY</b>
+          <b class="drawer-step-title"><i class="fa-brands fa-python" style="color:#38bdf8"></i> 1. CREATE APP.PY</b>
           <span id="badge-app" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE FLASK CODE FROM REFERENCE BELOW:</div>
+        <div class="drawer-step-sub">CLICK + IN EXPLORER SIDEBAR AND WRITE FLASK CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="Flask API: Defines HTTP GET route /add returning number1, number2, and sum on port 5000">from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br><br>@app.route('/add', methods=['GET'])<br>def add_numbers():<br>&nbsp;&nbsp;try:<br>&nbsp;&nbsp;&nbsp;&nbsp;a = float(request.args.get('a'))<br>&nbsp;&nbsp;&nbsp;&nbsp;b = float(request.args.get('b'))<br>&nbsp;&nbsp;&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b})<br>&nbsp;&nbsp;except (TypeError, ValueError):<br>&nbsp;&nbsp;&nbsp;&nbsp;return jsonify({"error": "Please provide two valid numbers"}), 400<br><br>@app.route('/')<br>def home():<br>&nbsp;&nbsp;return "Addition Microservice is Running"<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</span></div>
@@ -78,12 +78,12 @@
       </div>
 
       <!-- Step 2: CREATE DOCKERFILE -->
-      <div id="checkCard-dockerfile" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-dockerfile" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
+          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
           <span id="badge-dockerfile" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + TO CREATE DOCKERFILE WITH PYTHON MICROSERVICE INSTRUCTIONS:</div>
+        <div class="drawer-step-sub">CLICK + TO CREATE DOCKERFILE WITH PYTHON MICROSERVICE INSTRUCTIONS:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies official Python 3.9 Linux base image">FROM python:3.9-slim</span><br><span class="vlab-hover-target" data-vlab-tooltip="WORKDIR /app: Sets container app directory">WORKDIR /app</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY requirements.txt & RUN pip: Installs Python dependencies inside container">COPY requirements.txt .<br>RUN pip install -r requirements.txt</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY app.py .: Copies application code into container">COPY app.py .</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE 5000 & CMD: Opens port 5000 and executes Flask app">EXPOSE 5000<br>CMD ["python", "app.py"]</span></div>
@@ -91,12 +91,12 @@
       </div>
 
       <!-- Step 3: CREATE REQUIREMENTS.TXT -->
-      <div id="checkCard-req" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-req" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-file-code" style="color:#a855f7"></i> 3. CREATE REQUIREMENTS.TXT</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-file-code" style="color:#a855f7"></i> 3. CREATE REQUIREMENTS.TXT</b>
           <span id="badge-req" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE DEPENDENCIES FROM REFERENCE BELOW:</div>
+        <div class="drawer-step-sub">CLICK + IN EXPLORER SIDEBAR AND WRITE DEPENDENCIES FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="requirements.txt: Specifies required Flask PyPI package">flask==3.0.0</span></div>
@@ -104,31 +104,31 @@
       </div>
 
       <!-- Step 4: BUILD DOCKER IMAGE -->
-      <div id="checkCard-build" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-build" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-cube" style="color:var(--blue)"></i> 4. BUILD MICROSERVICE IMAGE</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-cube" style="color:var(--blue)"></i> 4. BUILD MICROSERVICE IMAGE</b>
           <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
         <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8"><span class="vlab-hover-target" data-vlab-tooltip="docker build: Compiles Python microservice image named sum-microservice">docker build -t sum-microservice .</span></div>
       </div>
 
       <!-- Step 5: RUN CONTAINER -->
-      <div id="checkCard-run" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-run" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-play" style="color:var(--green)"></i> 5. RUN MICROSERVICE CONTAINER</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--green)"></i> 5. RUN MICROSERVICE CONTAINER</b>
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
         <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399"><span class="vlab-hover-target" data-vlab-tooltip="docker run: Launches microservice in background (-d) mapping host port 5000 to container port 5000 (-p)">docker run -d -p 5000:5000 sum-microservice</span></div>
       </div>
     </div>
 
     <div style="margin-top:16px;flex-shrink:0">
       <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:.74rem;margin-top:5px">
-        <span id="progLabel" style="color:var(--muted)">0 / 5 Compulsory Tested</span>
-        <span id="progPct" style="color:var(--blue);font-family:monospace">0%</span>
+      <div class="progress-labels">
+        <span id="progLabel">0 / 5 Compulsory Tested</span>
+        <span id="progPct" class="prog-pct">0%</span>
       </div>
     </div>
   </div>
@@ -167,19 +167,18 @@
         <div style="display:flex;gap:8px;align-items:center">
           <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> New File</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
-          <button class="btn-insert-code" id="btnInsertTemplate" onclick="insertBoilerplateCode()" title="Auto-fill standard starter boilerplate code for this file"><i class="fa-solid fa-wand-magic-sparkles"></i> Insert Code Template</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> Rename</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:.76rem;color:#94a3b8;font-family:var(--mono)" id="editorFileStatus">Editing: app.py</span>
+          <span style="font-size:.76rem;color:#E0E0E0;font-family:var(--font-mono);font-weight:700" id="editorFileStatus">Editing: app.py</span>
         </div>
       </div>
 
       <!-- Interactive Instruction & Hover Guidance Bar -->
-      <div style="background:var(--surface-2);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;justify-content:space-between;font-size:.76rem;font-family:var(--sans);color:var(--muted)">
-        <span><i class="fa-solid fa-lightbulb" style="color:var(--amber);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
-        <button onclick="toggleInstructionsDrawer()" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#f59e0b;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:.72rem;font-weight:700"><i class="fa-solid fa-book-open"></i> Open Instructions &rarr;</button>
+      <div style="background:#222222;border-bottom:2px solid #121212;padding:6px 14px;display:flex;align-items:center;justify-content:space-between;font-size:.76rem;font-family:var(--font-display);color:#FFFFFF">
+        <span><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
+        <button onclick="toggleInstructionsDrawer()" class="btn btn-sm btn-yellow" style="padding:2px 10px;font-size:.72rem"><i class="fa-solid fa-book-open"></i> Open Instructions &rarr;</button>
       </div>
 
       <!-- Editor & Preview Split Pane -->
@@ -253,7 +252,7 @@
     <div style="font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:24px;white-space:pre-line" id="tourDesc"></div>
     <div style="display:flex;justify-content:space-between;align-items:center">
       <button class="btn btn-outline btn-sm" id="tourPrevBtn" onclick="prevTourStep()">&larr; Previous</button>
-      <button class="btn btn-primary btn-sm" id="tourNextBtn" onclick="nextTourStep()">Next Step &rarr;</button>
+      <button class="btn btn-blue btn-sm" id="tourNextBtn" onclick="nextTourStep()">Next Step &rarr;</button>
     </div>
   </div>
 </div>
@@ -285,7 +284,7 @@
     <textarea id="ticketDescInput" rows="3" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:14px;box-sizing:border-box" placeholder="Describe the error code or obstacle you encountered..."></textarea>
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px">
       <button class="btn btn-outline btn-sm" onclick="closeTicketModal()">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="submitSupportTicket()"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
+      <button class="btn btn-blue btn-sm" onclick="submitSupportTicket()"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <h4 style="font-size:.9rem;margin:0 0 10px;color:var(--text)"><i class="fa-solid fa-reply-all" style="color:var(--blue)"></i> Previous Questions &amp; Faculty Answers</h4>
@@ -306,7 +305,7 @@
     <input type="text" id="customPromptInput" style="width:100%;background:#0f172a;border:1.5px solid #0284c7;color:#f8fafc;padding:12px 14px;border-radius:8px;outline:none;font-family:var(--mono);font-size:.9rem;margin-bottom:20px;box-sizing:border-box" placeholder="e.g. app.py, Dockerfile">
     <div style="display:flex;justify-content:flex-end;gap:10px">
       <button class="btn btn-outline btn-sm" style="color:#cbd5e1;border:1px solid #475569;border-radius:8px;padding:8px 18px" onclick="closeCustomPromptModal()">Cancel</button>
-      <button class="btn btn-primary btn-sm" id="customPromptConfirmBtn" style="background:#0284c7;border:none;border-radius:8px;padding:8px 20px;font-weight:700"><i class="fa-solid fa-check"></i> Confirm</button>
+      <button class="btn btn-blue btn-sm" id="customPromptConfirmBtn" style="background:#0284c7;border:none;border-radius:8px;padding:8px 20px;font-weight:700"><i class="fa-solid fa-check"></i> Confirm</button>
     </div>
   </div>
 </div>

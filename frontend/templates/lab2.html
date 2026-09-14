@@ -9,7 +9,7 @@
       <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 2: Create a Docker Image of a "Hello World!" Web Application</h2>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
+      <button class="btn btn-blue" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
       <button class="btn btn-outline" onclick="showLabVideoModal(2)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
       <button class="btn btn-outline" onclick="showTicketModal(2)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
       <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:var(--purple)"></i> Interactive Tour</button>
@@ -57,18 +57,18 @@
       <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
     </div>
     
-    <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;flex-shrink:0">
+    <div class="drawer-subtitle">
       Complete these tasks in the VS Code Web IDE to package and deploy your web application container:
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
       <!-- Step 1: CREATE INDEX.HTML -->
-      <div id="checkCard-index" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-index" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-html5" style="color:#e34f26"></i> 1. CREATE INDEX.HTML</b>
+          <b class="drawer-step-title"><i class="fa-brands fa-html5" style="color:#e34f26"></i> 1. CREATE INDEX.HTML</b>
           <span id="badge-index" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + IN EXPLORER SIDEBAR AND WRITE HTML CODE FROM REFERENCE BELOW:</div>
+        <div class="drawer-step-sub">CLICK + IN EXPLORER SIDEBAR AND WRITE HTML CODE FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Web Page: Defines root page title, heading and Docker welcome text">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&nbsp;&nbsp;&lt;head&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;title&gt;Hello World&lt;/title&gt;<br>&nbsp;&nbsp;&lt;/head&gt;<br>&nbsp;&nbsp;&lt;body&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Hello, World!&lt;/h1&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Welcome to Docker.&lt;/p&gt;<br>&nbsp;&nbsp;&lt;/body&gt;<br>&lt;/html&gt;</span></div>
@@ -76,12 +76,12 @@
       </div>
 
       <!-- Step 2: CREATE DOCKERFILE -->
-      <div id="checkCard-dockerfile" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-dockerfile" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
+          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
           <span id="badge-dockerfile" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">CLICK + TO CREATE DOCKERFILE WITH NGINX INSTRUCTIONS FROM REFERENCE BELOW:</div>
+        <div class="drawer-step-sub">CLICK + TO CREATE DOCKERFILE WITH NGINX INSTRUCTIONS FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies base Nginx web server image from Docker Hub">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html into container web root">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE: Opens container network port 80">EXPOSE 80</span></div>
@@ -89,31 +89,31 @@
       </div>
 
       <!-- Step 3: BUILD DOCKER IMAGE -->
-      <div id="checkCard-build" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-build" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-hammer" style="color:#38bdf8"></i> 3. BUILD DOCKER IMAGE</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-hammer" style="color:#38bdf8"></i> 3. BUILD DOCKER IMAGE</b>
           <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
         <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8"><span class="vlab-hover-target" data-vlab-tooltip="docker build: Compiles Dockerfile into tagged image named hello-web">docker build -t hello-web .</span></div>
       </div>
 
       <!-- Step 4: RUN WEB CONTAINER -->
-      <div id="checkCard-run" style="background:var(--surface-2);border:1.5px solid var(--border);padding:14px;border-radius:10px;transition:all .3s">
+      <div id="checkCard-run" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b style="color:var(--text);font-size:.88rem;letter-spacing:0.03em"><i class="fa-solid fa-play" style="color:var(--green)"></i> 4. RUN WEB CONTAINER</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--green)"></i> 4. RUN WEB CONTAINER</b>
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
         <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399"><span class="vlab-hover-target" data-vlab-tooltip="docker run: Runs container in background (-d) mapping host port 8080 to container port 80 (-p)">docker run -d -p 8080:80 hello-web</span></div>
       </div>
     </div>
 
     <div style="margin-top:16px;flex-shrink:0">
       <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:.74rem;margin-top:5px">
-        <span id="progLabel" style="color:var(--muted)">0 / 4 Compulsory Tested</span>
-        <span id="progPct" style="color:var(--blue);font-family:monospace">0%</span>
+      <div class="progress-labels">
+        <span id="progLabel">0 / 4 Compulsory Tested</span>
+        <span id="progPct" class="prog-pct">0%</span>
       </div>
     </div>
   </div>
@@ -155,17 +155,16 @@
         <div style="display:flex;gap:8px;align-items:center">
           <button class="editor-pill-btn btn-new" id="btnNewFile"><i class="fa-solid fa-plus"></i> New File</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
-          <button class="btn-insert-code" id="btnInsertTemplate" onclick="insertBoilerplateCode()" title="Auto-fill standard starter boilerplate code for this file"><i class="fa-solid fa-wand-magic-sparkles"></i> Insert Code Template</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile"><i class="fa-solid fa-pen"></i> Rename</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
-        <span style="font-size:.76rem;color:#94a3b8;font-family:var(--mono)" id="editorFileStatus">Ready to edit</span>
+        <span style="font-size:.76rem;color:#E0E0E0;font-family:var(--font-mono);font-weight:700" id="editorFileStatus">Ready to edit</span>
       </div>
 
       <!-- Interactive Instruction & Hover Guidance Bar -->
-      <div style="background:var(--surface-2);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;justify-content:space-between;font-size:.76rem;font-family:var(--sans);color:var(--muted)">
-        <span><i class="fa-solid fa-lightbulb" style="color:var(--amber);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
-        <button onclick="toggleInstructionsDrawer()" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#f59e0b;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:.72rem;font-weight:700"><i class="fa-solid fa-book-open"></i> Open Instructions &rarr;</button>
+      <div style="background:#222222;border-bottom:2px solid #121212;padding:6px 14px;display:flex;align-items:center;justify-content:space-between;font-size:.76rem;font-family:var(--font-display);color:#FFFFFF">
+        <span><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
+        <button onclick="toggleInstructionsDrawer()" class="btn btn-sm btn-yellow" style="padding:2px 10px;font-size:.72rem"><i class="fa-solid fa-book-open"></i> Open Instructions &rarr;</button>
       </div>
 
       <!-- Editor Pane -->
@@ -1371,7 +1370,7 @@ window.addEventListener('keydown', function(e) {
       <button class="btn btn-outline btn-sm" id="tourPrevBtn" onclick="prevTourStep()">&larr; Previous</button>
       <div style="display:flex;gap:10px">
         <button class="btn btn-outline btn-sm" onclick="closeTourModal()">Skip Tour</button>
-        <button class="btn btn-primary btn-sm" id="tourNextBtn" onclick="nextTourStep()">Next Step &rarr;</button>
+        <button class="btn btn-blue btn-sm" id="tourNextBtn" onclick="nextTourStep()">Next Step &rarr;</button>
       </div>
     </div>
   </div>
@@ -1391,19 +1390,22 @@ window.addEventListener('keydown', function(e) {
 </div>
 
 <script>
-function toggleInstructionsDrawer() {
+function toggleInstructionsDrawer(forceOpen) {
   const drawer = document.getElementById('instructionsDrawer');
-  if(drawer.style.transform === 'translateX(0px)') {
-    drawer.style.transform = 'translateX(-100%)';
+  if (!drawer) return;
+  if (forceOpen === true) {
+    drawer.classList.add('open');
+  } else if (forceOpen === false) {
+    drawer.classList.remove('open');
   } else {
-    drawer.style.transform = 'translateX(0px)';
+    drawer.classList.toggle('open');
   }
 }
 
 function closeInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(-100%)';
+    drawer.classList.remove('open');
   }
 }
 
@@ -1435,7 +1437,7 @@ function toggleLab2DocCheck(chk) {
     <textarea id="ticketDescInput" rows="4" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:16px" placeholder="Describe the error code or obstacle you encountered..."></textarea>
     <div style="display:flex;justify-content:flex-end;gap:10px">
       <button class="btn btn-outline btn-sm" onclick="closeTicketModal()">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="submitSupportTicket()"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
+      <button class="btn btn-blue btn-sm" onclick="submitSupportTicket()"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
     </div>
   </div>
 </div>
@@ -1451,7 +1453,7 @@ function toggleLab2DocCheck(chk) {
     <input type="text" id="customPromptInput" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:10px 14px;border-radius:8px;outline:none;font-family:var(--mono);font-size:.9rem;margin-bottom:20px;box-sizing:border-box" placeholder="e.g. index.html, Dockerfile">
     <div style="display:flex;justify-content:flex-end;gap:10px">
       <button class="btn btn-outline btn-sm" style="color:#cbd5e1;border-color:#475569" onclick="closeCustomPromptModal()">Cancel</button>
-      <button class="btn btn-primary btn-sm" id="customPromptConfirmBtn" style="background:#0284c7;border:none"><i class="fa-solid fa-check"></i> Confirm</button>
+      <button class="btn btn-blue btn-sm" id="customPromptConfirmBtn" style="background:#0284c7;border:none"><i class="fa-solid fa-check"></i> Confirm</button>
     </div>
   </div>
 </div>

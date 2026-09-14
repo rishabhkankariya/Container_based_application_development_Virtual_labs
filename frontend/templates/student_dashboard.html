@@ -1,34 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Student Control Panel — V-Lab Virtual Docker Suite{% endblock %}
+
+{% block title %}Student Control Panel | Container V-Lab{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-  <!-- Hero Banner Header -->
-  <div class="card bg-base-100 border border-base-300 shadow-xl overflow-hidden relative">
-    <div class="absolute -right-10 -bottom-10 opacity-10 text-primary pointer-events-none text-9xl">
-      <i class="fa-brands fa-docker"></i>
-    </div>
-    <div class="card-body p-6 sm:p-8">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold text-base-content flex items-center gap-3">
-            Welcome back, {{ student.name.split(' ')[0] }} <span class="text-warning">👋</span>
-          </h1>
-          <p class="text-sm text-base-content/70 mt-1">
-            Container-Based Application Development Virtual Laboratory Suite
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <div class="badge badge-info gap-2 py-3 px-3">
-            <i class="fa-solid fa-id-badge"></i> {{ student.student_id }}
-          </div>
-          <div class="badge badge-success gap-2 py-3 px-3">
-            <i class="fa-solid fa-envelope"></i> {{ student.email or 'Student Active' }}
-          </div>
-          <div class="badge badge-purple gap-2 py-3 px-3 bg-purple-500/10 text-purple-400 border-purple-500/20">
-            <i class="fa-solid fa-cubes"></i> 4 Lab Modules
-          </div>
-        </div>
+<div style="display:flex;flex-direction:column;gap:24px">
+
+  <!-- Student Welcome Banner -->
+  <div class="card" style="padding:28px 32px;border-top:8px solid var(--primary-blue)">
+    <div class="corner-decor corner-decor-rotated"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+      <div>
+        <div class="badge badge-yellow" style="margin-bottom:6px">STUDENT WORKSPACE</div>
+        <h1 style="font-size:2rem;margin-bottom:4px">
+          WELCOME BACK, {{ student.name.split(' ')[0] | upper }}
+        </h1>
+        <p style="font-size:.92rem;color:#555">
+          Container-Based Application Development Virtual Laboratory Suite
+        </p>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="badge badge-red"><i class="fa-solid fa-id-badge"></i> {{ student.student_id }}</div>
+        <div class="badge badge-blue"><i class="fa-solid fa-envelope"></i> {{ student.email or 'Student Active' }}</div>
+        <div class="badge badge-yellow"><i class="fa-solid fa-cubes"></i> 4 LAB MODULES</div>
       </div>
     </div>
   </div>
@@ -41,223 +35,196 @@
   {% set total_all_possible = total_steps + total_steps2 + total_steps3 + total_steps4 %}
   {% set overall_pct = ((total_all_done / total_all_possible) * 100)|round|int %}
 
-  <!-- DaisyUI Stats Grid -->
-  <div class="stats stats-vertical lg:stats-horizontal shadow-xl bg-base-100 border border-base-300 w-full">
-    <div class="stat">
-      <div class="stat-figure text-primary">
-        <i class="fa-solid fa-box-open text-3xl"></i>
-      </div>
-      <div class="stat-title text-xs font-bold uppercase tracking-wider">Lab 01 Status</div>
-      <div class="stat-value text-primary text-2xl">{{ done1 }}/{{ total_steps }}</div>
-      <div class="stat-desc text-xs mt-1 font-medium">{{ done1 }}/{{ total_steps }} steps completed</div>
+  <!-- Bauhaus Multi-Lab Metric Stats Bar -->
+  <div class="stats-banner-yellow" style="grid-template-columns:repeat(5, 1fr);margin-bottom:0">
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--primary-red)">{{ done1 }}/{{ total_steps }}</div>
+      <div class="stat-lbl">LAB 01 PROGRESS</div>
     </div>
-
-    <div class="stat">
-      <div class="stat-figure text-emerald-500">
-        <i class="fa-solid fa-server text-3xl"></i>
-      </div>
-      <div class="stat-title text-xs font-bold uppercase tracking-wider">Lab 02 Status</div>
-      <div class="stat-value text-emerald-500 text-2xl">{{ done2 }}/{{ total_steps2 }}</div>
-      <div class="stat-desc text-xs mt-1 font-medium">{{ done2 }}/{{ total_steps2 }} steps completed</div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--primary-blue)">{{ done2 }}/{{ total_steps2 }}</div>
+      <div class="stat-lbl">LAB 02 PROGRESS</div>
     </div>
-
-    <div class="stat">
-      <div class="stat-figure text-sky-400">
-        <i class="fa-solid fa-terminal text-3xl"></i>
-      </div>
-      <div class="stat-title text-xs font-bold uppercase tracking-wider">Lab 03 Status</div>
-      <div class="stat-value text-sky-400 text-2xl">{{ done3 }}/{{ total_steps3 }}</div>
-      <div class="stat-desc text-xs mt-1 font-medium">{{ done3 }}/{{ total_steps3 }} steps completed</div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:#121212">{{ done3 }}/{{ total_steps3 }}</div>
+      <div class="stat-lbl">LAB 03 PROGRESS</div>
     </div>
-
-    <div class="stat">
-      <div class="stat-figure text-purple-400">
-        <i class="fa-solid fa-calculator text-3xl"></i>
-      </div>
-      <div class="stat-title text-xs font-bold uppercase tracking-wider">Lab 04 Status</div>
-      <div class="stat-value text-purple-400 text-2xl">{{ done4 }}/{{ total_steps4 }}</div>
-      <div class="stat-desc text-xs mt-1 font-medium">{{ done4 }}/{{ total_steps4 }} steps completed</div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--accent-green)">{{ done4 }}/{{ total_steps4 }}</div>
+      <div class="stat-lbl">LAB 04 PROGRESS</div>
     </div>
-
-    <div class="stat">
-      <div class="stat-figure text-warning">
-        <div class="radial-progress text-primary" data-value="{{ overall_pct }}" style="--size:3rem; --thickness:4px;" role="progressbar">
-          {{ overall_pct }}%
-        </div>
-      </div>
-      <div class="stat-title text-xs font-bold uppercase tracking-wider">Overall Progress</div>
-      <div class="stat-value text-xl font-extrabold">{{ overall_pct }}%</div>
-      <div class="stat-desc text-xs mt-1 font-medium">{{ total_all_done }}/{{ total_all_possible }} total steps</div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--primary-red)">{{ overall_pct }}%</div>
+      <div class="stat-lbl">TOTAL COMPLETION</div>
     </div>
   </div>
 
-  <!-- Lab Modules Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    
+  <!-- 4 Lab Module Cards Grid -->
+  <div class="grid-2">
     <!-- Lab 1 Card -->
-    <div class="card bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all duration-300 {% if verified %}border-success/40 bg-success/5{% endif %}">
-      <div class="card-body p-6 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <span class="text-xs font-bold text-primary tracking-wider uppercase"><i class="fa-solid fa-cubes"></i> CO1 &middot; Module 1</span>
-            {% if verified %}
-              <span class="badge badge-success gap-1.5 font-bold"><i class="fa-solid fa-check-double"></i> Completed</span>
-            {% elif steps_done|length > 0 %}
-              <span class="badge badge-warning gap-1.5 font-bold"><i class="fa-solid fa-clock"></i> In Progress</span>
-            {% else %}
-              <span class="badge badge-ghost gap-1.5 font-medium"><i class="fa-solid fa-circle-dot"></i> Not Started</span>
-            {% endif %}
-          </div>
-          <h2 class="card-title text-lg font-bold text-base-content">Install Docker Desktop & Verify Installation</h2>
-          <p class="text-sm text-base-content/70 mt-2 leading-relaxed">
-            Hands-on walkthrough installing Docker Desktop &mdash; system check, download, launch, and live background task verification.
-          </p>
+    <div class="card" style="border-top:8px solid var(--primary-red)">
+      <div class="corner-decor corner-decor-circle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="badge badge-red">MODULE 01 • VIRTUALIZATION</span>
+        {% if verified %}
+          <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> VERIFIED</span>
+        {% elif steps_done|length > 0 %}
+          <span class="badge badge-yellow"><i class="fa-solid fa-clock"></i> IN PROGRESS</span>
+        {% else %}
+          <span class="badge badge-white"><i class="fa-solid fa-circle"></i> NOT STARTED</span>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size:1.35rem">Install Docker Desktop &amp; Verify Installation</h2>
+      <p style="margin-bottom:16px;font-size:.9rem">
+        Step-by-step walkthrough installing Docker Desktop, WSL2 virtualization audit, hypervisor checks, and live terminal validation.
+      </p>
+
+      <div style="margin-top:auto;border-top:2px solid #E0E0E0;padding-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;margin-bottom:6px">
+          <span>COMPLETION: {{ done1 }}/{{ total_steps }} STAGES</span>
+          <span>{{ (done1 / total_steps * 100)|round|int }}%</span>
+        </div>
+        <div style="height:12px;background:#E0E0E0;border:2px solid #121212;position:relative;margin-bottom:14px">
+          <div class="progress-bar-fill" data-progress="{{ (done1 / total_steps * 100)|round|int }}" style="height:100%;background:var(--primary-red);width:0%;transition:width .3s ease"></div>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-base-200">
-          <div class="flex items-center justify-between text-xs mb-2">
-            <span class="text-base-content/60 font-semibold">Module Completion</span>
-            <span class="font-bold text-primary">{{ (steps_done|length / total_steps * 100)|round|int }}% ({{ steps_done|length }}/{{ total_steps }})</span>
-          </div>
-          <progress class="progress progress-primary w-full" value="{{ (steps_done|length / total_steps * 100)|round|int }}" max="100"></progress>
-          
-          <div class="mt-4 flex justify-end">
-            <a href="{{ url_for('lab1') }}" class="btn btn-sm {% if verified %}btn-outline btn-success{% else %}btn-primary{% endif %} rounded-xl gap-2 px-5">
-              {% if verified %}<i class="fa-solid fa-eye"></i> Review Lab 1{% else %}<i class="fa-solid fa-rocket"></i> Launch Lab 1 &rarr;{% endif %}
-            </a>
-          </div>
+        <div style="display:flex;justify-content:flex-end">
+          <a href="{{ url_for('lab1') }}" class="btn btn-sm {% if verified %}btn-outline{% else %}btn-red{% endif %}">
+            {% if verified %}<i class="fa-solid fa-eye"></i> REVIEW LAB 1{% else %}<i class="fa-solid fa-play"></i> LAUNCH LAB 1 &rarr;{% endif %}
+          </a>
         </div>
       </div>
     </div>
 
     <!-- Lab 2 Card -->
-    <div class="card bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all duration-300 {% if verified2 %}border-success/40 bg-success/5{% endif %} {% if not verified %}opacity-75{% endif %}">
-      <div class="card-body p-6 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <span class="text-xs font-bold text-emerald-500 tracking-wider uppercase"><i class="fa-solid fa-code"></i> CO1 &middot; Module 2</span>
-            {% if verified2 %}
-              <span class="badge badge-success gap-1.5 font-bold"><i class="fa-solid fa-check-double"></i> Completed</span>
-            {% elif steps_done2|length > 0 %}
-              <span class="badge badge-warning gap-1.5 font-bold"><i class="fa-solid fa-clock"></i> In Progress</span>
-            {% elif not verified %}
-              <span class="badge badge-error badge-outline gap-1.5 font-bold"><i class="fa-solid fa-lock"></i> Locked</span>
-            {% else %}
-              <span class="badge badge-ghost gap-1.5 font-medium"><i class="fa-solid fa-circle-dot"></i> Unlocked</span>
-            {% endif %}
-          </div>
-          <h2 class="card-title text-lg font-bold text-base-content">Create & Containerize "Hello World!" Web App</h2>
-          <p class="text-sm text-base-content/70 mt-2 leading-relaxed">
-            Full VS Code Web IDE experience: write index.html, configure Dockerfile, build images, and run live container on port 8080.
-          </p>
+    <div class="card" style="border-top:8px solid var(--primary-blue)">
+      <div class="corner-decor corner-decor-square"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="badge badge-blue">MODULE 02 • WEB CONTAINER</span>
+        {% if verified2 %}
+          <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> VERIFIED</span>
+        {% elif steps_done2|length > 0 %}
+          <span class="badge badge-yellow"><i class="fa-solid fa-clock"></i> IN PROGRESS</span>
+        {% elif not verified %}
+          <span class="badge badge-white" style="color:var(--primary-red)"><i class="fa-solid fa-lock"></i> LOCKED</span>
+        {% else %}
+          <span class="badge badge-white"><i class="fa-solid fa-circle"></i> UNLOCKED</span>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size:1.35rem">Create &amp; Containerize "Hello World!" Web App</h2>
+      <p style="margin-bottom:16px;font-size:.9rem">
+        Integrated VS Code environment: write index.html, configure Dockerfile, build images, and run live container service on port 8080.
+      </p>
+
+      <div style="margin-top:auto;border-top:2px solid #E0E0E0;padding-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;margin-bottom:6px">
+          <span>COMPLETION: {{ done2 }}/{{ total_steps2 }} STAGES</span>
+          <span>{{ (done2 / total_steps2 * 100)|round|int }}%</span>
+        </div>
+        <div style="height:12px;background:#E0E0E0;border:2px solid #121212;position:relative;margin-bottom:14px">
+          <div class="progress-bar-fill" data-progress="{{ (done2 / total_steps2 * 100)|round|int }}" style="height:100%;background:var(--primary-blue);width:0%;transition:width .3s ease"></div>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-base-200">
-          <div class="flex items-center justify-between text-xs mb-2">
-            <span class="text-base-content/60 font-semibold">Module Completion</span>
-            <span class="font-bold text-emerald-500">{{ (steps_done2|length / total_steps2 * 100)|round|int }}% ({{ steps_done2|length }}/{{ total_steps2 }})</span>
-          </div>
-          <progress class="progress progress-success w-full" value="{{ (steps_done2|length / total_steps2 * 100)|round|int }}" max="100"></progress>
-          
-          <div class="mt-4 flex justify-end">
-            {% if not verified %}
-              <button class="btn btn-sm btn-disabled rounded-xl gap-2 px-5 opacity-60">
-                <i class="fa-solid fa-lock"></i> Locked (Complete Lab 1 First)
-              </button>
-            {% else %}
-              <a href="{{ url_for('lab2') }}" class="btn btn-sm {% if verified2 %}btn-outline btn-success{% else %}btn-primary{% endif %} rounded-xl gap-2 px-5">
-                {% if verified2 %}<i class="fa-solid fa-eye"></i> Review Lab 2{% else %}<i class="fa-solid fa-rocket"></i> Launch Lab 2 &rarr;{% endif %}
-              </a>
-            {% endif %}
-          </div>
+        <div style="display:flex;justify-content:flex-end">
+          {% if not verified %}
+            <button class="btn btn-sm btn-outline" disabled style="opacity:0.6;cursor:not-allowed">
+              <i class="fa-solid fa-lock"></i> COMPLETE LAB 1 FIRST
+            </button>
+          {% else %}
+            <a href="{{ url_for('lab2') }}" class="btn btn-sm {% if verified2 %}btn-outline{% else %}btn-blue{% endif %}">
+              {% if verified2 %}<i class="fa-solid fa-eye"></i> REVIEW LAB 2{% else %}<i class="fa-solid fa-play"></i> LAUNCH LAB 2 &rarr;{% endif %}
+            </a>
+          {% endif %}
         </div>
       </div>
     </div>
 
     <!-- Lab 3 Card -->
-    <div class="card bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all duration-300 {% if verified3 %}border-success/40 bg-success/5{% endif %} {% if not verified2 %}opacity-75{% endif %}">
-      <div class="card-body p-6 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <span class="text-xs font-bold text-sky-400 tracking-wider uppercase"><i class="fa-brands fa-docker"></i> CO1 &middot; Module 3</span>
-            {% if verified3 %}
-              <span class="badge badge-success gap-1.5 font-bold"><i class="fa-solid fa-check-double"></i> Completed</span>
-            {% elif steps_done3|length > 0 %}
-              <span class="badge badge-warning gap-1.5 font-bold"><i class="fa-solid fa-clock"></i> In Progress</span>
-            {% elif not verified2 %}
-              <span class="badge badge-error badge-outline gap-1.5 font-bold"><i class="fa-solid fa-lock"></i> Locked</span>
-            {% else %}
-              <span class="badge badge-ghost gap-1.5 font-medium"><i class="fa-solid fa-circle-dot"></i> Unlocked</span>
-            {% endif %}
-          </div>
-          <h2 class="card-title text-lg font-bold text-base-content">Run Container from "hello-world" Image</h2>
-          <p class="text-sm text-base-content/70 mt-2 leading-relaxed">
-            Container lifecycle management: pull official image, run executables, inspect states (`docker ps -a`), and clean system resources.
-          </p>
+    <div class="card" style="border-top:8px solid var(--primary-yellow)">
+      <div class="corner-decor corner-decor-triangle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="badge badge-yellow">MODULE 03 • LIFECYCLE</span>
+        {% if verified3 %}
+          <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> VERIFIED</span>
+        {% elif steps_done3|length > 0 %}
+          <span class="badge badge-yellow"><i class="fa-solid fa-clock"></i> IN PROGRESS</span>
+        {% elif not verified2 %}
+          <span class="badge badge-white" style="color:var(--primary-red)"><i class="fa-solid fa-lock"></i> LOCKED</span>
+        {% else %}
+          <span class="badge badge-white"><i class="fa-solid fa-circle"></i> UNLOCKED</span>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size:1.35rem">Run Container from "hello-world" Image</h2>
+      <p style="margin-bottom:16px;font-size:.9rem">
+        Execute container lifecycle tasks: pull official images, inspect states with <code>docker ps -a</code>, and prune unused resources.
+      </p>
+
+      <div style="margin-top:auto;border-top:2px solid #E0E0E0;padding-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;margin-bottom:6px">
+          <span>COMPLETION: {{ done3 }}/{{ total_steps3 }} STAGES</span>
+          <span>{{ (done3 / total_steps3 * 100)|round|int }}%</span>
+        </div>
+        <div style="height:12px;background:#E0E0E0;border:2px solid #121212;position:relative;margin-bottom:14px">
+          <div class="progress-bar-fill" data-progress="{{ (done3 / total_steps3 * 100)|round|int }}" style="height:100%;background:var(--primary-yellow);width:0%;transition:width .3s ease"></div>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-base-200">
-          <div class="flex items-center justify-between text-xs mb-2">
-            <span class="text-base-content/60 font-semibold">Module Completion</span>
-            <span class="font-bold text-sky-400">{{ (steps_done3|length / total_steps3 * 100)|round|int }}% ({{ steps_done3|length }}/{{ total_steps3 }})</span>
-          </div>
-          <progress class="progress progress-info w-full" value="{{ (steps_done3|length / total_steps3 * 100)|round|int }}" max="100"></progress>
-          
-          <div class="mt-4 flex justify-end">
-            {% if not verified2 %}
-              <button class="btn btn-sm btn-disabled rounded-xl gap-2 px-5 opacity-60">
-                <i class="fa-solid fa-lock"></i> Locked (Complete Lab 2 First)
-              </button>
-            {% else %}
-              <a href="{{ url_for('lab3') }}" class="btn btn-sm {% if verified3 %}btn-outline btn-success{% else %}btn-primary{% endif %} rounded-xl gap-2 px-5">
-                {% if verified3 %}<i class="fa-solid fa-eye"></i> Review Lab 3{% else %}<i class="fa-solid fa-rocket"></i> Launch Lab 3 &rarr;{% endif %}
-              </a>
-            {% endif %}
-          </div>
+        <div style="display:flex;justify-content:flex-end">
+          {% if not verified2 %}
+            <button class="btn btn-sm btn-outline" disabled style="opacity:0.6;cursor:not-allowed">
+              <i class="fa-solid fa-lock"></i> COMPLETE LAB 2 FIRST
+            </button>
+          {% else %}
+            <a href="{{ url_for('lab3') }}" class="btn btn-sm {% if verified3 %}btn-outline{% else %}btn-yellow{% endif %}">
+              {% if verified3 %}<i class="fa-solid fa-eye"></i> REVIEW LAB 3{% else %}<i class="fa-solid fa-play"></i> LAUNCH LAB 3 &rarr;{% endif %}
+            </a>
+          {% endif %}
         </div>
       </div>
     </div>
 
     <!-- Lab 4 Card -->
-    <div class="card bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all duration-300 {% if verified4 %}border-success/40 bg-success/5{% endif %} {% if not verified3 %}opacity-75{% endif %}">
-      <div class="card-body p-6 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <span class="text-xs font-bold text-purple-400 tracking-wider uppercase"><i class="fa-solid fa-calculator"></i> CO1 &middot; Module 4</span>
-            {% if verified4 %}
-              <span class="badge badge-success gap-1.5 font-bold"><i class="fa-solid fa-check-double"></i> Completed</span>
-            {% elif steps_done4|length > 0 %}
-              <span class="badge badge-warning gap-1.5 font-bold"><i class="fa-solid fa-clock"></i> In Progress</span>
-            {% elif not verified3 %}
-              <span class="badge badge-error badge-outline gap-1.5 font-bold"><i class="fa-solid fa-lock"></i> Locked</span>
-            {% else %}
-              <span class="badge badge-ghost gap-1.5 font-medium"><i class="fa-solid fa-circle-dot"></i> Unlocked</span>
-            {% endif %}
-          </div>
-          <h2 class="card-title text-lg font-bold text-base-content">Build & Containerize a Sum Microservice</h2>
-          <p class="text-sm text-base-content/70 mt-2 leading-relaxed">
-            Develop a Python Flask REST microservice accepting parameters `a` & `b` to return JSON calculation outputs live on port 5000.
-          </p>
+    <div class="card" style="border-top:8px solid var(--accent-green)">
+      <div class="corner-decor corner-decor-rotated"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="badge badge-green">MODULE 04 • MICROSERVICES</span>
+        {% if verified4 %}
+          <span class="badge badge-green"><i class="fa-solid fa-check-double"></i> VERIFIED</span>
+        {% elif steps_done4|length > 0 %}
+          <span class="badge badge-yellow"><i class="fa-solid fa-clock"></i> IN PROGRESS</span>
+        {% elif not verified3 %}
+          <span class="badge badge-white" style="color:var(--primary-red)"><i class="fa-solid fa-lock"></i> LOCKED</span>
+        {% else %}
+          <span class="badge badge-white"><i class="fa-solid fa-circle"></i> UNLOCKED</span>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size:1.35rem">Build &amp; Containerize a Sum Microservice</h2>
+      <p style="margin-bottom:16px;font-size:.9rem">
+        Develop a Flask REST microservice accepting parameters <code>a</code> &amp; <code>b</code> to return JSON outputs on port 5000.
+      </p>
+
+      <div style="margin-top:auto;border-top:2px solid #E0E0E0;padding-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;margin-bottom:6px">
+          <span>COMPLETION: {{ done4 }}/{{ total_steps4 }} STAGES</span>
+          <span>{{ (done4 / total_steps4 * 100)|round|int }}%</span>
+        </div>
+        <div style="height:12px;background:#E0E0E0;border:2px solid #121212;position:relative;margin-bottom:14px">
+          <div class="progress-bar-fill" data-progress="{{ (done4 / total_steps4 * 100)|round|int }}" style="height:100%;background:var(--accent-green);width:0%;transition:width .3s ease"></div>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-base-200">
-          <div class="flex items-center justify-between text-xs mb-2">
-            <span class="text-base-content/60 font-semibold">Module Completion</span>
-            <span class="font-bold text-purple-400">{{ (steps_done4|length / total_steps4 * 100)|round|int }}% ({{ steps_done4|length }}/{{ total_steps4 }})</span>
-          </div>
-          <progress class="progress progress-secondary w-full" value="{{ (steps_done4|length / total_steps4 * 100)|round|int }}" max="100"></progress>
-          
-          <div class="mt-4 flex justify-end">
-            {% if not verified3 %}
-              <button class="btn btn-sm btn-disabled rounded-xl gap-2 px-5 opacity-60">
-                <i class="fa-solid fa-lock"></i> Locked (Complete Lab 3 First)
-              </button>
-            {% else %}
-              <a href="{{ url_for('lab4') }}" class="btn btn-sm {% if verified4 %}btn-outline btn-success{% else %}btn-primary{% endif %} rounded-xl gap-2 px-5">
-                {% if verified4 %}<i class="fa-solid fa-eye"></i> Review Lab 4{% else %}<i class="fa-solid fa-rocket"></i> Launch Lab 4 &rarr;{% endif %}
-              </a>
-            {% endif %}
-          </div>
+        <div style="display:flex;justify-content:flex-end">
+          {% if not verified3 %}
+            <button class="btn btn-sm btn-outline" disabled style="opacity:0.6;cursor:not-allowed">
+              <i class="fa-solid fa-lock"></i> COMPLETE LAB 3 FIRST
+            </button>
+          {% else %}
+            <a href="{{ url_for('lab4') }}" class="btn btn-sm {% if verified4 %}btn-outline{% else %}btn-green{% endif %}">
+              {% if verified4 %}<i class="fa-solid fa-eye"></i> REVIEW LAB 4{% else %}<i class="fa-solid fa-play"></i> LAUNCH LAB 4 &rarr;{% endif %}
+            </a>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -266,14 +233,13 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.radial-progress[data-value]').forEach(el => {
-    el.style.setProperty('--value', el.getAttribute('data-value') || '0');
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.progress-bar-fill[data-progress]').forEach(el => {
+      const pct = el.getAttribute('data-progress');
+      if (pct) {
+        el.style.width = pct + '%';
+      }
+    });
   });
-  if (window.VLabMotion) {
-    window.VLabMotion.staggerChildren('.stats', '.stat', { stagger: 0.08 });
-    window.VLabMotion.staggerChildren('.grid', '.card', { stagger: 0.1 });
-  }
-});
 </script>
 {% endblock %}

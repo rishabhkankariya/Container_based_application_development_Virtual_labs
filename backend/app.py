@@ -1801,7 +1801,13 @@ def faculty_add_student():
             "student_id": student_id,
             "name": name,
             "email": email,
-            "default_password": default_password
+            "default_password": default_password,
+            "student": {
+                "student_id": student_id,
+                "name": name,
+                "email": email,
+                "default_password": default_password
+            }
         })
 
     flash(msg, "success")

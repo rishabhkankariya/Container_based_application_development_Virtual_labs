@@ -1,90 +1,100 @@
 {% extends "base.html" %}
-{% block title %}V-Lab | Virtual Docker Suite Portal Authentication{% endblock %}
+
+{% block title %}Portal Authentication | Container V-Lab{% endblock %}
+
 {% block body %}
-<div class="auth-screen">
-  <div style="position:absolute;top:20px;left:24px;z-index:10">
-    <a href="{{ url_for('index') }}" style="color:var(--text);font-weight:700;display:inline-flex;align-items:center;gap:8px;font-size:.9rem;text-decoration:none;background:var(--surface);padding:8px 16px;border-radius:20px;border:1px solid var(--border)">
-      <i class="fa-solid fa-arrow-left"></i> Back to Home
-    </a>
-  </div>
-  <div style="position:absolute;top:20px;right:24px;z-index:10">
-    <button class="theme-toggle-btn" onclick="window.toggleVLabTheme()" title="Toggle Light/Dark Theme"><i class="fa-solid fa-sun"></i></button>
-  </div>
-  <div class="auth-box">
-    <div class="auth-logo">
-      <div class="auth-whale-icon"><i class="fa-brands fa-docker"></i></div>
-      <div class="auth-title">Container V-Lab Suite</div>
-      <div class="auth-sub">Virtual Docker Laboratory &amp; Interactive Learning Portal</div>
+<div style="min-height:75vh;display:flex;align-items:center;justify-content:center;padding:20px 0">
+  <div class="card" style="max-width:480px;width:100%;padding:36px">
+    <div class="corner-decor corner-decor-rotated"></div>
+
+    <!-- Bauhaus Brand Header -->
+    <div style="text-align:center;margin-bottom:28px">
+      <div class="bauhaus-logo" style="justify-content:center;margin-bottom:8px">
+        <div class="bauhaus-shapes">
+          <span class="shape-circle"></span>
+          <span class="shape-square"></span>
+          <span class="shape-triangle"></span>
+        </div>
+        <span>PORTAL ACCESS</span>
+      </div>
+      <p style="font-size:.88rem;color:#555">Virtual Docker Laboratory Authentication Console</p>
     </div>
-    <div class="card auth-card">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}{% for category, msg in messages %}
-          <div class="flash flash-{{ category }}"><i class="fa-solid fa-triangle-exclamation"></i> {{ msg }}</div>
-        {% endfor %}{% endif %}
-      {% endwith %}
-      <form method="POST" action="{{ url_for('login') }}">
-        <div class="role-toggle">
-          <label><input type="radio" name="role" value="student" id="roleStudent" onchange="updateHint()"><span><i class="fa-solid fa-user-graduate"></i> Student Portal</span></label>
-          <label><input type="radio" name="role" value="faculty" id="roleFaculty" onchange="updateHint()"><span><i class="fa-solid fa-chalkboard-user"></i> Faculty Console</span></label>
-        </div>
-        <label id="idLabel"><i class="fa-solid fa-id-badge"></i> Student ID</label>
-        <input type="text" name="identifier" id="idField" placeholder="e.g. STU001" required autofocus>
-        
-        <label><i class="fa-solid fa-lock"></i> Password</label>
-        <div class="password-wrap">
-          <input type="password" name="password" placeholder="••••••••" required>
-          <button type="button" class="password-toggle-btn" onclick="window.togglePassword(this)" title="Toggle password visibility">
-            <i class="fa-solid fa-eye"></i>
-          </button>
-        </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:.95rem;padding:12px 20px;border-radius:30px">
-          Sign In to Portal <i class="fa-solid fa-arrow-right"></i>
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, msg in messages %}
+        <div class="flash flash-{{ category }}"><i class="fa-solid fa-triangle-exclamation"></i> {{ msg }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <!-- Bauhaus Role Toggle Switch -->
+      <div class="role-toggle">
+        <label>
+          <input type="radio" name="role" value="student" id="roleStudent" onchange="updateHint()" checked>
+          <span><i class="fa-solid fa-user-graduate"></i> Student</span>
+        </label>
+        <label>
+          <input type="radio" name="role" value="faculty" id="roleFaculty" onchange="updateHint()">
+          <span><i class="fa-solid fa-chalkboard-user"></i> Faculty</span>
+        </label>
+      </div>
+
+      <!-- Identity Field -->
+      <label id="idLabel"><i class="fa-solid fa-id-badge"></i> Student ID or Email</label>
+      <input type="text" name="identifier" id="idField" placeholder="e.g. STU001 or student@univ.edu" required autofocus>
+
+      <!-- Password Field with Toggle -->
+      <label><i class="fa-solid fa-lock"></i> Password</label>
+      <div style="position:relative;display:flex;align-items:center">
+        <input type="password" name="password" id="loginPassword" placeholder="••••••••" required style="padding-right:45px">
+        <button type="button" onclick="window.togglePassword(this)" style="position:absolute;right:10px;background:none;border:none;cursor:pointer;font-size:1.1rem;color:#121212" title="Toggle password visibility">
+          <i class="fa-solid fa-eye"></i>
         </button>
-      </form>
-
-      <div style="display:flex;justify-content:center;align-items:center;margin-top:16px">
-        <a href="{{ url_for('change_password') }}" style="color:var(--blue);font-size:.85rem;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px">
-          <i class="fa-solid fa-key"></i> Need to change your password? Click here
-        </a>
       </div>
 
-      <div style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border)">
-        <i class="fa-solid fa-shield-halved" style="color:var(--blue)"></i> Faculty default: <code>faculty</code> / <code>faculty123</code>
-      </div>
+      <!-- Sign In Button -->
+      <button type="submit" class="btn btn-lg btn-red" style="width:100%;margin-top:24px">
+        SIGN IN TO WORKSPACE <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </form>
+
+    <!-- Sub links -->
+    <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:2px solid #E0E0E0">
+      <a href="{{ url_for('change_password') }}" style="font-size:.85rem;font-weight:700">
+        <i class="fa-solid fa-key"></i> Need to change your password?
+      </a>
+    </div>
+
+    <div style="margin-top:16px;background:var(--accent-yellow-light);border:2px solid #121212;padding:10px 14px;font-size:.8rem;color:#121212;box-shadow:2px 2px 0px #121212">
+      <i class="fa-solid fa-shield-halved" style="color:var(--primary-blue)"></i> Faculty Default: <code>faculty</code> / <code>faculty123</code>
     </div>
   </div>
 </div>
+
 <script>
-function updateHint() {
-  const role = document.querySelector('input[name=role]:checked').value;
-  const label = document.getElementById('idLabel');
-  const field = document.getElementById('idField');
-  if (role === 'student') {
-    label.innerHTML = '<i class="fa-solid fa-id-badge"></i> Student ID or Email';
-    field.placeholder = 'e.g. STU001 or student@univ.edu';
-  } else {
-    label.innerHTML = '<i class="fa-solid fa-user-gear"></i> Faculty Username';
-    field.placeholder = 'e.g. faculty';
+  function updateHint() {
+    const role = document.querySelector('input[name=role]:checked').value;
+    const label = document.getElementById('idLabel');
+    const field = document.getElementById('idField');
+    if (role === 'student') {
+      label.innerHTML = '<i class="fa-solid fa-id-badge"></i> Student ID or Email';
+      field.placeholder = 'e.g. STU001 or student@univ.edu';
+    } else {
+      label.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Faculty Username';
+      field.placeholder = 'e.g. faculty';
+    }
   }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const paramRole = urlParams.get('role');
-  if (paramRole === 'faculty') {
-    document.getElementById('roleFaculty').checked = true;
-  } else {
-    document.getElementById('roleStudent').checked = true;
-  }
-  updateHint();
-
-  // Motion JS Entrance animation for Auth Box
-  if (window.VLabMotion) {
-    window.VLabMotion.popIn('.auth-box', { duration: 0.6 });
-    window.VLabMotion.staggerChildren('.auth-card', 'label, input, .password-wrap, .btn, .role-toggle', { stagger: 0.05 });
-  }
-});
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramRole = urlParams.get('role');
+    if (paramRole === 'faculty') {
+      document.getElementById('roleFaculty').checked = true;
+    } else {
+      document.getElementById('roleStudent').checked = true;
+    }
+    updateHint();
+  });
 </script>
 {% endblock %}
-

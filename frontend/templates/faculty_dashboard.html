@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Control Center | Container V-Lab{% endblock %}
+
+{% block body %}
+<div style="display:flex;flex-direction:column;gap:28px">
+
+  <!-- Header Banner -->
+  <div class="card" style="padding:28px 32px;border-top:8px solid var(--primary-red)">
+    <div class="corner-decor corner-decor-square"></div>
+    <div class="badge badge-red" style="margin-bottom:8px">FACULTY ADMINISTRATIVE CONSOLE</div>
+    <h1 style="font-size:2.2rem;margin-bottom:6px">
+      CLASS ANALYTICS &amp; MULTI-LAB ROSTER
+    </h1>
+    <p style="font-size:.92rem;color:#555">
+      Real-time instructor dashboard — monitors live student progress across Labs 1 through 4, background execution tasks, issue tickets, and credentials.
+    </p>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, msg in messages %}
+      <div class="flash flash-{{ category }}"><i class="fa-solid fa-bell"></i> {{ msg }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Bauhaus Color Blocked Analytics Grid -->
+  <div class="stats-banner-yellow" style="grid-template-columns:repeat(5, 1fr);margin-bottom:0">
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--primary-blue)" id="statTotal">{{ total_students }}</div>
+      <div class="stat-lbl">TOTAL ENROLLED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--primary-red)" id="statDone">{{ lab1_completed }}</div>
+      <div class="stat-lbl">LAB 1 COMPLETED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--primary-blue)" id="statLab2Done">{{ lab2_completed }}</div>
+      <div class="stat-lbl">LAB 2 COMPLETED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:#121212" id="statLab3Done">{{ lab3_completed }}</div>
+      <div class="stat-lbl">LAB 3 COMPLETED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--accent-green)" id="statLab4Done">{{ lab4_completed }}</div>
+      <div class="stat-lbl">LAB 4 COMPLETED</div>
+    </div>
+  </div>
+
+  <!-- Lecture Video Upload & Student Issue Desk Grid -->
+  <div class="grid-2">
+    <!-- Video Lecture Upload Card -->
+    <div class="card">
+      <div class="corner-decor corner-decor-circle"></div>
+      <div class="badge badge-blue" style="margin-bottom:8px">MEDIA &amp; LECTURES</div>
+      <h2><i class="fa-solid fa-video"></i> Lecture Video Manager</h2>
+      <p style="margin-bottom:16px">Link YouTube or MP4 video tutorial URLs to explain labs to students.</p>
+      
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label>Select Target Lab</label>
+          <select id="videoLabSelect">
+            <option value="1">Lab 1: Docker Desktop Setup &amp; Verification</option>
+            <option value="2">Lab 2: Create Docker Image &amp; Hello World Web App</option>
+            <option value="3">Lab 3: Run hello-world Container &amp; Verify Application</option>
+            <option value="4">Lab 4: Build &amp; Containerize a Sum Microservice</option>
+            <option value="5">Lab 5: Multi-Container Microservice &amp; Client Application Network</option>
+            <option value="6">Lab 6: Microservice Load Scaling &amp; Replica Management</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Video Tutorial Title</label>
+          <input type="text" id="videoTitleInput" placeholder="e.g. Lab 5 Detailed Explanation &amp; Walkthrough">
+        </div>
+
+        <div>
+          <label>Video Embed / Stream URL</label>
+          <input type="text" id="videoUrlInput" placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ">
+        </div>
+
+        <button type="button" class="btn btn-blue" onclick="saveFacultyVideo()" style="margin-top:6px">
+          <i class="fa-solid fa-cloud-arrow-up"></i> SAVE &amp; PUBLISH VIDEO
+        </button>
+      </div>
+    </div>
+
+    <!-- Student Help Tickets Card -->
+    <div class="card">
+      <div class="corner-decor corner-decor-triangle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="badge badge-red">SUPPORT DESK</div>
+        <span class="badge badge-yellow" id="ticketBadge">0 TICKETS</span>
+      </div>
+      <h2><i class="fa-solid fa-headset"></i> Student Issue Tickets</h2>
+      <p style="margin-bottom:16px">Respond directly to questions submitted by students during lab exercises.</p>
+
+      <div id="facultyTicketsContainer" style="display:flex;flex-direction:column;gap:12px;max-height:380px;overflow-y:auto;padding-right:4px">
+        <div style="color:#666;font-size:.88rem;padding:24px 0;text-align:center;background:#F8F8F8;border:2px dashed #121212">
+          <i class="fa-solid fa-circle-check" style="color:var(--accent-green);font-size:1.4rem;margin-bottom:6px;display:block"></i>
+          No active student support tickets reported.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Excel Roster Upload & Manual Student Enrollment Grid -->
+  <div class="grid-2">
+    <!-- Excel Roster Upload -->
+    <div class="card">
+      <div class="corner-decor corner-decor-rotated"></div>
+      <div class="badge badge-yellow" style="margin-bottom:8px">BATCH IMPORT</div>
+      <h2><i class="fa-solid fa-file-excel"></i> Import Class Roster (.xlsx)</h2>
+      <p style="margin-bottom:16px">Upload an Excel spreadsheet with a <code>Name</code> column. Auto-generates student IDs and default passwords.</p>
+
+      <form method="POST" action="{{ url_for('faculty_upload') }}" enctype="multipart/form-data">
+        <div style="border:3px dashed #121212;background:var(--accent-yellow-light);padding:24px;text-align:center;cursor:pointer;position:relative" onclick="document.getElementById('fileInput').click()">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size:2.2rem;color:var(--primary-blue);margin-bottom:8px;display:block"></i>
+          <div style="font-weight:800;font-family:var(--font-display)">CLICK OR DRAG EXCEL FILE HERE</div>
+          <div style="font-size:.78rem;color:#555">.xlsx format only</div>
+          <input type="file" name="roster_file" accept=".xlsx" required id="fileInput" onchange="showFileName(this)" style="display:none">
+        </div>
+        <div id="fileName" style="font-size:.84rem;color:var(--primary-blue);font-family:var(--font-mono);margin:10px 0;min-height:18px;font-weight:700"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="submit" class="btn btn-red"><i class="fa-solid fa-upload"></i> UPLOAD &amp; ISSUE CREDENTIALS</button>
+          <a href="{{ url_for('download_creds') }}" class="btn btn-outline"><i class="fa-solid fa-file-export"></i> EXPORT CREDENTIALS (.XLSX)</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Manual Student Enrollment -->
+    <div class="card">
+      <div class="corner-decor corner-decor-circle"></div>
+      <div class="badge badge-green" style="margin-bottom:8px">SINGLE ENROLLMENT</div>
+      <h2><i class="fa-solid fa-user-plus"></i> Add Student Manually</h2>
+      <p style="margin-bottom:16px">Quickly enroll an individual student with automatic ID and credentials generation.</p>
+
+      <form id="manualStudentForm" method="POST" action="{{ url_for('faculty_add_student') }}" onsubmit="submitManualStudent(event)">
+        <label for="studentNameInput">Student Full Name</label>
+        <input type="text" id="studentNameInput" name="name" placeholder="e.g. Aryan Sharma" required>
+
+        <label for="studentEmailInput">Student Email Address</label>
+        <input type="email" id="studentEmailInput" name="email" placeholder="e.g. aryan132@gmail.com" required>
+
+        <button type="submit" class="btn btn-green" style="width:100%;margin-top:20px">
+          <i class="fa-solid fa-user-plus"></i> ENROLL STUDENT
+        </button>
+      </form>
+      <div id="addStudentAlert" style="display:none;margin-top:16px" class="flash"></div>
+    </div>
+  </div>
+
+  <!-- Active Student Background Subprocesses -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <div class="badge badge-black" style="margin-bottom:6px">LIVE OPERATIONS</div>
+        <h2><i class="fa-solid fa-microchip"></i> Active Student Background Tasks</h2>
+      </div>
+      <span class="badge badge-yellow" id="facultyTaskBadge">0 ACTIVE</span>
+    </div>
+    <div id="facultyTaskContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px">
+      <div style="color:#666;font-size:.85rem;grid-column:1/-1;padding:12px;background:#F8F8F8;border:2px solid #121212">
+        No background execution jobs currently running.
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Roster Table -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+      <div>
+        <div class="badge badge-red" style="margin-bottom:6px">CLASS RECORD</div>
+        <h2><i class="fa-solid fa-list-ol"></i> Student Roster &amp; Multi-Lab Statuses</h2>
+      </div>
+      <span class="badge badge-blue"><i class="fa-solid fa-rotate"></i> AUTO-REFRESH (5S)</span>
+    </div>
+
+    {% if roster|length == 0 %}
+      <div style="text-align:center;padding:40px 20px;border:3px dashed #121212;background:#F8F8F8">
+        <i class="fa-solid fa-clipboard-user" style="font-size:3rem;color:#888;margin-bottom:12px;display:block"></i>
+        <div style="font-weight:700;font-size:1.1rem">No students enrolled yet.</div>
+        <p>Upload a class list Excel file or add a student manually above to begin.</p>
+      </div>
+    {% else %}
+      <!-- Search & Filters Toolbar -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#F5F5F5;border:3px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212">
+        <div style="flex:1;min-width:240px;position:relative">
+          <input type="search" id="studentSearchInput" placeholder="Search by name, ID, or email..." onkeyup="filterAndSortRoster()" style="padding-left:36px;margin:0">
+          <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#666"></i>
+        </div>
+
+        <select id="studentSortSelect" onchange="filterAndSortRoster()" style="width:auto;margin:0">
+          <option value="name-asc" selected>Sort: Name (A &rarr; Z)</option>
+          <option value="name-desc">Sort: Name (Z &rarr; A)</option>
+          <option value="id-asc">Sort: Student ID (Asc)</option>
+          <option value="id-desc">Sort: Student ID (Desc)</option>
+          <option value="score-desc">Sort: Score (High &rarr; Low)</option>
+          <option value="score-asc">Sort: Score (Low &rarr; High)</option>
+        </select>
+
+        <button type="button" class="btn btn-sm btn-outline" onclick="resetRosterFilters()" style="margin:0">
+          <i class="fa-solid fa-arrow-rotate-left"></i> RESET
+        </button>
+
+        <span class="badge badge-pill badge-yellow" id="rosterCountBadge" style="margin-left:auto">
+          SHOWING {{ roster|length }} / {{ roster|length }} STUDENTS
+        </span>
+      </div>
+
+      <!-- Roster Data Grid -->
+      <div class="table-wrap">
+        <table class="bauhaus-table" id="rosterTable">
+          <thead>
+            <tr>
+              <th>STUDENT ID</th>
+              <th>NAME</th>
+              <th>EMAIL</th>
+              <th>DEFAULT PASSWORD</th>
+              <th>STATUS</th>
+              <th>LAB 1</th>
+              <th>LAB 2</th>
+              <th>LAB 3</th>
+              <th>LAB 4</th>
+              <th>LAB 5</th>
+              <th>LAB 6</th>
+              <th>TOTAL SCORE</th>
+            </tr>
+          </thead>
+          <tbody id="rosterTbody">
+            {% for r in roster %}
+              <tr class="roster-row"
+                  data-name="{{ r.name|lower }}"
+                  data-id="{{ r.student_id|lower }}"
+                  data-email="{{ (r.email or '')|lower }}"
+                  data-score="{{ r.overall_pct }}">
+                <td><code>{{ r.student_id }}</code></td>
+                <td><b>{{ r.name }}</b></td>
+                <td>{{ r.email or "—" }}</td>
+                <td><code>{{ r.default_password }}</code></td>
+                <td>
+                  {% if r.password_changed %}
+                    <span class="badge badge-green">CHANGED</span>
+                  {% else %}
+                    <span class="badge badge-yellow">DEFAULT</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.lab1.verified %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
+                  {% else %}
+                    <span class="badge badge-white">{{ r.lab1.steps_done }}/7</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.lab2.verified %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 4/4</span>
+                  {% else %}
+                    <span class="badge badge-white">{{ r.lab2.steps_done }}/4</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.lab3.verified %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 10/10</span>
+                  {% else %}
+                    <span class="badge badge-white">{{ r.lab3.steps_done }}/10</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.lab4.verified %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 5/5</span>
+                  {% else %}
+                    <span class="badge badge-white">{{ r.lab4.steps_done }}/5</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.lab5.verified %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
+                  {% else %}
+                    <span class="badge badge-white">{{ r.lab5.steps_done }}/7</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.lab6.verified %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
+                  {% else %}
+                    <span class="badge badge-white">{{ r.lab6.steps_done }}/7</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="font-family:var(--font-display);font-weight:900;font-size:1.1rem;color:var(--primary-red)">
+                    {{ r.overall_pct }}%
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Faculty Interactive JavaScript -->
+<script>
+  function showFileName(input) {
+    const fn = document.getElementById('fileName');
+    if (input.files && input.files[0]) {
+      fn.innerText = 'Selected file: ' + input.files[0].name;
+    }
+  }
+
+  async function saveFacultyVideo() {
+    const labNumber = document.getElementById('videoLabSelect').value;
+    const videoTitle = document.getElementById('videoTitleInput').value.trim();
+    const videoUrl = document.getElementById('videoUrlInput').value.trim();
+    if (!videoTitle || !videoUrl) {
+      alert('Please provide both a video title and URL');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/upload-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lab_number: labNumber, video_title: videoTitle, video_url: videoUrl })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert('Video successfully saved and published for Lab ' + labNumber);
+      } else {
+        alert('Error: ' + (data.error || 'Failed to save'));
+      }
+    } catch (e) {
+      alert('Network error while saving video');
+    }
+  }
+
+  async function submitManualStudent(e) {
+    e.preventDefault();
+    const name = document.getElementById('studentNameInput').value.trim();
+    const email = document.getElementById('studentEmailInput').value.trim();
+    const alertBox = document.getElementById('addStudentAlert');
+    try {
+      const res = await fetch('/faculty/add-student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        const s = d.student || d;
+        alertBox.className = 'flash flash-success';
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${s.name || name}</b> (ID: <code>${s.student_id}</code>, Pass: <code>${s.default_password}</code>)`;
+        alertBox.style.display = 'flex';
+        document.getElementById('manualStudentForm').reset();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        alertBox.className = 'flash flash-error';
+        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${d.message || d.error || 'Failed to enroll student.'}`;
+        alertBox.style.display = 'flex';
+      }
+    } catch (err) {
+      alertBox.className = 'flash flash-error';
+      alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${err.message || 'Network error'}`;
+      alertBox.style.display = 'flex';
+    }
+  }
+
+  function filterAndSortRoster() {
+    const q = (document.getElementById('studentSearchInput').value || '').toLowerCase().trim();
+    const sortVal = document.getElementById('studentSortSelect').value;
+    const rows = Array.from(document.querySelectorAll('.roster-row'));
+    let visible = 0;
+
+    rows.forEach(r => {
+      const name = r.getAttribute('data-name') || '';
+      const id = r.getAttribute('data-id') || '';
+      const email = r.getAttribute('data-email') || '';
+      const match = !q || name.includes(q) || id.includes(q) || email.includes(q);
+      if (match) {
+        r.style.display = '';
+        visible++;
+      } else {
+        r.style.display = 'none';
+      }
+    });
+
+    const tbody = document.getElementById('rosterTbody');
+    if (tbody) {
+      rows.sort((a, b) => {
+        if (sortVal === 'name-asc') return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+        if (sortVal === 'name-desc') return (b.getAttribute('data-name') || '').localeCompare(a.getAttribute('data-name') || '');
+        if (sortVal === 'id-asc') return (a.getAttribute('data-id') || '').localeCompare(b.getAttribute('data-id') || '');
+        if (sortVal === 'id-desc') return (b.getAttribute('data-id') || '').localeCompare(a.getAttribute('data-id') || '');
+        if (sortVal === 'score-desc') return parseInt(b.getAttribute('data-score') || 0) - parseInt(a.getAttribute('data-score') || 0);
+        if (sortVal === 'score-asc') return parseInt(a.getAttribute('data-score') || 0) - parseInt(b.getAttribute('data-score') || 0);
+        return 0;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
+    const badge = document.getElementById('rosterCountBadge');
+    if (badge) badge.innerText = `SHOWING ${visible} / ${rows.length} STUDENTS`;
+  }
+
+  function resetRosterFilters() {
+    document.getElementById('studentSearchInput').value = '';
+    document.getElementById('studentSortSelect').value = 'name-asc';
+    filterAndSortRoster();
+  }
+</script>
+{% endblock %}

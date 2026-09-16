@@ -1,0 +1,503 @@
+{% extends "base.html" %}
+{% block title %}Lab 6: Microservice Load Scaling & Replica Management - Container Virtual Labs{% endblock %}
+{% block body %}
+
+<div class="wrap" style="max-width:100%;padding:0 0 40px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-solid fa-layer-group" style="color:var(--purple)"></i> Lab 6: Microservice Load Scaling &amp; Replica Management <span class="badge badge-purple" style="font-size:.7rem;margin-left:8px">CO4</span></h2>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-blue" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
+      <button class="btn btn-outline" onclick="showLabVideoModal(6)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
+      <button class="btn btn-outline" onclick="showTicketModal(6)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
+      <button class="btn btn-green" onclick="submitLab6Completion()"><i class="fa-solid fa-circle-check"></i> Submit &amp; Verify Lab 6</button>
+    </div>
+  </div>
+
+  <!-- Connected Step Guidance Banner with Arrows -->
+  <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-bottom:12px">
+    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 1 details & guidance">
+      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">1</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Configure docker-compose.yml <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Write app.py, Dockerfile, &amp; Compose stack</span></div>
+    </div>
+    <div style="color:var(--blue);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
+    <div style="background:var(--surface);border:1.5px solid var(--purple);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(168,85,247,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 2 details & commands">
+      <span style="background:var(--purple);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">2</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Scale Replicas Up &amp; Down <i class="fa-solid fa-circle-info" style="color:var(--purple);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">docker compose up -d --scale sum-microservice=3</span></div>
+    </div>
+    <div style="color:var(--green);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
+    <div style="background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(5,150,105,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 3 details & verification">
+      <span style="background:var(--green);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">3</span>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Inspect Replicas &amp; Submit <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Verify multi-replica load distribution &amp; submit</span></div>
+    </div>
+  </div>
+
+  <!-- Telemetry & Active Replicas Bar -->
+  <div class="telemetry-bar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-family:var(--mono);font-size:.78rem">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i class="fa-brands fa-docker" style="color:var(--blue);font-size:1.1rem"></i>
+      <span style="font-weight:700;color:var(--text)">docker.compose telemetry</span>
+      <span class="badge badge-purple" style="font-size:.68rem;padding:2px 8px" id="l6ReplicaBadge"><i class="fa-solid fa-cubes"></i> Replicas: 1 Active</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px">
+      <div>Service: <b style="color:var(--blue)">sum-microservice</b></div>
+      <div>Active Instances: <b style="color:var(--purple)" id="l6ReplicaCount">1 / 5 Max</b></div>
+      <div>Load Balancer: <b style="color:var(--green)">Round-Robin (Port 5000)</b></div>
+    </div>
+  </div>
+
+  <!-- Slide-in Drawer for Lab 6 Instructions & Checkmarks -->
+  <div id="instructionsDrawer" class="instructions-drawer">
+    <div class="instructions-drawer-header">
+      <h3><i class="fa-solid fa-list-check" style="color:var(--purple)"></i> LAB 6 INSTRUCTIONS</h3>
+      <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
+    </div>
+    
+    <div class="drawer-subtitle">
+      Scale microservice container instances up and down dynamically using Docker Compose to manage load:
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
+      <!-- Step 1: APP.PY -->
+      <div id="checkCard-app" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-brands fa-python" style="color:#38bdf8"></i> 1. WRITE MICROSERVICE (app.py)</b>
+          <span id="badge-app" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE app.py FEATURING HOSTNAME IDENTIFIER TO TRACK REPLICAS:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
+          <div class="no-copy-code">import socket<br>from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br>HOST_ID = socket.gethostname()<br><br>@app.route('/add', methods=['GET'])<br>def add():<br>&nbsp;&nbsp;a = float(request.args.get('a', 0))<br>&nbsp;&nbsp;b = float(request.args.get('b', 0))<br>&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b, "handled_by_replica": HOST_ID})<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</div>
+        </div>
+      </div>
+
+      <!-- Step 2: DOCKERFILE -->
+      <div id="checkCard-dockerfile" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
+          <span id="badge-dockerfile" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE Dockerfile IN VS CODE EXPLORER:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
+          <div class="no-copy-code">FROM python:3.9-slim<br>WORKDIR /app<br>COPY requirements.txt .<br>RUN pip install -r requirements.txt<br>COPY app.py .<br>EXPOSE 5000<br>CMD ["python", "app.py"]</div>
+        </div>
+      </div>
+
+      <!-- Step 3: DOCKER-COMPOSE.YML -->
+      <div id="checkCard-compose" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-file-code" style="color:#a855f7"></i> 3. CONFIGURE DOCKER-COMPOSE.YML</b>
+          <span id="badge-compose" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE docker-compose.yml DEFINING SCALABLE STACK:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
+          <div class="no-copy-code">version: '3.8'<br>services:<br>&nbsp;&nbsp;sum-microservice:<br>&nbsp;&nbsp;&nbsp;&nbsp;build: .<br>&nbsp;&nbsp;&nbsp;&nbsp;ports:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "5000:5000"<br>&nbsp;&nbsp;&nbsp;&nbsp;deploy:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replicas: 1</div>
+        </div>
+      </div>
+
+      <!-- Step 4: DEPLOY STACK -->
+      <div id="checkCard-deploy" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--blue)"></i> 4. DEPLOY BASELINE STACK</b>
+          <span id="badge-deploy" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker compose up -d</div>
+      </div>
+
+      <!-- Step 5: SCALE UP -->
+      <div id="checkCard-scale_up" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-up-right-and-down-left-from-center" style="color:var(--purple)"></i> 5. SCALE MICROSERVICE REPLICAS UP</b>
+          <span id="badge-scale_up" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#c084fc">docker compose up -d --scale sum-microservice=3</div>
+      </div>
+
+      <!-- Step 6: SCALE DOWN -->
+      <div id="checkCard-scale_down" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-compress" style="color:var(--green)"></i> 6. SCALE MICROSERVICE REPLICAS DOWN</b>
+          <span id="badge-scale_down" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399">docker compose up -d --scale sum-microservice=1</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;flex-shrink:0">
+      <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
+      <div class="progress-labels">
+        <span id="progLabel">0 / 6 Tasks Completed</span>
+        <span id="progPct" class="prog-pct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Integrated VS Code Workplace Layout -->
+  <div class="vscode-container" style="height:calc(100vh - 170px);min-height:720px">
+    <!-- Activity Bar -->
+    <div class="vscode-activitybar">
+      <div class="vscode-activity-icon active" id="act-explorer" title="Explorer (Ctrl+Shift+E)" onclick="switchActivityTab('explorer')"><i class="fa-regular fa-copy"></i></div>
+      <div class="vscode-activity-icon" id="act-search" title="Search (Ctrl+Shift+F)" onclick="switchActivityTab('search')"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="vscode-activity-icon" id="act-git" title="Source Control" onclick="switchActivityTab('git')"><i class="fa-solid fa-code-branch"></i></div>
+      <div class="vscode-activity-icon" id="act-docker" title="Docker Compose Scaling Extension" onclick="switchActivityTab('docker')"><i class="fa-brands fa-docker"></i></div>
+    </div>
+
+    <!-- Explorer Sidebar -->
+    <div class="vscode-sidebar" id="vscodeSidebar">
+      <div class="vscode-sidebar-title" style="display:flex;justify-content:space-between;align-items:center" id="sidebarHeaderTitle">
+        <span>EXPLORER &mdash; LAB 6 SCALING</span>
+        <div class="sidebar-action-icons">
+          <span class="sidebar-action-icon add-file" onclick="createNewFilePrompt()" title="Create New File"><i class="fa-solid fa-plus"></i></span>
+          <span class="sidebar-action-icon save-file" onclick="saveCurrentFile()" title="Save File"><i class="fa-solid fa-floppy-disk"></i></span>
+        </div>
+      </div>
+      <div class="vscode-file-tree" id="fileTreeContainer"></div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="vscode-main">
+      <div class="vscode-tabs" id="vscodeTabsContainer"></div>
+
+      <div class="vscode-editor-toolbar">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="editor-pill-btn btn-new" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> New File</button>
+          <button class="editor-pill-btn btn-save" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:.76rem;color:#E0E0E0;font-family:var(--font-mono);font-weight:700" id="editorFileStatus">Editing: docker-compose.yml</span>
+        </div>
+      </div>
+
+      <!-- Editor & Replica Visualizer Split Pane -->
+      <div class="vscode-editor-pane">
+        <!-- Left: Code Editor -->
+        <div class="vscode-code-area">
+          <div class="vscode-line-numbers" id="lineNumbers">1</div>
+          <div class="vscode-editor-wrapper">
+            <pre class="vscode-highlight-layer" id="codeHighlight" aria-hidden="true"></pre>
+            <textarea class="vscode-textarea" id="codeEditor" spellcheck="false" placeholder="Write compose code here..." oninput="onCodeInput()" onscroll="syncEditorScroll()"></textarea>
+          </div>
+        </div>
+
+        <!-- Right: Real-Time Dynamic Replica Scaling Visualizer Widget -->
+        <div class="vscode-preview-pane">
+          <div class="vscode-preview-header">
+            <i class="fa-solid fa-rotate-right" style="cursor:pointer;color:var(--purple)" title="Refresh Replicas State" onclick="updateReplicaGrid()"></i>
+            <div class="vscode-preview-url"><i class="fa-solid fa-cubes" style="font-size:.7rem;color:#a855f7"></i> <span id="previewUrlText">Docker Compose Load Balancing Grid</span></div>
+            <span class="badge badge-purple" id="scalingStateBadge">Baseline (1 Replica)</span>
+          </div>
+
+          <div style="padding:16px;overflow-y:auto;flex:1;background:#0d1117;color:#c9d1d9;font-family:var(--mono);font-size:.82rem">
+            <div style="border:1px solid #30363d;border-radius:6px;padding:12px;background:#161b22;margin-bottom:12px">
+              <h4 style="color:#a855f7;margin-bottom:8px;font-size:.9rem"><i class="fa-solid fa-server"></i> Active Microservice Container Replicas</h4>
+              <div id="replicaContainerGrid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-top:10px">
+                <!-- Replica cards injected dynamically -->
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <button class="btn btn-purple" style="flex:1" onclick="scaleReplicasTo(3)"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Quick Scale to 3 Replicas</button>
+              <button class="btn btn-outline" style="flex:1" onclick="scaleReplicasTo(1)"><i class="fa-solid fa-compress"></i> Quick Scale to 1 Replica</button>
+            </div>
+
+            <button class="btn btn-green" style="width:100%;margin-bottom:12px" onclick="simulateLoadTraffic()"><i class="fa-solid fa-chart-line"></i> Simulate 10 High Traffic Requests (Observe Load Distribution)</button>
+
+            <div style="border:1px solid #30363d;border-radius:6px;padding:12px;background:#161b22">
+              <div style="color:#8b949e;font-size:.75rem;margin-bottom:6px">LOAD BALANCER RESPONSE LOGS:</div>
+              <pre id="trafficLogBox" style="margin:0;color:#38bdf8;font-size:.78rem;white-space:pre-wrap;max-height:160px;overflow-y:auto">Run 'docker compose up -d --scale sum-microservice=3' in terminal or use Quick Scale buttons above to monitor replicas.</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Integrated Terminal Pane -->
+      <div class="vscode-terminal-pane" id="vscodeTerminalPane">
+        <div class="vscode-terminal-tabs">
+          <div style="display:flex;gap:4px">
+            <div class="vscode-term-tab active"><i class="fa-solid fa-terminal" style="color:var(--purple)"></i> TERMINAL</div>
+            <div class="vscode-term-tab"><i class="fa-solid fa-circle-info"></i> PROBLEMS</div>
+            <div class="vscode-term-tab"><i class="fa-solid fa-square-poll-vertical"></i> OUTPUT</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:.72rem;color:var(--muted)">Docker Compose CLI Ready</span>
+            <button class="btn btn-sm btn-outline" style="padding:1px 8px;font-size:.7rem" onclick="clearTerminalConsole()"><i class="fa-solid fa-ban"></i> Clear</button>
+          </div>
+        </div>
+        <div class="vscode-terminal-body" id="terminalOutput" onclick="focusTerminalInput()">
+          <div class="term-line info">Container Virtual Labs &mdash; Docker Compose Replica Scaling Engine v3.2</div>
+          <div class="term-line info">Type 'docker compose up -d --scale sum-microservice=3' to scale microservice replicas.</div>
+        </div>
+        <div class="vscode-terminal-inputrow">
+          <span class="term-prompt">student@vlab-terminal:~/lab6$</span>
+          <input type="text" class="term-input" id="terminalInput" placeholder="Type docker compose up -d --scale sum-microservice=3..." onkeydown="handleTerminalKeydown(event)" autocomplete="off">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let files = {
+  "docker-compose.yml": `version: '3.8'\nservices:\n  sum-microservice:\n    build: .\n    ports:\n      - "5000:5000"\n    deploy:\n      replicas: 1\n`,
+  "app.py": `import socket\nfrom flask import Flask, request, jsonify\n\napp = Flask(__name__)\nHOST_ID = socket.gethostname()\n\n@app.route('/add', methods=['GET'])\ndef add():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({"number1": a, "number2": b, "sum": a + b, "handled_by_replica": HOST_ID})\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n`,
+  "Dockerfile": `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD ["python", "app.py"]\n`,
+  "requirements.txt": `flask==3.0.0\n`
+};
+
+let activeFile = "docker-compose.yml";
+let replicaCount = 1;
+let tested = {
+  app: true,
+  dockerfile: true,
+  compose: true,
+  deploy: false,
+  scale_up: false,
+  scale_down: false
+};
+
+function renderFileTree() {
+  const container = document.getElementById("fileTreeContainer");
+  container.innerHTML = "";
+  Object.keys(files).forEach(filename => {
+    const item = document.createElement("div");
+    item.className = "vscode-file-item" + (filename === activeFile ? " active" : "");
+    item.onclick = () => switchFile(filename);
+    let icon = "fa-solid fa-file-code";
+    if (filename.endsWith(".py")) icon = "fa-brands fa-python";
+    if (filename.endsWith(".yml") || filename.endsWith(".yaml")) icon = "fa-solid fa-cubes";
+    if (filename === "Dockerfile") icon = "fa-brands fa-docker";
+    item.innerHTML = `<i class="${icon}" style="margin-right:8px"></i> ${filename}`;
+    container.appendChild(item);
+  });
+}
+
+function renderTabs() {
+  const container = document.getElementById("vscodeTabsContainer");
+  container.innerHTML = "";
+  Object.keys(files).forEach(filename => {
+    const tab = document.createElement("div");
+    tab.className = "vscode-tab" + (filename === activeFile ? " active" : "");
+    tab.onclick = () => switchFile(filename);
+    tab.innerHTML = `<span>${filename}</span><span class="tab-close" onclick="event.stopPropagation();">&times;</span>`;
+    container.appendChild(tab);
+  });
+}
+
+function switchFile(filename) {
+  files[activeFile] = document.getElementById("codeEditor").value;
+  activeFile = filename;
+  document.getElementById("codeEditor").value = files[activeFile] || "";
+  document.getElementById("editorFileStatus").innerText = `Editing: ${activeFile}`;
+  renderFileTree();
+  renderTabs();
+  onCodeInput();
+}
+
+function onCodeInput() {
+  const code = document.getElementById("codeEditor").value;
+  files[activeFile] = code;
+  const lines = code.split("\n").length;
+  document.getElementById("lineNumbers").innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+  updateProgressUI();
+}
+
+function syncEditorScroll() {
+  const textarea = document.getElementById("codeEditor");
+  document.getElementById("codeHighlight").scrollTop = textarea.scrollTop;
+}
+
+function toggleInstructionsDrawer() {
+  const drawer = document.getElementById("instructionsDrawer");
+  drawer.classList.toggle("open");
+}
+
+function createNewFilePrompt() {
+  const fname = prompt("Enter new filename (e.g. env.conf):");
+  if (fname && !files[fname]) {
+    files[fname] = "# New file\n";
+    switchFile(fname);
+  }
+}
+
+function saveCurrentFile() {
+  files[activeFile] = document.getElementById("codeEditor").value;
+  alert(`File '${activeFile}' saved successfully!`);
+}
+
+function handleTerminalKeydown(e) {
+  if (e.key === "Enter") {
+    const input = document.getElementById("terminalInput");
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    input.value = "";
+    appendTermLine(`student@vlab-terminal:~/lab6$ ${cmd}`, "cmd");
+    execTerminalCommand(cmd);
+  }
+}
+
+function appendTermLine(txt, type="info") {
+  const body = document.getElementById("terminalOutput");
+  const div = document.createElement("div");
+  div.className = `term-line ${type}`;
+  div.innerText = txt;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearTerminalConsole() {
+  document.getElementById("terminalOutput").innerHTML = "";
+}
+
+function focusTerminalInput() {
+  document.getElementById("terminalInput").focus();
+}
+
+function execTerminalCommand(cmd) {
+  const cmdLower = cmd.toLowerCase();
+
+  fetch("/api/run-command", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({command: cmd, files: files})
+  })
+  .then(res => res.json())
+  .then(data => {
+    appendTermLine(data.output || "Done.", data.ok ? "output" : "error");
+
+    if (cmdLower.includes("docker compose up") || cmdLower.includes("docker-compose up")) {
+      tested.deploy = true;
+      if (cmdLower.includes("--scale") || cmdLower.includes("scale")) {
+        if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
+          scaleReplicasTo(3);
+          tested.scale_up = true;
+        } else if (cmdLower.includes("=1") || cmdLower.includes(" 1")) {
+          scaleReplicasTo(1);
+          tested.scale_down = true;
+        }
+      } else {
+        scaleReplicasTo(1);
+      }
+    }
+    if (cmdLower.includes("docker compose scale") || cmdLower.includes("docker-compose scale")) {
+      if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
+        scaleReplicasTo(3);
+        tested.scale_up = true;
+      } else if (cmdLower.includes("=1") || cmdLower.includes(" 1")) {
+        scaleReplicasTo(1);
+        tested.scale_down = true;
+      }
+    }
+    updateProgressUI();
+  })
+  .catch(err => {
+    appendTermLine("Execution error: " + err, "error");
+  });
+}
+
+function scaleReplicasTo(count) {
+  replicaCount = count;
+  if (count >= 3) tested.scale_up = true;
+  if (count === 1 && tested.scale_up) tested.scale_down = true;
+  tested.deploy = true;
+
+  document.getElementById("l6ReplicaBadge").innerHTML = `<i class="fa-solid fa-cubes"></i> Replicas: ${count} Active`;
+  document.getElementById("l6ReplicaCount").innerText = `${count} / 5 Max`;
+  document.getElementById("scalingStateBadge").innerText = count > 1 ? `Scaled Up (${count} Replicas)` : `Baseline (1 Replica)`;
+  document.getElementById("scalingStateBadge").className = count > 1 ? "badge badge-purple" : "badge badge-blue";
+
+  updateReplicaGrid();
+  appendTermLine(`[DOCKER COMPOSE] Service 'sum-microservice' scaled to ${count} replica container instances.`, "success");
+  updateProgressUI();
+}
+
+function updateReplicaGrid() {
+  const grid = document.getElementById("replicaContainerGrid");
+  grid.innerHTML = "";
+  for (let i = 1; i <= replicaCount; i++) {
+    const card = document.createElement("div");
+    card.style.cssText = "border:1.5px solid #a855f7;border-radius:6px;padding:8px 10px;background:#161b22;text-align:center";
+    const hostHash = "sum-replica-" + (100 + i);
+    card.innerHTML = `
+      <div style="font-size:1.1rem;color:#c084fc;margin-bottom:4px"><i class="fa-solid fa-cube"></i></div>
+      <div style="font-weight:700;font-size:.78rem;color:#e2e8f0">replica_${i}</div>
+      <div style="font-size:.68rem;color:#94a3b8">${hostHash}</div>
+      <div style="font-size:.65rem;color:#4ade80;margin-top:4px"><i class="fa-solid fa-circle"></i> Running</div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function simulateLoadTraffic() {
+  const logBox = document.getElementById("trafficLogBox");
+  let logs = `[LOAD TESTER] Dispatching 10 HTTP GET requests to port 5000...\n`;
+  for (let r = 1; r <= 10; r++) {
+    const repId = (r % replicaCount) + 1;
+    const host = `sum-replica-${100 + repId}`;
+    logs += `Request #${r}: GET /add?a=${r}&b=${r*2} -> 200 OK (Handled by ${host})\n`;
+  }
+  logs += `[SUCCESS] 100% requests handled seamlessly across ${replicaCount} active replica(s).`;
+  logBox.innerText = logs;
+  logBox.scrollTop = logBox.scrollHeight;
+  appendTermLine(`[LOAD TEST] Dispatched 10 traffic requests across ${replicaCount} replica(s). Load balancing verified.`, "success");
+}
+
+function updateProgressUI() {
+  let doneCount = 0;
+  const keys = Object.keys(tested);
+  keys.forEach(k => {
+    if (tested[k]) doneCount++;
+    const card = document.getElementById(`checkCard-${k}`);
+    const badge = document.getElementById(`badge-${k}`);
+    if (card && badge) {
+      if (tested[k]) {
+        card.classList.add("completed");
+        badge.className = "badge badge-green";
+        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed';
+      } else {
+        card.classList.remove("completed");
+        badge.className = "badge badge-amber";
+        badge.innerHTML = '<i class="fa-solid fa-clock"></i> Required';
+      }
+    }
+  });
+
+  const pct = Math.round((doneCount / keys.length) * 100);
+  document.getElementById("mainProg").style.width = pct + "%";
+  document.getElementById("progLabel").innerText = `${doneCount} / ${keys.length} Tasks Completed`;
+  document.getElementById("progPct").innerText = pct + "%";
+}
+
+function submitLab6Completion() {
+  fetch("/api/lab6/verify", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({tested: tested})
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      alert("🏆 CONGRATULATIONS! Lab 6 Verified Successfully!\n\nYou have completed all 6 Virtual Labs and earned your Master Docker Engineer certificate!");
+      window.location.href = "{{ url_for('student_dashboard') }}";
+    } else {
+      alert(data.message || "Verification incomplete.");
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderFileTree();
+  renderTabs();
+  onCodeInput();
+  updateReplicaGrid();
+  updateProgressUI();
+});
+</script>
+
+{% endblock %}

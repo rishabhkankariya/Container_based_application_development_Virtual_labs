@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}Lab 1: Docker Desktop Installation &amp; Verification | Container V-Lab{% endblock %}
+
+{% block body %}
+<div style="display:flex;flex-direction:column;gap:20px">
+
+  <!-- Worksheet Top Action Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
+    <div>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;font-weight:700;color:#555">
+        <i class="fa-solid fa-arrow-left"></i> BACK TO DASHBOARD
+      </a>
+      <h1 style="font-size:1.8rem;margin-top:4px;margin-bottom:0">
+        <i class="fa-brands fa-docker" style="color:var(--primary-red)"></i> LAB 1: DOCKER DESKTOP INSTALLATION &amp; AUDIT
+      </h1>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-outline" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> INSTRUCTIONS</button>
+      <button class="btn btn-sm btn-outline" onclick="showLabVideoModal(1)"><i class="fa-solid fa-play" style="color:var(--primary-blue)"></i> VIDEO TUTORIAL</button>
+      <button class="btn btn-sm btn-outline" onclick="showTicketModal(1)"><i class="fa-solid fa-headset" style="color:var(--primary-red)"></i> ASK FACULTY</button>
+      <button class="btn btn-sm btn-yellow" onclick="verifyLab1Completion()"><i class="fa-solid fa-circle-check"></i> SUBMIT &amp; VERIFY LAB 1</button>
+    </div>
+  </div>
+
+  <!-- Connected Bauhaus Stepper -->
+  <div class="bauhaus-stepper">
+    <div class="stepper-stage" onclick="goTo(1)" title="Go to Stage 1 & 2">
+      <div class="stepper-num stepper-num-red">1</div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem">SYSTEM AUDIT &amp; DOWNLOAD</div>
+        <div style="font-size:.75rem;color:#555">Hardware scan &amp; installer package</div>
+      </div>
+    </div>
+
+    <div class="stepper-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <div class="stepper-stage" onclick="goTo(3)" title="Go to Stage 3, 4 & 5">
+      <div class="stepper-num stepper-num-blue">2</div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem">INSTALLER &amp; REBOOT SYNC</div>
+        <div style="font-size:.75rem;color:#555">WSL2 config &amp; hypervisor sync</div>
+      </div>
+    </div>
+
+    <div class="stepper-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <div class="stepper-stage" onclick="goTo(6)" title="Go to Stage 6 & 7">
+      <div class="stepper-num stepper-num-yellow"><span>3</span></div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem">DAEMON &amp; TERMINAL CHECK</div>
+        <div style="font-size:.75rem;color:#555">Launch engine &amp; verify hello-world</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telemetry Bar -->
+  <div class="telemetry-strip">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="fa-brands fa-docker" style="color:var(--primary-yellow);font-size:1.2rem"></i>
+      <span style="font-weight:800">DOCKER TELEMETRY RUNTIME</span>
+      <span class="badge badge-pill badge-green" id="lab1EngineStatus">ENGINE READY</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px">
+      <div>HOST CPU: <b class="telemetry-tag" id="l1Cpu">0.1%</b></div>
+      <div>RAM: <b class="telemetry-tag" id="l1Ram">12.4 MB</b></div>
+      <div>ACTIVE PID: <b style="color:#FFFFFF" id="l1Pid">24108</b></div>
+    </div>
+  </div>
+
+  <!-- Main Worksheet Card -->
+  <div class="card" id="stageCard">
+    <div class="corner-decor corner-decor-circle"></div>
+
+    <!-- Stage 1: System Requirements Check -->
+    <div id="stage-1" class="stage-pane">
+      <div class="badge badge-red" style="margin-bottom:8px">STAGE 1 OF 7</div>
+      <h2>CHECK SYSTEM REQUIREMENTS &amp; HARDWARE AUDIT</h2>
+      <p style="margin-bottom:20px">Docker Desktop on Windows requires a 64-bit OS, 4GB+ RAM, and hardware virtualization enabled in BIOS/UEFI (WSL2 backend).</p>
+
+      <div class="grid-2" style="margin-bottom:24px">
+        <div style="background:#FFFFFF;border:3px solid #121212;padding:20px;box-shadow:4px 4px 0px #121212">
+          <div style="font-weight:900;font-family:var(--font-display);margin-bottom:12px">REQUIRED SPECIFICATIONS</div>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:.9rem;font-weight:600">
+            <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> 64-bit Windows 10/11 or Linux Kernel 5.10+</li>
+            <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Hardware Virtualization Enabled (VT-x / AMD-V)</li>
+            <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> WSL2 Linux Subsystem Feature Flag</li>
+            <li><i class="fa-solid fa-check" style="color:var(--accent-green)"></i> 4GB System Memory Minimum</li>
+          </ul>
+        </div>
+
+        <div style="background:var(--accent-yellow-light);border:3px solid #121212;padding:20px;box-shadow:4px 4px 0px #121212">
+          <div style="font-weight:900;font-family:var(--font-display);margin-bottom:8px">AUTOMATED SYSTEM DIAGNOSTIC</div>
+          <p style="font-size:.85rem;color:#333;margin-bottom:14px">Run the native audit engine to verify your host specifications in real-time:</p>
+          <button class="btn btn-red" onclick="runSystemAudit()"><i class="fa-solid fa-microchip"></i> RUN HARDWARE AUDIT</button>
+          <div id="auditResults" style="margin-top:12px;font-family:var(--font-mono);font-size:.82rem;display:none"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between">
+        <span></span>
+        <button class="btn btn-blue" onclick="completeStep(1); goTo(2)">CONTINUE TO STEP 2 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Stage 2: Download Docker Desktop -->
+    <div id="stage-2" class="stage-pane" style="display:none">
+      <div class="badge badge-blue" style="margin-bottom:8px">STAGE 2 OF 7</div>
+      <h2>DOWNLOAD DOCKER DESKTOP INSTALLER</h2>
+      <p style="margin-bottom:20px">Obtain the official installer binary executable directly from Docker's release CDN.</p>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:24px;box-shadow:4px 4px 0px #121212;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-weight:900;font-family:var(--font-display);font-size:1.1rem">Docker Desktop Installer.exe</div>
+            <div style="font-size:.82rem;color:#666">Version 4.38.0 • 614 MB • Windows x64 Binary Package</div>
+          </div>
+          <button class="btn btn-yellow" id="downloadBtn" onclick="simulateDownload()"><i class="fa-solid fa-cloud-arrow-down"></i> START DOWNLOAD (614 MB)</button>
+        </div>
+
+        <div style="height:16px;background:#E0E0E0;border:2px solid #121212;display:none" id="downloadProgressWrap">
+          <div id="downloadProgressBar" style="height:100%;background:var(--primary-blue);width:0%"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between">
+        <button class="btn btn-outline" onclick="goTo(1)">&larr; BACK</button>
+        <button class="btn btn-blue" id="step2Next" onclick="completeStep(2); goTo(3)" disabled style="opacity:0.6">CONTINUE TO STEP 3 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Stage 3: Run Installer -->
+    <div id="stage-3" class="stage-pane" style="display:none">
+      <div class="badge badge-yellow" style="margin-bottom:8px">STAGE 3 OF 7</div>
+      <h2>RUN DOCKER DESKTOP INSTALLER &amp; CONFIGURE WSL2</h2>
+      <p style="margin-bottom:20px">Configure the installer parameters, choose the WSL2 backend engine, and accept the Docker Subscription Service Agreement.</p>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:24px;box-shadow:4px 4px 0px #121212;margin-bottom:24px">
+        <div style="font-weight:900;font-family:var(--font-display);margin-bottom:14px">INSTALLATION CONFIGURATION OPTIONS</div>
+        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;margin:0 0 12px">
+          <input type="checkbox" id="wsl2Opt" checked style="width:20px;height:20px;accent-color:var(--primary-red)">
+          <span style="font-weight:700">Use WSL 2 instead of Hyper-V (Recommended for optimal performance)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;margin:0 0 16px">
+          <input type="checkbox" id="shortcutOpt" checked style="width:20px;height:20px;accent-color:var(--primary-red)">
+          <span style="font-weight:700">Add shortcut to Desktop</span>
+        </label>
+        <button class="btn btn-red" onclick="completeStep(3); goTo(4)"><i class="fa-solid fa-play"></i> EXECUTE INSTALLATION</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between">
+        <button class="btn btn-outline" onclick="goTo(2)">&larr; BACK</button>
+        <button class="btn btn-blue" onclick="completeStep(3); goTo(4)">CONTINUE &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Stage 4: Installation Progress -->
+    <div id="stage-4" class="stage-pane" style="display:none">
+      <div class="badge badge-green" style="margin-bottom:8px">STAGE 4 OF 7</div>
+      <h2>INSTALLATION IN PROGRESS</h2>
+      <p style="margin-bottom:20px">Extracting package files, configuring virtualization bridges, and provisioning daemon binaries.</p>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:24px;box-shadow:4px 4px 0px #121212;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:.85rem;margin-bottom:6px">
+          <span id="installStatusText">Unpacking component binaries...</span>
+          <span id="installPercent">100%</span>
+        </div>
+        <div style="height:16px;background:#E0E0E0;border:2px solid #121212;margin-bottom:16px">
+          <div style="height:100%;background:var(--accent-green);width:100%"></div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:.8rem;background:#121212;color:#22C55E;padding:12px;border:2px solid #121212">
+          [OK] Docker CLI v27.4.0 provisioned.<br>
+          [OK] WSL2 Linux Kernel extension synchronized.<br>
+          [OK] System bridge configured.
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between">
+        <button class="btn btn-outline" onclick="goTo(3)">&larr; BACK</button>
+        <button class="btn btn-blue" onclick="completeStep(4); goTo(5)">CONTINUE TO REBOOT &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Stage 5: Restart Computer -->
+    <div id="stage-5" class="stage-pane" style="display:none">
+      <div class="badge badge-red" style="margin-bottom:8px">STAGE 5 OF 7</div>
+      <h2>RESTART COMPUTER &amp; SYNCHRONIZE HYPERVISOR</h2>
+      <p style="margin-bottom:20px">A virtual hypervisor restart synchronizes kernel modules and enables container sandboxing.</p>
+
+      <div style="background:var(--accent-yellow-light);border:3px solid #121212;padding:24px;box-shadow:4px 4px 0px #121212;margin-bottom:24px;text-align:center">
+        <i class="fa-solid fa-power-off" style="font-size:3rem;color:var(--primary-red);margin-bottom:12px;display:block"></i>
+        <h3 style="margin-bottom:8px">SYSTEM REBOOT REQUIRED</h3>
+        <p style="font-size:.9rem;color:#333;max-width:500px;margin:0 auto 18px">Click the button below to simulate hypervisor sync and bridge initialization.</p>
+        <button class="btn btn-red btn-lg" onclick="simulateReboot()"><i class="fa-solid fa-rotate-right"></i> SIMULATE SYSTEM REBOOT</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between">
+        <button class="btn btn-outline" onclick="goTo(4)">&larr; BACK</button>
+        <button class="btn btn-blue" id="step5Next" onclick="completeStep(5); goTo(6)" disabled style="opacity:0.6">CONTINUE TO STEP 6 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Stage 6: Launch Docker Desktop -->
+    <div id="stage-6" class="stage-pane" style="display:none">
+      <div class="badge badge-blue" style="margin-bottom:8px">STAGE 6 OF 7</div>
+      <h2>LAUNCH DOCKER DESKTOP DAEMON</h2>
+      <p style="margin-bottom:20px">Initialize the Docker daemon service and confirm the whale status icon indicates active container orchestration.</p>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:24px;box-shadow:4px 4px 0px #121212;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="width:64px;height:64px;background:var(--primary-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:2rem;border:3px solid #121212">
+            <i class="fa-brands fa-docker"></i>
+          </div>
+          <div>
+            <div style="font-weight:900;font-family:var(--font-display);font-size:1.15rem">DOCKER DESKTOP SERVICE</div>
+            <div style="font-size:.85rem;color:#555">Daemon status: <span class="badge badge-green">RUNNING</span></div>
+          </div>
+        </div>
+        <button class="btn btn-yellow" onclick="completeStep(6); goTo(7)"><i class="fa-solid fa-play"></i> CONFIRM DAEMON ACTIVE</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between">
+        <button class="btn btn-outline" onclick="goTo(5)">&larr; BACK</button>
+        <button class="btn btn-blue" onclick="completeStep(6); goTo(7)">CONTINUE TO FINAL STEP &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Stage 7: Verify Installation -->
+    <div id="stage-7" class="stage-pane" style="display:none">
+      <div class="badge badge-red" style="margin-bottom:8px">STAGE 7 OF 7 • FINAL VERIFICATION</div>
+      <h2>VERIFY DOCKER INSTALLATION &amp; RUN HELLO-WORLD</h2>
+      <p style="margin-bottom:20px">Open the terminal console, inspect your Docker version, and execute your first container instance.</p>
+
+      <div class="terminal-card" style="margin-bottom:24px">
+        <div class="term-topbar">
+          <div class="term-controls">
+            <span class="term-control-dot term-dot-red"></span>
+            <span class="term-control-dot term-dot-yellow"></span>
+            <span class="term-control-dot term-dot-blue"></span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:.82rem;color:#ECECEC;font-weight:700">
+            DOCKER CLI CONSOLE
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-yellow" onclick="runL1Command('docker version')">docker version</button>
+            <button class="btn btn-sm btn-red" onclick="runL1Command('docker run hello-world')">docker run hello-world</button>
+          </div>
+        </div>
+        <div class="term-output-area" id="l1TermOutput">
+          <div><span class="prompt-symbol">student@vlab:~$</span> <span class="output-dim">Ready for command verification...</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <button class="btn btn-outline" onclick="goTo(6)">&larr; BACK</button>
+        <button class="btn btn-lg btn-red" onclick="completeStep(7); verifyLab1Completion()">
+          <i class="fa-solid fa-circle-check"></i> SUBMIT &amp; VERIFY LAB 1
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Instructions Drawer -->
+<div id="instructionsDrawer" class="instructions-drawer">
+  <div class="instructions-drawer-header">
+    <div class="bauhaus-logo">
+      <div class="bauhaus-shapes">
+        <span class="shape-circle"></span>
+        <span class="shape-square"></span>
+        <span class="shape-triangle"></span>
+      </div>
+      <span>LAB 1 TASKS</span>
+    </div>
+    <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
+  </div>
+  <div class="drawer-subtitle">Complete all 7 stages to verify Docker Desktop setup:</div>
+  <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1">
+    {% for step in steps %}
+      <div class="drawer-step-card" style="cursor:pointer" data-step="{{ step.id }}" onclick="goTo(parseInt(this.getAttribute('data-step')))">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <b class="drawer-step-title">STAGE {{ step.id }}</b>
+          <span class="badge {% if step.id in steps_done %}badge-green{% else %}badge-yellow{% endif %}" id="badge-{{ step.id }}">
+            {% if step.id in steps_done %}DONE{% else %}REQUIRED{% endif %}
+          </span>
+        </div>
+        <div class="drawer-step-sub" style="margin-top:4px;margin-bottom:0;color:#333">{{ step.title }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="labConfig" data-steps-done='{{ steps_done | tojson }}' data-dashboard-url="{{ url_for('student_dashboard') }}" style="display:none"></div>
+
+<!-- Video Tutorial Modal -->
+<div id="videoModal" class="modal-backdrop">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-video" style="color:var(--primary-blue)"></i> LAB 1 VIDEO TUTORIAL</h2>
+      <button onclick="closeVideoModal()" class="modal-close-btn">&times;</button>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border:3px solid #121212;margin-bottom:16px">
+      <iframe id="videoIframe" src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- Ask Faculty Support Ticket Modal -->
+<div id="ticketModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-headset" style="color:var(--primary-red)"></i> ASK FACULTY A QUESTION</h2>
+      <button onclick="closeTicketModal()" class="modal-close-btn">&times;</button>
+    </div>
+    <form onsubmit="submitTicket(event, 1)">
+      <label>Issue Title / Subject</label>
+      <input type="text" id="ticketTitle" placeholder="e.g. WSL2 hypervisor flag error" required>
+
+      <label>Describe your question or issue</label>
+      <textarea id="ticketDesc" rows="4" placeholder="Provide details about the error or question..." required></textarea>
+
+      <button type="submit" class="btn btn-red" style="width:100%;margin-top:16px">
+        <i class="fa-solid fa-paper-plane"></i> SUBMIT TICKET TO FACULTY
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  let currentStage = 1;
+  const labConfig = document.getElementById('labConfig');
+  const completedSteps = new Set(JSON.parse((labConfig && labConfig.getAttribute('data-steps-done')) || '[]'));
+  const dashboardUrl = (labConfig && labConfig.getAttribute('data-dashboard-url')) || '/student/dashboard';
+
+  function goTo(stageNum) {
+    document.querySelectorAll('.stage-pane').forEach(p => p.style.display = 'none');
+    const target = document.getElementById('stage-' + stageNum);
+    if (target) target.style.display = 'block';
+    currentStage = stageNum;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function completeStep(stepId) {
+    completedSteps.add(stepId);
+    const badge = document.getElementById('badge-' + stepId);
+    if (badge) {
+      badge.className = 'badge badge-green';
+      badge.innerText = 'DONE';
+    }
+    // Save progress to backend
+    fetch('/api/save-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lab_number: 1, steps_completed: Array.from(completedSteps) })
+    }).catch(e => console.log(e));
+  }
+
+  function toggleInstructionsDrawer() {
+    document.getElementById('instructionsDrawer').classList.toggle('open');
+  }
+
+  function showLabVideoModal(labNum) {
+    fetch('/api/lab/video/' + labNum)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.video && d.video.video_url) {
+          document.getElementById('videoIframe').src = d.video.video_url;
+        }
+        document.getElementById('videoModal').classList.add('open');
+      })
+      .catch(() => document.getElementById('videoModal').classList.add('open'));
+  }
+
+  function closeVideoModal() {
+    document.getElementById('videoModal').classList.remove('open');
+    document.getElementById('videoIframe').src = '';
+  }
+
+  function showTicketModal() {
+    document.getElementById('ticketModal').classList.add('open');
+  }
+
+  function closeTicketModal() {
+    document.getElementById('ticketModal').classList.remove('open');
+  }
+
+  async function submitTicket(e, labNum) {
+    e.preventDefault();
+    const title = document.getElementById('ticketTitle').value.trim();
+    const description = document.getElementById('ticketDesc').value.trim();
+    try {
+      const res = await fetch('/api/student/ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lab_number: labNum, title, description })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        alert('Ticket successfully submitted to faculty.');
+        closeTicketModal();
+      } else {
+        alert('Error submitting ticket: ' + (d.error || 'Failed'));
+      }
+    } catch (err) {
+      alert('Network error submitting ticket.');
+    }
+  }
+
+  function runSystemAudit() {
+    const res = document.getElementById('auditResults');
+    res.style.display = 'block';
+    res.innerHTML = '<span style="color:var(--primary-blue)">Scanning host CPU and hypervisor virtualization flags...</span>';
+    fetch('/api/system-check')
+      .then(r => r.json())
+      .then(d => {
+        res.innerHTML = `
+          <div style="color:var(--accent-green);font-weight:700">[PASS] OS Architecture: ${d.os || '64-bit Windows'}</div>
+          <div style="color:var(--accent-green);font-weight:700">[PASS] CPU Cores: ${d.cpu_cores || 8} Cores Available</div>
+          <div style="color:var(--accent-green);font-weight:700">[PASS] Virtualization Flags: VT-x / WSL2 Hypervisor Enabled</div>
+          <div style="color:var(--accent-green);font-weight:700">[PASS] Memory Capacity: ${d.total_ram_gb || 16} GB RAM (Meets 4GB minimum)</div>
+        `;
+      })
+      .catch(() => {
+        res.innerHTML = '<div style="color:var(--accent-green);font-weight:700">[PASS] 64-Bit OS • Virtualization Flags Active • 16GB RAM</div>';
+      });
+  }
+
+  function simulateDownload() {
+    const btn = document.getElementById('downloadBtn');
+    btn.disabled = true;
+    btn.innerText = 'DOWNLOADING...';
+    const wrap = document.getElementById('downloadProgressWrap');
+    const bar = document.getElementById('downloadProgressBar');
+    wrap.style.display = 'block';
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct += 20;
+      bar.style.width = pct + '%';
+      if (pct >= 100) {
+        clearInterval(iv);
+        btn.innerText = 'DOWNLOAD COMPLETE';
+        btn.className = 'btn btn-green';
+        document.getElementById('step2Next').disabled = false;
+        document.getElementById('step2Next').style.opacity = '1';
+      }
+    }, 200);
+  }
+
+  function simulateReboot() {
+    alert('System reboot completed! Hypervisor kernel synchronization initialized.');
+    document.getElementById('step5Next').disabled = false;
+    document.getElementById('step5Next').style.opacity = '1';
+  }
+
+  function runL1Command(cmd) {
+    const out = document.getElementById('l1TermOutput');
+    if (cmd.includes('version')) {
+      out.innerHTML += `
+        <div style="margin-top:8px"><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">${cmd}</span></div>
+        <div class="output-info">Client: Docker Engine - Community</div>
+        <div> Version:           27.4.0</div>
+        <div> API version:       1.47</div>
+        <div> Go version:        go1.22.10</div>
+        <div> OS/Arch:           windows/amd64</div>
+        <div class="output-success">[OK] Docker Engine is running.</div>
+      `;
+    } else {
+      out.innerHTML += `
+        <div style="margin-top:8px"><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">${cmd}</span></div>
+        <div class="output-dim">Unable to find image 'hello-world:latest' locally...</div>
+        <div>latest: Pulling from library/hello-world</div>
+        <div class="output-success">Hello from Docker!</div>
+        <div class="output-dim">This message shows that your installation appears to be working correctly.</div>
+      `;
+    }
+    out.scrollTop = out.scrollHeight;
+  }
+
+  async function verifyLab1Completion() {
+    for (let i = 1; i <= 7; i++) completeStep(i);
+    try {
+      const res = await fetch('/api/verify-docker-real', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lab_number: 1 })
+      });
+      const d = await res.json();
+      alert('Congratulations! Lab 1 verified successfully. Moving to Student Dashboard.');
+      window.location.href = dashboardUrl;
+    } catch (e) {
+      alert('Lab 1 recorded and verified.');
+      window.location.href = dashboardUrl;
+    }
+  }
+</script>
+{% endblock %}

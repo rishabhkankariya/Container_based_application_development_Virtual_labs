@@ -5,7 +5,7 @@
 <div class="wrap" style="max-width:100%;padding:0 0 40px">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
     <div>
-      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--text-muted);font-weight:600;text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
       <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 2: Create a Docker Image of a "Hello World!" Web Application</h2>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -21,17 +21,17 @@
   <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-bottom:12px">
     <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="showStepDetailModal(1)" title="Click to view Step 1 details & guidance">
       <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">1</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Inspect &amp; Create Files <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Click to create index.html / Dockerfile</span></div>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Inspect &amp; Create Files <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:#475569;font-size:.76rem;font-weight:600">Click to create index.html / Dockerfile</span></div>
     </div>
     <div style="color:var(--blue);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
     <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="showStepDetailModal(2)" title="Click to view Step 2 details & commands">
       <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">2</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Build &amp; Run Container <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">docker build &amp; docker run</span></div>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Build &amp; Run Container <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:#475569;font-size:.76rem;font-weight:600">docker build &amp; docker run</span></div>
     </div>
     <div style="color:var(--green);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
     <div style="background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(5,150,105,0.12);cursor:pointer;transition:transform .15s ease" onclick="showStepDetailModal(3)" title="Click to view Step 3 details & verification">
       <span style="background:var(--green);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">3</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">View Live Web Page <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Test app on port 8080 &amp; submit</span></div>
+      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">View Live Web Page <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:#475569;font-size:.76rem;font-weight:600">Test app on port 8080 &amp; submit</span></div>
     </div>
   </div>
 
@@ -132,10 +132,10 @@
       <div class="vscode-sidebar-title" style="display:flex;justify-content:space-between;align-items:center" id="sidebarHeaderTitle">
         <span>Explorer &mdash; HELLO-WEB</span>
         <div class="sidebar-action-icons">
-          <span class="sidebar-action-icon add-file" id="sbNewFile" title="Create New File"><i class="fa-solid fa-plus"></i></span>
-          <span class="sidebar-action-icon rename-file" id="sbRenameFile" title="Rename Selected File"><i class="fa-solid fa-pen"></i></span>
-          <span class="sidebar-action-icon delete-file" id="sbDeleteFile" title="Delete Selected File"><i class="fa-solid fa-trash"></i></span>
-          <span class="sidebar-action-icon save-file" id="sbSaveFile" title="Save File (Ctrl+S)"><i class="fa-solid fa-floppy-disk"></i></span>
+          <span class="sidebar-action-icon add-file" id="sbNewFile" onclick="createNewFilePrompt()" title="Create New File"><i class="fa-solid fa-plus"></i></span>
+          <span class="sidebar-action-icon rename-file" id="sbRenameFile" onclick="renameCurrentFilePrompt()" title="Rename Selected File"><i class="fa-solid fa-pen"></i></span>
+          <span class="sidebar-action-icon delete-file" id="sbDeleteFile" onclick="deleteCurrentFilePrompt()" title="Delete Selected File"><i class="fa-solid fa-trash"></i></span>
+          <span class="sidebar-action-icon save-file" id="sbSaveFile" onclick="saveCurrentFile()" title="Save File (Ctrl+S)"><i class="fa-solid fa-floppy-disk"></i></span>
         </div>
       </div>
       <div class="vscode-file-tree" id="fileTreeContainer">
@@ -153,10 +153,10 @@
       <!-- Quick Action Toolbar -->
       <div class="vscode-editor-toolbar">
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="editor-pill-btn btn-new" id="btnNewFile"><i class="fa-solid fa-plus"></i> New File</button>
-          <button class="editor-pill-btn btn-save" id="btnSaveFile"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
-          <button class="editor-pill-btn btn-rename" id="btnRenameFile"><i class="fa-solid fa-pen"></i> Rename</button>
-          <button class="editor-pill-btn btn-delete" id="btnDeleteFile"><i class="fa-solid fa-trash"></i> Delete</button>
+          <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> New File</button>
+          <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
+          <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> Rename</button>
+          <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
         <span style="font-size:.76rem;color:#E0E0E0;font-family:var(--font-mono);font-weight:700" id="editorFileStatus">Ready to edit</span>
       </div>
@@ -444,13 +444,24 @@ function openCustomPrompt(title, message, defaultValue, iconClass, iconColor, ca
   const msgEl = document.getElementById('customPromptMessage');
   const confirmBtn = document.getElementById('customPromptConfirmBtn');
 
-  if(titleEl) titleEl.innerHTML = `<i class="${iconClass}" style="color:${iconColor}"></i> ${title}`;
+  if(titleEl) {
+    titleEl.innerHTML = '';
+    const titleIcon = document.createElement('i');
+    titleIcon.className = iconClass;
+    titleIcon.style.color = iconColor;
+    titleEl.appendChild(titleIcon);
+    titleEl.appendChild(document.createTextNode(' ' + title));
+  }
   if(msgEl) msgEl.textContent = message;
   inputEl.value = defaultValue || '';
   promptCallback = callback;
 
   modal.style.display = 'flex';
-  setTimeout(() => inputEl.focus(), 50);
+  modal.style.zIndex = '999999';
+  setTimeout(() => {
+    inputEl.focus();
+    inputEl.select();
+  }, 50);
 
   inputEl.onkeydown = (e) => {
     if(e.key === 'Enter') confirmCustomPrompt();
@@ -504,25 +515,45 @@ function closeCustomConfirmModal() {
 }
 
 function createNewFilePrompt() {
-  openCustomPrompt(
-    'Create New File',
-    'Enter file name to add to workspace:',
-    '',
-    'fa-solid fa-file-circle-plus',
-    '#38bdf8',
-    (fname) => {
-      if(!fname || fname === 'null') return;
-      if(files[fname] !== undefined) {
-        showToast(`File '${fname}' already exists!`, 'warning');
-        return;
+  const customModal = document.getElementById('customPromptModal');
+  if (customModal) {
+    openCustomPrompt(
+      'Create New File',
+      'Enter file name to add to workspace:',
+      '',
+      'fa-solid fa-file-circle-plus',
+      '#38bdf8',
+      (fname) => {
+        if(!fname || fname === 'null') return;
+        fname = fname.trim();
+        if(!fname) return;
+        if(files[fname] !== undefined) {
+          showToast(`File '${fname}' already exists!`, 'warning');
+          return;
+        }
+        files[fname] = '';
+        saveFilesToLocalStorage();
+        renderFileTree();
+        renderTabs();
+        switchFile(fname);
+        showToast(`Created '${fname}' successfully!`, 'success');
       }
-      files[fname] = '';
-      renderFileTree();
-      renderTabs();
-      switchFile(fname);
-      showToast(`Created '${fname}' successfully!`, 'success');
+    );
+  } else {
+    const fname = prompt('Enter new file name to create in workspace (e.g. index.html, Dockerfile):');
+    if(!fname || fname === 'null') return;
+    const cleanName = fname.trim();
+    if(!cleanName) return;
+    if(files[cleanName] !== undefined) {
+      alert(`File '${cleanName}' already exists!`);
+      return;
     }
-  );
+    files[cleanName] = '';
+    saveFilesToLocalStorage();
+    renderFileTree();
+    renderTabs();
+    switchFile(cleanName);
+  }
 }
 
 function renameCurrentFilePrompt() {
@@ -608,7 +639,19 @@ function renderTabs() {
     tabDiv.onclick = () => switchFile(filename);
     const iconClass = filename.endsWith('.html') ? 'fa-brands fa-html5' : (filename === 'Dockerfile' ? 'fa-brands fa-docker' : 'fa-solid fa-file-code');
     const iconColor = filename.endsWith('.html') ? '#e34c26' : (filename === 'Dockerfile' ? '#2496ed' : 'var(--blue)');
-    tabDiv.innerHTML = `<i class="${iconClass}" style="color:${iconColor}"></i> ${filename} <i class="fa-solid fa-xmark close-tab" onclick="deleteFile('${filename}', event)" title="Delete File"></i>`;
+    
+    const icon = document.createElement('i');
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+
+    const closeBtn = document.createElement('i');
+    closeBtn.className = 'fa-solid fa-xmark close-tab';
+    closeBtn.title = 'Delete File';
+    closeBtn.onclick = (e) => deleteFile(filename, e);
+
+    tabDiv.appendChild(icon);
+    tabDiv.appendChild(document.createTextNode(' ' + filename + ' '));
+    tabDiv.appendChild(closeBtn);
     tabsContainer.appendChild(tabDiv);
   });
 }
@@ -801,7 +844,7 @@ function switchActivityTab(tabName) {
 
   if(tabName === 'explorer') {
     document.getElementById('act-explorer').classList.add('active');
-    header.innerHTML = `<span>Explorer &mdash; HELLO-WEB</span><div class="sidebar-action-icons"><span class="sidebar-action-icon add-file" id="sbNewFile" title="Create New File"><i class="fa-solid fa-plus"></i></span><span class="sidebar-action-icon rename-file" id="sbRenameFile" title="Rename Selected File"><i class="fa-solid fa-pen"></i></span><span class="sidebar-action-icon delete-file" id="sbDeleteFile" title="Delete Selected File"><i class="fa-solid fa-trash"></i></span><span class="sidebar-action-icon save-file" id="sbSaveFile" title="Save File (Ctrl+S)"><i class="fa-solid fa-floppy-disk"></i></span></div>`;
+    header.innerHTML = '<span>Explorer — HELLO-WEB</span><div class="sidebar-action-icons"><span class="sidebar-action-icon add-file" id="sbNewFile" onclick="createNewFilePrompt()" title="Create New File"><i class="fa-solid fa-plus"></i></span><span class="sidebar-action-icon rename-file" id="sbRenameFile" onclick="renameCurrentFilePrompt()" title="Rename Selected File"><i class="fa-solid fa-pen"></i></span><span class="sidebar-action-icon delete-file" id="sbDeleteFile" onclick="deleteCurrentFilePrompt()" title="Delete Selected File"><i class="fa-solid fa-trash"></i></span><span class="sidebar-action-icon save-file" id="sbSaveFile" onclick="saveCurrentFile()" title="Save File (Ctrl+S)"><i class="fa-solid fa-floppy-disk"></i></span></div>';
     renderFileTree();
     bindActionButtons();
   } else if(tabName === 'docs') {
@@ -867,8 +910,8 @@ function switchActivityTab(tabName) {
       <div style="padding:12px;font-size:.8rem;color:#e2e8f0;font-family:var(--sans)">
         <div style="font-weight:700;margin-bottom:8px;color:#38bdf8;display:flex;align-items:center;gap:6px"><i class="fa-brands fa-docker"></i> Docker Containers</div>
         <div style="background:#1e293b;border:1px solid #334155;padding:8px;border-radius:6px;margin-bottom:12px">
-          <div style="font-weight:700;color:${containerRunning ? '#34d399' : '#94a3b8'};font-size:.82rem">
-            ${containerRunning ? '🟢 hello-web:latest (Active)' : '⚪ hello-web (Stopped)'}
+          <div style="font-weight:700;color:' + (containerRunning ? '#34d399' : '#94a3b8') + ';font-size:.82rem">
+            ' + (containerRunning ? '🟢 hello-web:latest (Active)' : '⚪ hello-web (Stopped)') + '
           </div>
           <div style="font-size:.74rem;color:#94a3b8;margin-top:4px">Port Mapping: 0.0.0.0:8080 &rarr; 80/tcp</div>
         </div>
@@ -895,7 +938,13 @@ function renderFileTree() {
     fileDiv.onclick = () => switchFile(filename);
     const iconClass = filename.endsWith('.html') ? 'fa-brands fa-html5' : (filename === 'Dockerfile' ? 'fa-brands fa-docker' : 'fa-solid fa-file-code');
     const iconColor = filename.endsWith('.html') ? '#e34c26' : (filename === 'Dockerfile' ? '#2496ed' : 'var(--blue)');
-    fileDiv.innerHTML = `<i class="${iconClass}" style="color:${iconColor}"></i> ${filename}`;
+    
+    const icon = document.createElement('i');
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+
+    fileDiv.appendChild(icon);
+    fileDiv.appendChild(document.createTextNode(' ' + filename));
     tree.appendChild(fileDiv);
   });
 }

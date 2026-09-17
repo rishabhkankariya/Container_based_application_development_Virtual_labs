@@ -1793,37 +1793,64 @@ footer.bauhaus-footer a:hover {
   padding: 10px 12px;
   margin-top: 6px;
   color: #FFFFFF;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
 }
 
 .no-copy-code {
   font-family: var(--font-mono);
   font-size: 0.76rem;
   color: #38BDF8;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
 }
 
 .vlab-hover-target {
   cursor: pointer;
   position: relative;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
 }
 
-.vlab-hover-target:hover::after {
-  content: attr(data-vlab-tooltip);
-  position: absolute;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #0f172a;
-  color: #38bdf8;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.76rem;
-  font-family: var(--font-mono);
-  white-space: nowrap;
-  z-index: 99999;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  border: 1px solid #334155;
-  pointer-events: none;
+.sidebar-action-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
+.sidebar-action-icon {
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 4px !important;
+  color: #94a3b8 !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+}
+
+.sidebar-action-icon i {
+  pointer-events: none !important;
+  font-size: 0.85rem !important;
+}
+
+.sidebar-action-icon:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.sidebar-action-icon.add-file:hover { color: #38bdf8 !important; }
+.sidebar-action-icon.rename-file:hover { color: #fbbf24 !important; }
+.sidebar-action-icon.delete-file:hover { color: #f87171 !important; }
+.sidebar-action-icon.save-file:hover { color: #34d399 !important; }
 
 #vsTermInput:focus, #vsTermInput:focus-visible, .terminal input:focus, .terminal input:focus-visible {
   outline: none !important;

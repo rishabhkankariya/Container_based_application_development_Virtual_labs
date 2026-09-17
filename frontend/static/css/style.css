@@ -1802,7 +1802,32 @@ footer.bauhaus-footer a:hover {
 }
 
 .vlab-hover-target {
-  cursor: help;
-  border-bottom: 1px dashed var(--primary-yellow);
+  cursor: pointer;
+  position: relative;
+}
+
+.vlab-hover-target:hover::after {
+  content: attr(data-vlab-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  z-index: 99999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  border: 1px solid #334155;
+  pointer-events: none;
+}
+
+#vsTermInput:focus, #vsTermInput:focus-visible, .terminal input:focus, .terminal input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 

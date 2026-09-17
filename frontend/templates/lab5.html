@@ -249,13 +249,28 @@
 </div>
 
 <script>
-let files = {
+const STORAGE_KEY_LAB5 = 'vlab_code_lab5_' + (window.STUDENT_ID || 'guest');
+let defaultFiles = {
   "app.py": `from flask import Flask, request, jsonify\n\napp = Flask(__name__)\n\n@app.route('/add', methods=['GET'])\ndef add():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({"number1": a, "number2": b, "sum": a + b, "container": "sum-microservice"})\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n`,
   "client.py": `from flask import Flask, request, jsonify\nimport requests\n\napp = Flask(__name__)\nMICROSERVICE_URL = "http://sum-microservice:5000/add"\n\n@app.route('/calc', methods=['GET'])\ndef calc():\n    a = request.args.get('a', 10)\n    b = request.args.get('b', 20)\n    try:\n        res = requests.get(f"{MICROSERVICE_URL}?a={a}&b={b}")\n        return jsonify({"client_status": "success", "network_result": res.json()})\n    except Exception as e:\n        return jsonify({"client_status": "error", "message": str(e)}), 500\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=8080)\n`,
   "Dockerfile.microservice": `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD ["python", "app.py"]\n`,
   "Dockerfile.client": `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY client.py .\nEXPOSE 8080\nCMD ["python", "client.py"]\n`,
   "requirements.txt": `flask==3.0.0\nrequests==2.31.0\n`
 };
+
+let files = defaultFiles;
+try {
+  const saved = localStorage.getItem(STORAGE_KEY_LAB5);
+  if (saved) {
+    files = JSON.parse(saved);
+  }
+} catch(e) {}
+
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB5, JSON.stringify(files));
+  } catch(e) {}
+}
 
 let activeFile = "app.py";
 let tested = {
@@ -309,6 +324,7 @@ function switchFile(filename) {
 function onCodeInput() {
   const code = document.getElementById("codeEditor").value;
   files[activeFile] = code;
+  saveFilesToLocalStorage();
   const lines = code.split("\n").length;
   document.getElementById("lineNumbers").innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
   updateProgressUI();
@@ -334,6 +350,7 @@ function createNewFilePrompt() {
 
 function saveCurrentFile() {
   files[activeFile] = document.getElementById("codeEditor").value;
+  saveFilesToLocalStorage();
   alert(`File '${activeFile}' saved successfully!`);
 }
 

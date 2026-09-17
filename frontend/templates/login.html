@@ -73,10 +73,17 @@
 </div>
 
 <script>
-  function updateHint() {
+  function updateHint(clearInputs = true) {
     const role = document.querySelector('input[name=role]:checked').value;
     const label = document.getElementById('idLabel');
     const field = document.getElementById('idField');
+    const pwdField = document.getElementById('loginPassword');
+    
+    if (clearInputs) {
+      if (field) field.value = '';
+      if (pwdField) pwdField.value = '';
+    }
+
     if (role === 'student') {
       label.innerHTML = '<i class="fa-solid fa-id-badge"></i> Student ID or Email';
       field.placeholder = 'e.g. STU001 or student@univ.edu';
@@ -94,7 +101,7 @@
     } else {
       document.getElementById('roleStudent').checked = true;
     }
-    updateHint();
+    updateHint(false);
   });
 </script>
 {% endblock %}

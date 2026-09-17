@@ -244,12 +244,27 @@
 </div>
 
 <script>
-let files = {
+const STORAGE_KEY_LAB6 = 'vlab_code_lab6_' + (window.STUDENT_ID || 'guest');
+let defaultFiles = {
   "docker-compose.yml": `version: '3.8'\nservices:\n  sum-microservice:\n    build: .\n    ports:\n      - "5000:5000"\n    deploy:\n      replicas: 1\n`,
   "app.py": `import socket\nfrom flask import Flask, request, jsonify\n\napp = Flask(__name__)\nHOST_ID = socket.gethostname()\n\n@app.route('/add', methods=['GET'])\ndef add():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({"number1": a, "number2": b, "sum": a + b, "handled_by_replica": HOST_ID})\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n`,
   "Dockerfile": `FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD ["python", "app.py"]\n`,
   "requirements.txt": `flask==3.0.0\n`
 };
+
+let files = defaultFiles;
+try {
+  const saved = localStorage.getItem(STORAGE_KEY_LAB6);
+  if (saved) {
+    files = JSON.parse(saved);
+  }
+} catch(e) {}
+
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB6, JSON.stringify(files));
+  } catch(e) {}
+}
 
 let activeFile = "docker-compose.yml";
 let replicaCount = 1;
@@ -303,6 +318,7 @@ function switchFile(filename) {
 function onCodeInput() {
   const code = document.getElementById("codeEditor").value;
   files[activeFile] = code;
+  saveFilesToLocalStorage();
   const lines = code.split("\n").length;
   document.getElementById("lineNumbers").innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
   updateProgressUI();
@@ -328,6 +344,7 @@ function createNewFilePrompt() {
 
 function saveCurrentFile() {
   files[activeFile] = document.getElementById("codeEditor").value;
+  saveFilesToLocalStorage();
   alert(`File '${activeFile}' saved successfully!`);
 }
 

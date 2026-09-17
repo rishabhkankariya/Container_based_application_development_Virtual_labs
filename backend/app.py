@@ -824,16 +824,12 @@ def api_terminal_exec():
             if "system prune" in cmd_lower and "-f" not in cmd_lower and "--force" not in cmd_lower:
                 exec_cmd = cmd + " -f"
 
-            # Handle placeholder <container_id> cleanly to prevent Windows Shell redirect error
+            # Handle placeholder <container_id> validation
             if "<container_id>" in cmd_lower or "<container" in cmd_lower or ("<" in cmd and ">" in cmd):
-                ps_res = subprocess.run("docker ps -a --format \"{{.ID}}\"", shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
-                container_ids = [line.strip() for line in ps_res.stdout.splitlines() if line.strip()]
-                if container_ids:
-                    real_id = container_ids[0]
-                    exec_cmd = re.sub(r'<[^>]+>', real_id, exec_cmd)
-                    res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
-                else:
-                    return jsonify({"ok": True, "output": "e7a9c31b8f42", "docker_engine": "local"})
+                return jsonify({
+                    "ok": False,
+                    "output": "docker: Error response from daemon: No such container. Please replace '<container_id>' with a valid Container ID (e.g. from 'docker ps -a')."
+                })
             else:
                 res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
             
@@ -1610,6 +1606,7 @@ def api_lab6_verify():
     return jsonify({"ok": True})
 
 
+@app.route("/add", methods=["GET", "POST"])
 @app.route("/api/calculator/add", methods=["GET", "POST"])
 @app.route("/api/calculator/sum/<path:a_val>/<path:b_val>", methods=["GET", "POST"])
 @app.route("/api/calculator/sum", methods=["GET", "POST"])
@@ -2083,34 +2080,48 @@ def faculty_dashboard():
 def faculty_add_student():
     """Allows faculty to manually enroll a single student with auto-generated ID & default password."""
     if request.is_json:
-        data = request.get_json(force=True)
+        data = request.get_json(force=True) or {}
         name = data.get("name", "").strip()
         email = data.get("email", "").strip()
+        custom_sid = data.get("student_id", "").strip()
+        custom_pwd = data.get("default_password", "").strip()
     else:
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
+        custom_sid = request.form.get("student_id", "").strip()
+        custom_pwd = request.form.get("default_password", "").strip()
 
-    if not name or not email:
+    if not name:
         if request.is_json:
-            return jsonify({"ok": False, "message": "Both Student Name and Email are required."}), 400
-        flash("Both Student Name and Email are required.", "error")
+            return jsonify({"ok": False, "message": "Student Name is required."}), 400
+        flash("Student Name is required.", "error")
         return redirect(url_for("faculty_dashboard"))
 
     conn = get_db()
     existing_rows = conn.execute("SELECT student_id FROM students").fetchall()
     existing_ids = set(r["student_id"] for r in existing_rows)
 
-    indices = []
-    for sid in existing_ids:
-        if sid.startswith("STU"):
-            try:
-                indices.append(int(sid[3:]))
-            except ValueError:
-                pass
-    next_idx = max(indices) + 1 if indices else len(existing_ids) + 1
+    if custom_sid:
+        if custom_sid in existing_ids:
+            conn.close()
+            msg = f"Student ID '{custom_sid}' is already registered."
+            if request.is_json:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return redirect(url_for("faculty_dashboard"))
+        student_id = custom_sid
+    else:
+        indices = []
+        for sid in existing_ids:
+            if sid.startswith("STU"):
+                try:
+                    indices.append(int(sid[3:]))
+                except ValueError:
+                    pass
+        next_idx = max(indices) + 1 if indices else len(existing_ids) + 1
+        student_id = generate_student_id(existing_ids, next_idx)
 
-    student_id = generate_student_id(existing_ids, next_idx)
-    default_password = generate_default_password()
+    default_password = custom_pwd if custom_pwd else generate_default_password()
     password_hash = generate_password_hash(default_password)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -2152,14 +2163,41 @@ def faculty_add_student():
 
 
 
+@app.route("/faculty/delete-student/<student_id>", methods=["POST", "DELETE"])
+@app.route("/api/faculty/delete-student/<student_id>", methods=["POST", "DELETE"])
+@login_required_faculty
+def faculty_delete_student(student_id):
+    """Deletes a student record and all associated lab progress."""
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE student_id=?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        if request.is_json:
+            return jsonify({"ok": False, "message": "Student not found."}), 404
+        flash("Student not found.", "error")
+        return redirect(url_for("faculty_dashboard"))
+
+    conn.execute("DELETE FROM lab_progress WHERE student_id=?", (student_id,))
+    conn.execute("DELETE FROM issue_tickets WHERE student_id=?", (student_id,))
+    conn.execute("DELETE FROM students WHERE student_id=?", (student_id,))
+    conn.commit()
+    conn.close()
+
+    msg = f"Student '{student['name']}' ({student_id}) deleted successfully."
+    if request.is_json:
+        return jsonify({"ok": True, "message": msg})
+    flash(msg, "success")
+    return redirect(url_for("faculty_dashboard"))
+
+
 @app.route("/api/faculty/stats")
 @login_required_faculty
 def api_faculty_stats():
     """Live polling endpoint for faculty dashboard."""
     conn = get_db()
-    students = conn.execute("SELECT student_id FROM students").fetchall()
+    students = conn.execute("SELECT student_id, name, email, default_password, password_changed FROM students ORDER BY student_id").fetchall()
     progress_rows = conn.execute(
-        "SELECT student_id, lab_number, steps_completed, verification_passed FROM lab_progress"
+        "SELECT student_id, lab_number, steps_completed, verification_passed, completed_at FROM lab_progress"
     ).fetchall()
     conn.close()
 
@@ -2168,6 +2206,8 @@ def api_faculty_stats():
     l2_completed = sum(1 for p in progress_rows if p["lab_number"] == 2 and p["verification_passed"])
     l3_completed = sum(1 for p in progress_rows if p["lab_number"] == 3 and p["verification_passed"])
     l4_completed = sum(1 for p in progress_rows if p["lab_number"] == 4 and p["verification_passed"])
+    l5_completed = sum(1 for p in progress_rows if p["lab_number"] == 5 and p["verification_passed"])
+    l6_completed = sum(1 for p in progress_rows if p["lab_number"] == 6 and p["verification_passed"])
 
     return jsonify({
         "total": total,
@@ -2175,7 +2215,9 @@ def api_faculty_stats():
         "lab1_completed": l1_completed,
         "lab2_completed": l2_completed,
         "lab3_completed": l3_completed,
-        "lab4_completed": l4_completed
+        "lab4_completed": l4_completed,
+        "lab5_completed": l5_completed,
+        "lab6_completed": l6_completed
     })
 
 
@@ -2379,9 +2421,14 @@ def api_system_telemetry():
             "pid": pid,
             "cpu": f"{cpu_pct:.1f}%",
             "cpu_num": cpu_pct,
+            "cpu_percent": round(cpu_pct, 1),
             "ram": ram_str,
             "ram_pct": f"{mem.percent}%",
+            "memory_percent": round(mem.percent, 1),
+            "memory_used_mb": round(mem.used / (1024 * 1024), 1),
             "disk": disk_str,
+            "disk_percent": round(disk.percent, 1),
+            "disk_free_gb": round(disk.free / (1024 * 1024 * 1024), 1),
             "docker_engine": "local" if has_docker else "virtual",
             "docker_status_text": docker_msg
         })

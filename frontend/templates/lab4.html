@@ -335,10 +335,25 @@
 <script>
 const isAlreadyVerified = document.getElementById('labConfig').dataset.verified === 'true';
 
-let files = {
-  'app.py': ''
-};
-let currentFile = 'app.py';
+const STORAGE_KEY_LAB4 = 'vlab_code_lab4_' + (window.STUDENT_ID || 'guest');
+let files = {};
+try {
+  const savedCode = localStorage.getItem(STORAGE_KEY_LAB4);
+  if (savedCode) {
+    files = JSON.parse(savedCode);
+  }
+} catch(e) {}
+if (!files || Object.keys(files).length === 0) {
+  files = { 'app.py': '' };
+}
+
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB4, JSON.stringify(files));
+  } catch(e) {}
+}
+
+let currentFile = Object.keys(files)[0] || 'app.py';
 let containerRunning = false;
 
 let testedState = {
@@ -524,17 +539,15 @@ function showToast(message, type = 'info') {
 
 function toggleInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
-  if (drawer.style.transform === 'translateX(0px)') {
-    drawer.style.transform = 'translateX(-100%)';
-  } else {
-    drawer.style.transform = 'translateX(0px)';
+  if (drawer) {
+    drawer.classList.toggle('open');
   }
 }
 
 function closeInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(-100%)';
+    drawer.classList.remove('open');
   }
 }
 
@@ -1044,6 +1057,7 @@ function saveCurrentFile() {
   }
   const editor = document.getElementById('codeEditor');
   files[currentFile] = editor.value;
+  saveFilesToLocalStorage();
   refreshPreview();
   checkCodeProgress();
   showToast(`Saved '${currentFile}' successfully!`, 'success');
@@ -1095,6 +1109,7 @@ function onCodeInput() {
   syncHighlight();
   if (currentFile && files[currentFile] !== undefined) {
     files[currentFile] = document.getElementById('codeEditor').value;
+    saveFilesToLocalStorage();
   }
   if (typeof pushUndoState === 'function') pushUndoState();
   if (typeof checkCodeProgress === 'function') checkCodeProgress();
@@ -1136,11 +1151,11 @@ function refreshPreview() {
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                 <div>
                   <label style="font-size:.75rem;color:#cbd5e1 !important;display:block;margin-bottom:4px;font-weight:700">PARAM A</label>
-                  <input type="number" id="numAInput" value="" placeholder="e.g. 10" oninput="calculateSumInStudio()" style="width:100%;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:#ffffff !important;border-radius:6px;outline:none;font-family:var(--mono);box-sizing:border-box;font-size:.84rem;font-weight:600">
+                  <input type="number" id="numAInput" value="" placeholder="e.g. 10" oninput="calculateSumInStudio()" style="width:100%;padding:6px 10px;background:#0f172a;border:1px solid #334155;color:#f8fafc !important;border-radius:6px;outline:none;font-family:var(--mono);box-sizing:border-box;font-size:.84rem;font-weight:600">
                 </div>
                 <div>
                   <label style="font-size:.75rem;color:#cbd5e1 !important;display:block;margin-bottom:4px;font-weight:700">PARAM B</label>
-                  <input type="number" id="numBInput" value="" placeholder="e.g. 20" oninput="calculateSumInStudio()" style="width:100%;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:#ffffff !important;border-radius:6px;outline:none;font-family:var(--mono);box-sizing:border-box;font-size:.84rem;font-weight:600">
+                  <input type="number" id="numBInput" value="" placeholder="e.g. 20" oninput="calculateSumInStudio()" style="width:100%;padding:6px 10px;background:#0f172a;border:1px solid #334155;color:#f8fafc !important;border-radius:6px;outline:none;font-family:var(--mono);box-sizing:border-box;font-size:.84rem;font-weight:600">
                 </div>
               </div>
 
@@ -1373,7 +1388,7 @@ function refreshPreview() {
 function openInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(0px)';
+    drawer.classList.add('open');
   }
 }
 

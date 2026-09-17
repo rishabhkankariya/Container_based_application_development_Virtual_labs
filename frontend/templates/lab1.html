@@ -409,7 +409,11 @@
     }
   }
 
+  let l1AuditDone = false;
+  let l1CmdTested = false;
+
   function runSystemAudit() {
+    l1AuditDone = true;
     const res = document.getElementById('auditResults');
     res.style.display = 'block';
     res.innerHTML = '<span style="color:var(--primary-blue)">Scanning host CPU and hypervisor virtualization flags...</span>';
@@ -417,10 +421,10 @@
       .then(r => r.json())
       .then(d => {
         res.innerHTML = `
-          <div style="color:var(--accent-green);font-weight:700">[PASS] OS Architecture: ${d.os || '64-bit Windows'}</div>
-          <div style="color:var(--accent-green);font-weight:700">[PASS] CPU Cores: ${d.cpu_cores || 8} Cores Available</div>
+          <div style="color:var(--accent-green);font-weight:700">[PASS] OS Architecture: ${d.checks && d.checks.os ? d.checks.os.value : '64-bit Windows'}</div>
+          <div style="color:var(--accent-green);font-weight:700">[PASS] CPU Cores: ${d.checks && d.checks.cpu ? d.checks.cpu.value : 'Multi-core CPU'}</div>
           <div style="color:var(--accent-green);font-weight:700">[PASS] Virtualization Flags: VT-x / WSL2 Hypervisor Enabled</div>
-          <div style="color:var(--accent-green);font-weight:700">[PASS] Memory Capacity: ${d.total_ram_gb || 16} GB RAM (Meets 4GB minimum)</div>
+          <div style="color:var(--accent-green);font-weight:700">[PASS] Memory Capacity: ${d.checks && d.checks.ram ? d.checks.ram.value : '4GB+ RAM'}</div>
         `;
       })
       .catch(() => {
@@ -456,6 +460,7 @@
   }
 
   function runL1Command(cmd) {
+    l1CmdTested = true;
     const out = document.getElementById('l1TermOutput');
     if (cmd.includes('version')) {
       out.innerHTML += `
@@ -480,6 +485,12 @@
   }
 
   async function verifyLab1Completion() {
+    if (completedSteps.size < 4 && !l1AuditDone && !l1CmdTested) {
+      alert("⚠️ Lab 1 Verification Blocked!\n\nPlease execute the Hardware Audit in Stage 1 and test terminal verification commands in Stage 7 before submitting Lab 1.");
+      goTo(1);
+      return;
+    }
+
     for (let i = 1; i <= 7; i++) completeStep(i);
     try {
       const res = await fetch('/api/verify-docker-real', {
@@ -495,5 +506,6 @@
       window.location.href = dashboardUrl;
     }
   }
+</script>
 </script>
 {% endblock %}

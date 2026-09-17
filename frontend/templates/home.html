@@ -595,11 +595,14 @@
       const res = await fetch('/api/system-telemetry');
       if (res.ok) {
         const d = await res.json();
-        document.getElementById('telCpu').innerText = d.cpu_percent + '%';
-        document.getElementById('telRam').innerText = d.memory_percent + '%';
-        if (d.memory_used_mb) document.getElementById('telRamMb').innerText = d.memory_used_mb + ' MB USED';
-        if (d.disk_percent) document.getElementById('telDisk').innerText = d.disk_percent + '%';
+        const cpuVal = d.cpu !== undefined ? d.cpu : (d.cpu_percent !== undefined ? d.cpu_percent + '%' : '--%');
+        const ramVal = d.ram_pct !== undefined ? d.ram_pct : (d.memory_percent !== undefined ? d.memory_percent + '%' : '--%');
+        document.getElementById('telCpu').innerText = cpuVal;
+        document.getElementById('telRam').innerText = ramVal;
+        if (d.ram) document.getElementById('telRamMb').innerText = d.ram + ' USED';
+        if (d.disk) document.getElementById('telDisk').innerText = d.disk;
         if (d.disk_free_gb) document.getElementById('telDiskGb').innerText = d.disk_free_gb + ' GB FREE';
+        if (d.docker_status_text) document.getElementById('telDocker').innerText = d.docker_engine === 'local' ? 'ACTIVE (LOCAL)' : 'ACTIVE (VIRTUAL)';
       }
     } catch (e) {
       console.log('Telemetry fetch error', e);
@@ -610,8 +613,16 @@
   function updateReadinessScore() {
     const boxes = document.querySelectorAll('.skill-checkbox');
     let checked = 0;
-    boxes.forEach(b => { if (b.checked) checked++; });
-    const pct = Math.round((checked / boxes.length) * 100);
+    const checkedStates = [];
+    boxes.forEach((b, idx) => {
+      if (b.checked) {
+        checked++;
+        checkedStates.push(idx);
+      }
+    });
+    localStorage.setItem('vlab_skill_calculator_states', JSON.stringify(checkedStates));
+
+    const pct = boxes.length > 0 ? Math.round((checked / boxes.length) * 100) : 0;
     document.getElementById('calcScore').innerText = pct + '%';
     const badge = document.getElementById('calcLevel');
     if (pct === 100) {
@@ -626,8 +637,25 @@
     }
   }
 
+  function loadReadinessState() {
+    const boxes = document.querySelectorAll('.skill-checkbox');
+    try {
+      const saved = localStorage.getItem('vlab_skill_calculator_states');
+      if (saved) {
+        const checkedIndices = JSON.parse(saved);
+        boxes.forEach((b, idx) => {
+          if (checkedIndices.includes(idx)) {
+            b.checked = true;
+          }
+        });
+      }
+    } catch (e) {}
+    updateReadinessScore();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     refreshTelemetry();
+    loadReadinessState();
   });
 </script>
 {% endblock %}

@@ -384,11 +384,25 @@
 <script>
 const isAlreadyVerified = document.getElementById('labConfig').dataset.verified === 'true';
 
-let files = {
-  'index.html': ''
-};
+const STORAGE_KEY_LAB3 = 'vlab_code_lab3_' + (window.STUDENT_ID || 'guest');
+let files = {};
+try {
+  const savedCode = localStorage.getItem(STORAGE_KEY_LAB3);
+  if (savedCode) {
+    files = JSON.parse(savedCode);
+  }
+} catch(e) {}
+if (!files || Object.keys(files).length === 0) {
+  files = { 'index.html': '' };
+}
 
-let currentFile = 'index.html';
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB3, JSON.stringify(files));
+  } catch(e) {}
+}
+
+let currentFile = Object.keys(files)[0] || 'index.html';
 let containerRunning = false;
 
 // Strictly track compulsory Docker commands (Must be executed in terminal console)
@@ -580,17 +594,15 @@ function showToast(message, type = 'info') {
 
 function toggleInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
-  if (drawer.style.transform === 'translateX(0px)') {
-    drawer.style.transform = 'translateX(-100%)';
-  } else {
-    drawer.style.transform = 'translateX(0px)';
+  if (drawer) {
+    drawer.classList.toggle('open');
   }
 }
 
 function closeInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(-100%)';
+    drawer.classList.remove('open');
   }
 }
 
@@ -1100,6 +1112,7 @@ function saveCurrentFile() {
   }
   const editor = document.getElementById('codeEditor');
   files[currentFile] = editor.value;
+  saveFilesToLocalStorage();
   refreshPreview();
   checkCodeProgress();
   showToast(`Saved '${currentFile}' successfully!`, 'success');
@@ -1148,6 +1161,7 @@ function onCodeInput() {
   syncHighlight();
   if (currentFile && files[currentFile] !== undefined) {
     files[currentFile] = document.getElementById('codeEditor').value;
+    saveFilesToLocalStorage();
   }
   if (containerRunning && (currentFile === 'index.html' || currentFile.endsWith('.html'))) {
     refreshPreview();
@@ -1232,7 +1246,7 @@ function refreshPreview() {
 function openInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(0px)';
+    drawer.classList.add('open');
   }
 }
 
@@ -1250,7 +1264,7 @@ function submitLab3Completion() {
   if (!testedState.rm) missing.push('• 10. docker rm -f <container_id>');
 
   if (missing.length > 0) {
-    const formattedText = '⚠️ <b>Lab 3 Verification Blocked!</b><br><br>You must test all compulsory Docker functions in the inbuilt console before completing Lab 3:<br><br>' + missing.join('<br>');
+    const formattedText = '⚠️ Lab 3 Verification Blocked!\n\nYou must test all compulsory Docker functions in the inbuilt console before completing Lab 3:\n\n' + missing.join('\n');
     alert(formattedText);
     openInstructionsDrawer();
     return;

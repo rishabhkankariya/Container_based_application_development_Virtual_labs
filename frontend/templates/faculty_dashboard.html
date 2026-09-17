@@ -25,7 +25,7 @@
   {% endwith %}
 
   <!-- Bauhaus Color Blocked Analytics Grid -->
-  <div class="stats-banner-yellow" style="grid-template-columns:repeat(5, 1fr);margin-bottom:0">
+  <div class="stats-banner-yellow" style="grid-template-columns:repeat(7, 1fr);margin-bottom:0">
     <div class="stat-item">
       <div class="stat-val" style="color:var(--primary-blue)" id="statTotal">{{ total_students }}</div>
       <div class="stat-lbl">TOTAL ENROLLED</div>
@@ -45,6 +45,14 @@
     <div class="stat-item">
       <div class="stat-val" style="color:var(--accent-green)" id="statLab4Done">{{ lab4_completed }}</div>
       <div class="stat-lbl">LAB 4 COMPLETED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--orange)" id="statLab5Done">{{ lab5_completed }}</div>
+      <div class="stat-lbl">LAB 5 COMPLETED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:var(--purple)" id="statLab6Done">{{ lab6_completed }}</div>
+      <div class="stat-lbl">LAB 6 COMPLETED</div>
     </div>
   </div>
 
@@ -137,13 +145,29 @@
       <p style="margin-bottom:16px">Quickly enroll an individual student with automatic ID and credentials generation.</p>
 
       <form id="manualStudentForm" method="POST" action="{{ url_for('faculty_add_student') }}" onsubmit="submitManualStudent(event)">
-        <label for="studentNameInput">Student Full Name</label>
-        <input type="text" id="studentNameInput" name="name" placeholder="e.g. Aryan Sharma" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label for="studentNameInput">Student Full Name *</label>
+            <input type="text" id="studentNameInput" name="name" placeholder="e.g. Aryan Sharma" required>
+          </div>
+          <div>
+            <label for="studentEmailInput">Student Email Address</label>
+            <input type="email" id="studentEmailInput" name="email" placeholder="e.g. aryan132@gmail.com">
+          </div>
+        </div>
 
-        <label for="studentEmailInput">Student Email Address</label>
-        <input type="email" id="studentEmailInput" name="email" placeholder="e.g. aryan132@gmail.com" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+          <div>
+            <label for="studentIdInput">Custom Student ID (Optional)</label>
+            <input type="text" id="studentIdInput" name="student_id" placeholder="Auto-generated (e.g. STU005)">
+          </div>
+          <div>
+            <label for="studentPasswordInput">Default Password (Optional)</label>
+            <input type="text" id="studentPasswordInput" name="default_password" placeholder="Auto-generated if empty">
+          </div>
+        </div>
 
-        <button type="submit" class="btn btn-green" style="width:100%;margin-top:20px">
+        <button type="submit" class="btn btn-green" style="width:100%;margin-top:18px">
           <i class="fa-solid fa-user-plus"></i> ENROLL STUDENT
         </button>
       </form>
@@ -226,6 +250,7 @@
               <th>LAB 5</th>
               <th>LAB 6</th>
               <th>TOTAL SCORE</th>
+              <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody id="rosterTbody">
@@ -293,6 +318,11 @@
                     {{ r.overall_pct }}%
                   </div>
                 </td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-red" onclick="deleteStudent('{{ r.student_id }}', '{{ r.name|replace('\'', '\\\'') }}')" title="Delete Student Record" style="padding:4px 8px">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -321,7 +351,7 @@
       return;
     }
     try {
-      const res = await fetch('/api/admin/upload-video', {
+      const res = await fetch('/api/faculty/upload-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lab_number: labNumber, video_title: videoTitle, video_url: videoUrl })
@@ -330,7 +360,7 @@
       if (data.ok) {
         alert('Video successfully saved and published for Lab ' + labNumber);
       } else {
-        alert('Error: ' + (data.error || 'Failed to save'));
+        alert('Error: ' + (data.message || data.error || 'Failed to save'));
       }
     } catch (e) {
       alert('Network error while saving video');
@@ -341,13 +371,72 @@
     e.preventDefault();
     const name = document.getElementById('studentNameInput').value.trim();
     const email = document.getElementById('studentEmailInput').value.trim();
+    const student_id = document.getElementById('studentIdInput').value.trim();
+    const default_password = document.getElementById('studentPasswordInput').value.trim();
     const alertBox = document.getElementById('addStudentAlert');
+
     try {
       const res = await fetch('/faculty/add-student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email })
+        body: JSON.stringify({ name, email, student_id, default_password })
       });
+      const d = await res.json();
+      if (d.ok) {
+        const s = d.student || d;
+        alertBox.className = 'flash flash-success';
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${s.name || name}</b> (ID: <code>${s.student_id}</code>, Pass: <code>${s.default_password}</code>)`;
+        alertBox.style.display = 'flex';
+        document.getElementById('manualStudentForm').reset();
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        alertBox.className = 'flash flash-error';
+        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${d.message || d.error || 'Failed to enroll student.'}`;
+        alertBox.style.display = 'flex';
+      }
+    } catch (err) {
+      alertBox.className = 'flash flash-error';
+      alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${err.message || 'Network error'}`;
+      alertBox.style.display = 'flex';
+    }
+  }
+
+  async function deleteStudent(studentId, studentName) {
+    if (!confirm(`Are you sure you want to permanently delete student '${studentName}' (${studentId}) and all their lab records?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/faculty/delete-student/${studentId}`, { method: 'DELETE' });
+      const d = await res.json();
+      if (d.ok) {
+        alert(d.message);
+        location.reload();
+      } else {
+        alert('Error: ' + (d.message || 'Failed to delete student.'));
+      }
+    } catch (e) {
+      alert('Network error while deleting student.');
+    }
+  }
+
+  // Live Auto-Refresh (5s) for Faculty Stats & Roster
+  function pollFacultyStats() {
+    fetch('/api/faculty/stats')
+      .then(r => r.json())
+      .then(d => {
+        if (d) {
+          if (document.getElementById('statTotal')) document.getElementById('statTotal').innerText = d.total || 0;
+          if (document.getElementById('statDone')) document.getElementById('statDone').innerText = d.lab1_completed || 0;
+          if (document.getElementById('statLab2Done')) document.getElementById('statLab2Done').innerText = d.lab2_completed || 0;
+          if (document.getElementById('statLab3Done')) document.getElementById('statLab3Done').innerText = d.lab3_completed || 0;
+          if (document.getElementById('statLab4Done')) document.getElementById('statLab4Done').innerText = d.lab4_completed || 0;
+          if (document.getElementById('statLab5Done')) document.getElementById('statLab5Done').innerText = d.lab5_completed || 0;
+          if (document.getElementById('statLab6Done')) document.getElementById('statLab6Done').innerText = d.lab6_completed || 0;
+        }
+      })
+      .catch(() => {});
+  }
+  setInterval(pollFacultyStats, 5000);
       const d = await res.json();
       if (d.ok) {
         const s = d.student || d;

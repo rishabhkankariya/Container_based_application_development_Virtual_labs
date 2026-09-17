@@ -75,7 +75,7 @@
 
     <!-- User Action Controls -->
     <div style="display:flex;align-items:center;gap:12px">
-      {% if session.get('student_id') or session.get('faculty_user') %}
+      {% if session.get('student_id') or session.get('faculty_username') %}
         <div style="display:flex;align-items:center;gap:10px">
           <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-blue">
             <i class="fa-solid fa-gauge"></i> Dashboard
@@ -152,7 +152,7 @@
       <a href="{{ url_for('lab4') }}" class="btn btn-outline" style="justify-content:flex-start"><span class="badge badge-green" style="padding:2px 6px">4</span> REST Microservice</a>
 
       <div style="margin-top:auto;padding-top:20px;border-top:2px solid #121212">
-        {% if session.get('student_id') or session.get('faculty_user') %}
+        {% if session.get('student_id') or session.get('faculty_username') %}
           <a href="{{ url_for('logout') }}" class="btn btn-red" style="width:100%"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
         {% else %}
           <a href="{{ url_for('login') }}" class="btn btn-yellow" style="width:100%"><i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal</a>

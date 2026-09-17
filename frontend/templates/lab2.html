@@ -226,11 +226,25 @@
 
 <div id="labConfig" data-steps='{{ steps | tojson }}' data-done='{{ steps_done | tojson }}' data-verified="{{ 'true' if verified else 'false' }}" style="display:none"></div>
 
-<script>
-const files = {
-  'index.html': ''
-};
-let currentFile = 'index.html';
+const STORAGE_KEY_LAB2 = 'vlab_code_lab2_' + (window.STUDENT_ID || 'guest');
+let files = {};
+try {
+  const savedCode = localStorage.getItem(STORAGE_KEY_LAB2);
+  if (savedCode) {
+    files = JSON.parse(savedCode);
+  }
+} catch(e) {}
+if (!files || Object.keys(files).length === 0) {
+  files = { 'index.html': '' };
+}
+
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB2, JSON.stringify(files));
+  } catch(e) {}
+}
+
+let currentFile = Object.keys(files)[0] || 'index.html';
 let containerRunning = false;
 
 // Undo & Redo History Stack per file
@@ -553,6 +567,7 @@ function saveCurrentFile() {
     return;
   }
   files[currentFile] = document.getElementById('codeEditor').value;
+  saveFilesToLocalStorage();
   showToast(`Saved '${currentFile}' successfully!`, 'success');
 }
 
@@ -722,6 +737,7 @@ function onCodeInput() {
   syncHighlight();
   if (currentFile && files[currentFile] !== undefined) {
     files[currentFile] = document.getElementById('codeEditor').value;
+    saveFilesToLocalStorage();
   }
   checkCodeProgress();
   if (containerRunning && (currentFile === 'index.html' || currentFile.endsWith('.html'))) {
@@ -1043,7 +1059,7 @@ function verifyLab2Completion() {
   if (!testedState.run && !containerRunning) missing.push('• 4. docker run -d -p 8080:80 hello-web');
 
   if (missing.length > 0) {
-    const formattedText = '⚠️ <b>Lab 2 Verification Blocked!</b><br><br>You must test all compulsory tasks in the inbuilt editor & console before completing Lab 2:<br><br>' + missing.join('<br>');
+    const formattedText = '⚠️ Lab 2 Verification Blocked!\n\nYou must test all compulsory tasks in the inbuilt editor & console before completing Lab 2:\n\n' + missing.join('\n');
     alert(formattedText);
     toggleInstructionsDrawer(true);
     return;

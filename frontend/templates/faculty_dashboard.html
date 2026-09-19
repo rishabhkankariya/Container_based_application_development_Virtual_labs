@@ -85,7 +85,7 @@
 
         <div>
           <label>Video Embed / Stream URL</label>
-          <input type="text" id="videoUrlInput" placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ">
+          <input type="text" id="videoUrlInput" placeholder="e.g. https://www.youtube.com/embed/VIDEO_ID">
         </div>
 
         <button type="button" class="btn btn-blue" onclick="saveFacultyVideo()" style="margin-top:6px">
@@ -319,7 +319,7 @@
                   </div>
                 </td>
                 <td>
-                  <button type="button" class="btn btn-sm btn-red" onclick="deleteStudent('{{ r.student_id }}', '{{ r.name|replace('\'', '\\\'') }}')" title="Delete Student Record" style="padding:4px 8px">
+                  <button type="button" class="btn btn-sm btn-red" data-id="{{ r.student_id }}" data-name="{{ r.name }}" onclick="deleteStudent(this.dataset.id, this.dataset.name)" title="Delete Student Record" style="padding:4px 8px">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
@@ -437,25 +437,6 @@
       .catch(() => {});
   }
   setInterval(pollFacultyStats, 5000);
-      const d = await res.json();
-      if (d.ok) {
-        const s = d.student || d;
-        alertBox.className = 'flash flash-success';
-        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${s.name || name}</b> (ID: <code>${s.student_id}</code>, Pass: <code>${s.default_password}</code>)`;
-        alertBox.style.display = 'flex';
-        document.getElementById('manualStudentForm').reset();
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        alertBox.className = 'flash flash-error';
-        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${d.message || d.error || 'Failed to enroll student.'}`;
-        alertBox.style.display = 'flex';
-      }
-    } catch (err) {
-      alertBox.className = 'flash flash-error';
-      alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${err.message || 'Network error'}`;
-      alertBox.style.display = 'flex';
-    }
-  }
 
   function filterAndSortRoster() {
     const q = (document.getElementById('studentSearchInput').value || '').toLowerCase().trim();

@@ -1,3 +1,4 @@
+
 import os
 import io
 import json
@@ -684,49 +685,108 @@ def get_student_docker_state(student_id):
         }
     return STUDENT_DOCKER_STATE[student_id]
 
-AUTO_DOCKER_LAUNCH_ATTEMPTED = False
+def find_docker_desktop_executable():
+    """Locates Docker Desktop executable across Windows, macOS, and Linux."""
+    # 1. Search relative to docker CLI in PATH
+    docker_bin = shutil.which("docker")
+    if docker_bin:
+        parent = os.path.dirname(docker_bin)
+        candidates = [
+            os.path.normpath(os.path.join(parent, "..", "..", "Docker Desktop.exe")),
+            os.path.normpath(os.path.join(parent, "..", "Docker Desktop.exe")),
+            os.path.normpath(os.path.join(parent, "Docker Desktop.exe")),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
 
-def auto_start_host_docker():
-    """Attempts to auto-launch Docker Desktop executable if installed on host system."""
-    global AUTO_DOCKER_LAUNCH_ATTEMPTED
-    if AUTO_DOCKER_LAUNCH_ATTEMPTED:
-        return
-    AUTO_DOCKER_LAUNCH_ATTEMPTED = True
-
+    # 2. Search common known install locations
     desktop_paths = [
-        os.path.expandvars(r"%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe"),
-        os.path.expandvars(r"%ProgramFiles%\Docker\Docker\Docker Desktop.exe"),
-        os.path.expandvars(r"%ProgramFiles(x86)%\Docker\Docker\Docker Desktop.exe"),
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Programs\DockerDesktop\Docker Desktop.exe"),
+        os.path.join(os.environ.get("ProgramFiles", ""), r"Docker\Docker\Docker Desktop.exe"),
+        os.path.join(os.environ.get("ProgramFiles(x86)", ""), r"Docker\Docker\Docker Desktop.exe"),
         r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+        r"C:\Program Files\Docker\Docker Desktop\Docker Desktop.exe",
         "/Applications/Docker.app/Contents/MacOS/Docker"
     ]
-    
-    exe_path = None
     for p in desktop_paths:
-        if os.path.exists(p):
-            exe_path = p
-            break
+        if p and os.path.isfile(p):
+            return p
 
-    if exe_path:
-        try:
-            if platform.system() == "Windows":
-                subprocess.Popen([exe_path], creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW)
+    return None
+
+_DOCKER_STATUS_CACHE = {"status": False, "msg": "Virtual Docker Simulator (Active)", "expires": 0}
+AUTO_DOCKER_LAUNCH_ATTEMPTED = False
+
+def auto_start_host_docker(force=False):
+    """Attempts to launch Docker Desktop GUI executable so it visibly opens on the user's desktop."""
+    global AUTO_DOCKER_LAUNCH_ATTEMPTED
+    if AUTO_DOCKER_LAUNCH_ATTEMPTED and not force:
+        return True
+    AUTO_DOCKER_LAUNCH_ATTEMPTED = True
+
+    exe_path = find_docker_desktop_executable()
+    if not exe_path:
+        print("[Docker Manager] Docker Desktop executable not found in standard paths.")
+        return False
+
+    print(f"[Docker Manager] Opening Docker Desktop GUI from: {exe_path}")
+    try:
+        if platform.system() == "Windows":
+            # On Windows, os.startfile opens the desktop GUI application cleanly
+            # and signals the dashboard window to show on the user's screen.
+            if hasattr(os, "startfile"):
+                os.startfile(exe_path)
             else:
-                subprocess.Popen([exe_path])
-        except Exception:
-            pass
+                subprocess.Popen([exe_path], shell=True)
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", "-a", "Docker"])
+        else:
+            subprocess.Popen([exe_path])
+        print("[Docker Manager] Docker Desktop launch request initiated successfully.")
+        return True
+    except Exception as e:
+        print(f"[Docker Manager] Failed to launch Docker Desktop: {e}")
+        return False
 
 
 def check_host_docker_status(retry_auto_start=False):
-    """Checks if real Docker daemon is running on the host system cleanly and quickly."""
+    """Checks if real Docker daemon is running on the host system cleanly, with fast caching."""
+    global _DOCKER_STATUS_CACHE
+    now = time.time()
+    if now < _DOCKER_STATUS_CACHE["expires"]:
+        return _DOCKER_STATUS_CACHE["status"], _DOCKER_STATUS_CACHE["msg"]
+
     try:
-        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=2)
-        if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
-            return True, "Local Docker Engine (Connected)"
+        # Fast query: takes ~100ms vs ~4000ms for 'docker info'
+        res = subprocess.run(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            capture_output=True, text=True, timeout=3
+        )
+        if res.returncode == 0 and res.stdout.strip() and "failed to connect" not in (res.stderr or "").lower():
+            ver = res.stdout.strip()
+            msg = "Local Docker Engine (Connected)"
+            _DOCKER_STATUS_CACHE = {"status": True, "msg": msg, "expires": now + 4}
+            return True, msg
     except Exception:
         pass
 
-    return False, "Virtual Docker Simulator (Active)"
+    # Fallback to docker info in case docker version format was unexpected
+    try:
+        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=3)
+        if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
+            msg = "Local Docker Engine (Connected)"
+            _DOCKER_STATUS_CACHE = {"status": True, "msg": msg, "expires": now + 4}
+            return True, msg
+    except Exception:
+        pass
+
+    if retry_auto_start:
+        auto_start_host_docker(force=True)
+
+    msg = "Virtual Docker Simulator (Active)"
+    _DOCKER_STATUS_CACHE = {"status": False, "msg": msg, "expires": now + 2}
+    return False, msg
 
 @app.route("/api/terminal/exec", methods=["POST"])
 @app.route("/api/run-command", methods=["POST"])
@@ -774,21 +834,58 @@ def api_terminal_exec():
                 with open(fpath, "w", encoding="utf-8") as f:
                     f.write(clean_text)
 
-    # Ensure required build files exist in workspace_dir so docker build always succeeds seamlessly
+    # Multi-lab file bridges: support Dockerfile, Dockerfile.microservice, Dockerfile.client, docker-compose.yml
     df_path = os.path.join(workspace_dir, "Dockerfile")
-    if not os.path.exists(df_path) or os.path.getsize(df_path) == 0:
+    df_micro_path = os.path.join(workspace_dir, "Dockerfile.microservice")
+    df_client_path = os.path.join(workspace_dir, "Dockerfile.client")
+    compose_path = os.path.join(workspace_dir, "docker-compose.yml")
+
+    # If user created Dockerfile, mirror to Dockerfile.microservice and vice-versa
+    if os.path.exists(df_path) and not os.path.exists(df_micro_path):
+        shutil.copyfile(df_path, df_micro_path)
+    elif os.path.exists(df_micro_path) and not os.path.exists(df_path):
+        shutil.copyfile(df_micro_path, df_path)
+    elif not os.path.exists(df_path):
         with open(df_path, "w", encoding="utf-8") as f:
-            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 80\nCMD [\"python\", \"app.py\"]")
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD [\"python\", \"app.py\"]\n")
+        with open(df_micro_path, "w", encoding="utf-8") as f:
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD [\"python\", \"app.py\"]\n")
+
+    if not os.path.exists(df_client_path):
+        with open(df_client_path, "w", encoding="utf-8") as f:
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY client.py .\nEXPOSE 8080\nCMD [\"python\", \"client.py\"]\n")
+
+    req_file_path = os.path.join(workspace_dir, "requirements.txt")
+    if not os.path.exists(req_file_path) or os.path.getsize(req_file_path) == 0:
+        with open(req_file_path, "w", encoding="utf-8") as f:
+            f.write("flask==3.0.0\nrequests\n")
 
     app_file_path = os.path.join(workspace_dir, "app.py")
     if not os.path.exists(app_file_path):
         with open(app_file_path, "w", encoding="utf-8") as f:
-            f.write("# app.py\n")
+            f.write("import socket\nfrom flask import Flask, request, jsonify\napp = Flask(__name__)\nHOST_ID = socket.gethostname()\n@app.route('/add')\ndef add():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({'result': a + b, 'sum': a + b, 'status': 'success', 'handled_by_replica': HOST_ID, 'container': 'sum-microservice'})\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n")
 
-    req_file_path = os.path.join(workspace_dir, "requirements.txt")
-    if not os.path.exists(req_file_path):
-        with open(req_file_path, "w", encoding="utf-8") as f:
-            f.write("flask==3.0.0\n")
+    client_file_path = os.path.join(workspace_dir, "client.py")
+    if not os.path.exists(client_file_path):
+        with open(client_file_path, "w", encoding="utf-8") as f:
+            f.write("from flask import Flask, request, jsonify\nimport requests\napp = Flask(__name__)\nMICROSERVICE_URL = 'http://sum-microservice:5000/add'\n@app.route('/calc')\ndef calc():\n    try:\n        res = requests.get(f'{MICROSERVICE_URL}?a=10&b=20', timeout=2)\n        return jsonify({'client_status': 'success', 'network_result': res.json()})\n    except Exception as e:\n        return jsonify({'client_status': 'error', 'error': str(e)})\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=8080)\n")
+
+    if not os.path.exists(compose_path):
+        with open(compose_path, "w", encoding="utf-8") as f:
+            f.write("version: '3.8'\nservices:\n  sum-microservice:\n    build: .\n    ports:\n      - \"5001-5005:5000\"\n    deploy:\n      replicas: 1\n")
+    else:
+        try:
+            with open(compose_path, "r", encoding="utf-8") as cf:
+                compose_data = cf.read()
+            if "5000:5000" in compose_data:
+                compose_data = compose_data.replace("5000:5000", "5001-5005:5000")
+                with open(compose_path, "w", encoding="utf-8") as cf:
+                    cf.write(compose_data)
+        except Exception:
+            pass
+
+    # Hybrid Docker Execution Selector: Real System Docker vs Virtual Docker Simulator
+    has_real_docker, docker_msg = check_host_docker_status()
 
     # Pre-validation for docker run: check if target image exists
     if cmd_lower.startswith("docker run"):
@@ -811,18 +908,45 @@ def api_terminal_exec():
         repo_name = target_img.split(":")[0] if target_img else ""
         if repo_name and repo_name != "hello-world":
             image_exists = (repo_name in state.get("images", {}))
+            if not image_exists and has_real_docker:
+                try:
+                    insp = subprocess.run(f"docker image inspect {repo_name}", shell=True, capture_output=True, text=True, timeout=5)
+                    if insp.returncode == 0:
+                        image_exists = True
+                        state["images"][repo_name] = {"repo": repo_name, "tag": "latest"}
+                except Exception:
+                    pass
             if not image_exists:
                 out = f"Unable to find image '{target_img}:latest' locally\ndocker: Error response from daemon: No such image: {target_img}:latest.\nRun 'docker build -t {target_img} .' first!"
                 return jsonify({"ok": False, "output": out})
-
-    # Hybrid Docker Execution Selector: Real System Docker vs Virtual Docker Simulator
-    has_real_docker, docker_msg = check_host_docker_status()
 
     if cmd_lower.startswith("docker") and has_real_docker:
         try:
             exec_cmd = cmd
             if "system prune" in cmd_lower and "-f" not in cmd_lower and "--force" not in cmd_lower:
                 exec_cmd = cmd + " -f"
+
+            # Avoid host port 5000 hijacking: The Virtual Lab platform itself runs on port 5000.
+            # Map student container host port 5000 to 5001 so platform remains accessible.
+            if "5000:5000" in exec_cmd:
+                exec_cmd = exec_cmd.replace("5000:5000", "5001:5000")
+
+            # Handle docker compose running in background
+            if ("docker compose up" in cmd_lower or "docker-compose up" in cmd_lower) and "-d" not in cmd_lower:
+                exec_cmd = exec_cmd + " -d"
+
+            # Proactive network resolution: If creating network that already exists, succeed immediately
+            if "network create" in cmd_lower:
+                net_tokens = cmd.split()
+                net_name = net_tokens[-1] if len(net_tokens) >= 4 else "app-net"
+                net_chk = subprocess.run(f"docker network inspect {net_name}", shell=True, capture_output=True, text=True, timeout=5)
+                if net_chk.returncode == 0:
+                    return jsonify({"ok": True, "output": f"Network '{net_name}' is active and ready."})
+
+            # Proactive container name collision avoidance
+            for named_c in ["sum-microservice", "sum-client", "hello-web"]:
+                if f"--name {named_c}" in exec_cmd or f"--name={named_c}" in exec_cmd:
+                    subprocess.run(f"docker rm -f {named_c}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
 
             # Handle placeholder <container_id> validation
             if "<container_id>" in cmd_lower or "<container" in cmd_lower or ("<" in cmd and ">" in cmd):
@@ -831,20 +955,41 @@ def api_terminal_exec():
                     "output": "docker: Error response from daemon: No such container. Please replace '<container_id>' with a valid Container ID (e.g. from 'docker ps -a')."
                 })
             else:
-                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=40)
             
-            # Auto-healing: If port allocation failed (e.g. port 8080, 5000 or 80 already bound by old container), auto-free port and retry!
+            # Special auto-healing for docker network create if already exists
             err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
+            if "already exists" in err_lower and "network" in cmd_lower:
+                return jsonify({"ok": True, "output": "Network 'app-net' already exists and is active."})
+
+            # Auto-healing: If port allocation failed or address already in use, free port and retry
             if res.returncode != 0 and ("port is already allocated" in err_lower or "address already in use" in err_lower):
                 ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
                 if ps_res.stdout:
                     for line in ps_res.stdout.splitlines():
-                        if "8080" in line or "80" in line:
+                        if "8080" in line or "80" in line or "5000" in line or "5001" in line:
                             cnt_id = line.split()[0]
                             subprocess.run(f"docker rm -f {cnt_id}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
-                res = subprocess.run(cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
 
-            is_ok = (res.returncode == 0)
+            # Auto-healing: If container name already in use, remove conflicting container and retry
+            if res.returncode != 0 and "is already in use by container" in err_lower:
+                for cname in ["sum-microservice", "sum-client", "hello-web"]:
+                    if cname in err_lower or cname in cmd_lower:
+                        subprocess.run(f"docker rm -f {cname}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+                match = re.search(r'is already in use by container "?([a-f0-9]+)"?', err_lower)
+                if match:
+                    old_id = match.group(1)
+                    subprocess.run(f"docker rm -f {old_id}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
+
+            # Auto-healing: If Windows Docker Desktop meta.json file lock occurred, sleep briefly and retry
+            if res.returncode != 0 and "is being used by another process" in err_lower:
+                time.sleep(1.2)
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+
             stdout_text = res.stdout.strip() if res.stdout else ""
             stderr_text = res.stderr.strip() if res.stderr else ""
             
@@ -856,6 +1001,24 @@ def api_terminal_exec():
                 out = stdout_text
             else:
                 out = ""
+
+            err_check = out.lower()
+            has_fatal_err = any(err_sig in err_check for err_sig in [
+                "error response from daemon",
+                "cannot connect to the docker daemon",
+                "failed to solve",
+                "failed to build",
+                "no such image",
+                "no such container",
+                "unable to find image",
+                "is not recognized as an internal or external command",
+                "command not found",
+                "executable file not found",
+                "unknown shorthand flag",
+                "unknown flag",
+                "fatal:"
+            ])
+            is_ok = (res.returncode == 0) and not has_fatal_err
 
             if is_ok and not out:
                 out = "Command executed successfully."
@@ -939,12 +1102,13 @@ def api_terminal_exec():
 
     # Require real Docker Desktop daemon to be running for all Docker CLI execution
     if cmd_lower.startswith("docker") and not has_real_docker:
+        auto_start_host_docker(force=True)
         out = (
-            "ERROR: Cannot connect to the Docker daemon.\n"
+            "NOTICE: Docker Desktop is not currently active.\n"
             "----------------------------------------------------------------------\n"
-            "Docker Desktop is NOT running on your machine.\n"
-            "Please first launch Docker Desktop on your computer, wait for the\n"
-            "whale icon to show 'Docker Desktop is running', and then try again.\n"
+            "We have automatically triggered the startup of Docker Desktop.\n"
+            "Please allow 10-20 seconds for the Docker daemon to initialize in\n"
+            "the system tray, and then re-run your command.\n"
             "----------------------------------------------------------------------"
         )
         return jsonify({"ok": False, "output": out})
@@ -992,11 +1156,11 @@ def index():
         "level": "Novice Level",
         "skills": [
             {"id": "l1_s1", "title": "Virtualization & Specs Audit (Lab 1)", "done": False},
-            {"id": "l1_s2", "title": "Running First Container (<code>docker run hello-world</code>)", "done": False},
+            {"id": "l1_s2", "title": "Running First Container", "done": False},
             {"id": "l2_s1", "title": "Writing Custom Nginx Dockerfiles (Lab 2)", "done": False},
-            {"id": "l2_s2", "title": "Port Binding & Mapping (<code>8080:80</code>)", "done": False},
-            {"id": "l3_s1", "title": "Detached Execution Mode (<code>docker run -d</code>) (Lab 3)", "done": False},
-            {"id": "l3_s2", "title": "System Resource Pruning (<code>docker system prune</code>)", "done": False},
+            {"id": "l2_s2", "title": "Port Binding & Mapping", "done": False},
+            {"id": "l3_s1", "title": "Detached Execution Mode (Lab 3)", "done": False},
+            {"id": "l3_s2", "title": "System Resource Pruning", "done": False},
             {"id": "l4_s1", "title": "Flask Microservice API Packaging (Lab 4)", "done": False},
             {"id": "l4_s2", "title": "Docker Hub Authentication & Image Registry Push", "done": False},
             {"id": "l5_s1", "title": "Multi-Container User-Defined Networking (Lab 5)", "done": False},
@@ -2434,6 +2598,18 @@ def api_system_telemetry():
         })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/start-docker", methods=["POST", "GET"])
+def api_start_docker():
+    success = auto_start_host_docker(force=True)
+    has_real, msg = check_host_docker_status()
+    return jsonify({
+        "ok": success,
+        "status": msg,
+        "connected": has_real,
+        "message": "Docker Desktop launch initiated." if success else "Docker Desktop executable not found."
+    })
 
 
 @app.errorhandler(500)

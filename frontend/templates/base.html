@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,13 +10,15 @@
   <!-- Google Fonts: Outfit (Bauhaus Geometric) & Fira Code -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Bauhaus Design System Master Stylesheet -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=6.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7.2">
 
   <style>
     /* Layout utilities */
@@ -25,31 +28,79 @@
       margin: 0 auto;
       padding: 24px 20px 60px;
     }
-    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
     @media (max-width: 992px) {
-      .grid-4 { grid-template-columns: repeat(2, 1fr); }
-      .grid-3 { grid-template-columns: 1fr; }
-      .grid-2 { grid-template-columns: 1fr; }
+      .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
     }
+
     @media (max-width: 600px) {
-      .grid-4 { grid-template-columns: 1fr; }
+      .grid-4 {
+        grid-template-columns: 1fr;
+      }
     }
-    .flex-between { display: flex; align-items: center; justify-content: space-between; }
-    .flex-center { display: flex; align-items: center; justify-content: center; }
-    .gap-2 { gap: 8px; }
-    .gap-3 { gap: 12px; }
-    .gap-4 { gap: 16px; }
+
+    .flex-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .flex-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gap-2 {
+      gap: 8px;
+    }
+
+    .gap-3 {
+      gap: 12px;
+    }
+
+    .gap-4 {
+      gap: 16px;
+    }
   </style>
 </head>
+
 <body class="flex flex-col min-h-screen">
 
   <!-- Top Bauhaus Navigation Bar -->
   <header class="navbar flex-between">
     <div style="display:flex;align-items:center;gap:16px">
       <!-- Mobile Sidebar Toggle -->
-      <button onclick="toggleVLabSidebar()" class="btn btn-sm btn-outline" style="padding:6px 10px" title="Toggle Navigation Menu">
+      <button onclick="toggleVLabSidebar()" class="btn btn-sm btn-outline" style="padding:6px 10px"
+        title="Toggle Navigation Menu">
         <i class="fa-solid fa-bars" style="font-size:1.1rem"></i>
       </button>
 
@@ -76,18 +127,18 @@
     <!-- User Action Controls -->
     <div style="display:flex;align-items:center;gap:12px">
       {% if session.get('student_id') or session.get('faculty_username') %}
-        <div style="display:flex;align-items:center;gap:10px">
-          <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-blue">
-            <i class="fa-solid fa-gauge"></i> Dashboard
-          </a>
-          <a href="{{ url_for('logout') }}" class="btn btn-sm btn-red" title="Sign Out">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </a>
-        </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-blue">
+          <i class="fa-solid fa-gauge"></i> Dashboard
+        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-red" title="Sign Out">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+      </div>
       {% else %}
-        <button onclick="openLoginRoleModal()" class="btn btn-sm btn-yellow">
-          <i class="fa-solid fa-right-to-bracket"></i> Portal Login
-        </button>
+      <button onclick="openLoginRoleModal()" class="btn btn-sm btn-yellow">
+        <i class="fa-solid fa-right-to-bracket"></i> Portal Login
+      </button>
       {% endif %}
     </div>
   </header>
@@ -99,7 +150,8 @@
 
   <!-- Bauhaus Constructivist Footer -->
   <footer class="bauhaus-footer">
-    <div class="wrap" style="padding:0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:24px">
+    <div class="wrap"
+      style="padding:0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:24px">
       <div>
         <div class="bauhaus-logo" style="color:#FFFFFF;margin-bottom:8px">
           <div class="bauhaus-shapes">
@@ -110,18 +162,21 @@
           <span>CONTAINER <span style="color:var(--primary-yellow)">V-LAB</span> SUITE</span>
         </div>
         <p style="color:#AAAAAA;font-size:.86rem;max-width:500px">
-          Constructivist Virtual Laboratory Environment for Hands-on Docker Containerization, Subprocess Telemetry, and Microservice Architecture.
+          Constructivist Virtual Laboratory Environment for Hands-on Docker Containerization, Subprocess Telemetry, and
+          Microservice Architecture.
         </p>
       </div>
 
-      <div style="display:flex;gap:20px;flex-wrap:wrap;font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:.85rem">
+      <div
+        style="display:flex;gap:20px;flex-wrap:wrap;font-family:var(--font-display);font-weight:700;text-transform:uppercase;font-size:.85rem">
         <a href="{{ url_for('index') }}#curriculum">Lab Modules</a>
         <a href="{{ url_for('index') }}#telemetry">Telemetry</a>
         <a href="{{ url_for('index') }}#faq">Help Desk</a>
         <a href="{{ url_for('login') }}">Access Portal</a>
       </div>
     </div>
-    <div style="border-top:2px solid #333333;margin-top:24px;padding-top:16px;text-align:center;font-size:.8rem;color:#777777;font-family:var(--font-mono)">
+    <div
+      style="border-top:2px solid #333333;margin-top:24px;padding-top:16px;text-align:center;font-size:.8rem;color:#777777;font-family:var(--font-mono)">
       FORM FOLLOWS FUNCTION • CONTAINER V-LAB © 2026 • BUILT FOR BROWSER VIRTUALIZATION
     </div>
   </footer>
@@ -142,20 +197,30 @@
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
-      <a href="{{ url_for('index') }}" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-house" style="color:var(--primary-red)"></i> Home Portal</a>
-      <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-gauge" style="color:var(--primary-blue)"></i> Control Dashboard</a>
-      
-      <div style="font-family:var(--font-display);font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-top:16px;color:#888888">Lab Modules</div>
-      <a href="{{ url_for('lab1') }}" class="btn btn-outline" style="justify-content:flex-start"><span class="badge badge-red" style="padding:2px 6px">1</span> Docker Desktop Setup</a>
-      <a href="{{ url_for('lab2') }}" class="btn btn-outline" style="justify-content:flex-start"><span class="badge badge-blue" style="padding:2px 6px">2</span> Nginx Web App</a>
-      <a href="{{ url_for('lab3') }}" class="btn btn-outline" style="justify-content:flex-start"><span class="badge badge-yellow" style="padding:2px 6px">3</span> Container Lifecycle</a>
-      <a href="{{ url_for('lab4') }}" class="btn btn-outline" style="justify-content:flex-start"><span class="badge badge-green" style="padding:2px 6px">4</span> REST Microservice</a>
+      <a href="{{ url_for('index') }}" class="btn btn-outline" style="justify-content:flex-start"><i
+          class="fa-solid fa-house" style="color:var(--primary-red)"></i> Home Portal</a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="justify-content:flex-start"><i
+          class="fa-solid fa-gauge" style="color:var(--primary-blue)"></i> Control Dashboard</a>
+
+      <div
+        style="font-family:var(--font-display);font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-top:16px;color:#888888">
+        Lab Modules</div>
+      <a href="{{ url_for('lab1') }}" class="btn btn-outline" style="justify-content:flex-start"><span
+          class="badge badge-red" style="padding:2px 6px">1</span> Docker Desktop Setup</a>
+      <a href="{{ url_for('lab2') }}" class="btn btn-outline" style="justify-content:flex-start"><span
+          class="badge badge-blue" style="padding:2px 6px">2</span> Nginx Web App</a>
+      <a href="{{ url_for('lab3') }}" class="btn btn-outline" style="justify-content:flex-start"><span
+          class="badge badge-yellow" style="padding:2px 6px">3</span> Container Lifecycle</a>
+      <a href="{{ url_for('lab4') }}" class="btn btn-outline" style="justify-content:flex-start"><span
+          class="badge badge-green" style="padding:2px 6px">4</span> REST Microservice</a>
 
       <div style="margin-top:auto;padding-top:20px;border-top:2px solid #121212">
         {% if session.get('student_id') or session.get('faculty_username') %}
-          <a href="{{ url_for('logout') }}" class="btn btn-red" style="width:100%"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-red" style="width:100%"><i
+            class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
         {% else %}
-          <a href="{{ url_for('login') }}" class="btn btn-yellow" style="width:100%"><i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal</a>
+        <a href="{{ url_for('login') }}" class="btn btn-yellow" style="width:100%"><i
+            class="fa-solid fa-right-to-bracket"></i> Sign In to Portal</a>
         {% endif %}
       </div>
     </div>
@@ -170,25 +235,31 @@
         <button onclick="closeLoginRoleModal()" class="modal-close-btn">&times;</button>
       </div>
       <p style="margin-bottom:20px">Choose your access role to proceed to the authenticated Virtual Lab environment:</p>
-      
+
       <div style="display:flex;flex-direction:column;gap:16px">
-        <a href="{{ url_for('login') }}?role=student" class="card card-sm" style="display:flex;align-items:center;gap:16px;text-decoration:none;border-color:var(--primary-blue);margin-bottom:0">
-          <div style="width:48px;height:48px;background:var(--primary-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0;border:2px solid #121212">
+        <a href="{{ url_for('login') }}?role=student" class="card card-sm"
+          style="display:flex;align-items:center;gap:16px;text-decoration:none;border-color:var(--primary-blue);margin-bottom:0">
+          <div
+            style="width:48px;height:48px;background:var(--primary-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0;border:2px solid #121212">
             <i class="fa-solid fa-graduation-cap"></i>
           </div>
           <div style="flex:1">
-            <div style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:#121212">STUDENT ACCESS</div>
+            <div style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:#121212">STUDENT ACCESS
+            </div>
             <div style="font-size:.82rem;color:#666666">Execute labs, build Docker containers &amp; verify steps</div>
           </div>
           <i class="fa-solid fa-arrow-right" style="color:var(--primary-blue)"></i>
         </a>
 
-        <a href="{{ url_for('login') }}?role=faculty" class="card card-sm" style="display:flex;align-items:center;gap:16px;text-decoration:none;border-color:var(--primary-red);margin-bottom:0">
-          <div style="width:48px;height:48px;background:var(--primary-red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0;border:2px solid #121212;border-radius:9999px">
+        <a href="{{ url_for('login') }}?role=faculty" class="card card-sm"
+          style="display:flex;align-items:center;gap:16px;text-decoration:none;border-color:var(--primary-red);margin-bottom:0">
+          <div
+            style="width:48px;height:48px;background:var(--primary-red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0;border:2px solid #121212;border-radius:9999px">
             <i class="fa-solid fa-chalkboard-user"></i>
           </div>
           <div style="flex:1">
-            <div style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:#121212">FACULTY CONSOLE</div>
+            <div style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:#121212">FACULTY CONSOLE
+            </div>
             <div style="font-size:.82rem;color:#666666">Upload roster, review progress &amp; monitor telemetry</div>
           </div>
           <i class="fa-solid fa-arrow-right" style="color:var(--primary-red)"></i>
@@ -226,7 +297,7 @@
     }
 
     // Password Toggle Utility
-    window.togglePassword = function(btn) {
+    window.togglePassword = function (btn) {
       const input = btn.parentElement.querySelector('input');
       if (!input) return;
       if (input.type === 'password') {
@@ -237,6 +308,142 @@
         btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
       }
     };
+
+    // Global Tooltip Engine for Code & Command Explanations
+    (function initVLabTooltips() {
+      let tooltip = null;
+
+      function getTooltip() {
+        if (!tooltip) {
+          tooltip = document.getElementById('vlabGlobalTooltip');
+          if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'vlabGlobalTooltip';
+            tooltip.className = 'vlab-tooltip';
+            tooltip.innerHTML = `
+              <div class="vlab-tooltip-header">
+                <i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow)"></i>
+                <span id="vlabTooltipTitle" class="vlab-tooltip-title">Explanation</span>
+              </div>
+              <div id="vlabTooltipText" class="vlab-tooltip-text"></div>
+            `;
+            document.body.appendChild(tooltip);
+          }
+        }
+        return tooltip;
+      }
+
+      function showTooltip(target) {
+        const raw = target.getAttribute('data-vlab-tooltip');
+        if (!raw) return;
+
+        const tip = getTooltip();
+        const titleEl = tip.querySelector('#vlabTooltipTitle');
+        const textEl = tip.querySelector('#vlabTooltipText');
+
+        let title = 'Code Explanation';
+        let body = raw;
+        const colonIdx = raw.indexOf(':');
+        if (colonIdx > 0 && colonIdx < 40) {
+          title = raw.slice(0, colonIdx).trim();
+          body = raw.slice(colonIdx + 1).trim();
+        }
+
+        if (titleEl) titleEl.textContent = title;
+        if (textEl) textEl.textContent = body;
+
+        tip.style.display = 'block';
+        requestAnimationFrame(() => {
+          tip.classList.add('visible');
+          positionTooltip(target, tip);
+        });
+      }
+
+      function positionTooltip(target, tip) {
+        const rect = target.getBoundingClientRect();
+        const tipRect = tip.getBoundingClientRect();
+
+        let top = rect.top - tipRect.height - 8;
+        let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+
+        if (top < 10) {
+          top = rect.bottom + 8;
+        }
+        if (left < 10) left = 10;
+        if (left + tipRect.width > window.innerWidth - 10) {
+          left = window.innerWidth - tipRect.width - 10;
+        }
+
+        tip.style.top = Math.round(top) + 'px';
+        tip.style.left = Math.round(left) + 'px';
+      }
+
+      function hideTooltip() {
+        if (!tooltip) return;
+        tooltip.classList.remove('visible');
+        setTimeout(() => {
+          if (!tooltip.classList.contains('visible')) {
+            tooltip.style.display = 'none';
+          }
+        }, 180);
+      }
+
+      document.addEventListener('mouseover', (e) => {
+        const target = e.target.closest('.vlab-hover-target, [data-vlab-tooltip]');
+        if (target) {
+          showTooltip(target);
+        }
+      });
+
+      document.addEventListener('mouseout', (e) => {
+        const target = e.target.closest('.vlab-hover-target, [data-vlab-tooltip]');
+        if (target) {
+          hideTooltip();
+        }
+      });
+
+      window.addEventListener('scroll', hideTooltip, { passive: true });
+    })();
+
+    // Global Command Copy Utility
+    window.copyCommandText = function (text, btn) {
+      if (!text) return;
+      const finish = () => {
+        if (btn) {
+          const orig = btn.innerHTML;
+          btn.classList.add('copied');
+          btn.innerHTML = '<i class="fa-solid fa-check" style="color:#34d399"></i> Copied!';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = orig;
+          }, 1800);
+        }
+        if (typeof showToast === 'function') {
+          showToast('Command copied to clipboard!', 'success');
+        }
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(finish).catch(() => fallbackCopy(text, finish));
+      } else {
+        fallbackCopy(text, finish);
+      }
+    };
+
+    function fallbackCopy(text, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        cb();
+      } catch (e) { }
+      document.body.removeChild(ta);
+    }
   </script>
 </body>
+
 </html>

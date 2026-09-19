@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+
+{% block title %}Container V-Lab | Virtual Docker Laboratory Suite{% endblock %}
+
+{% block body %}
+{% set score_data = score_data if (score_data is defined and score_data and score_data.skills) else {
+  'is_logged_in': False,
+  'student_name': '',
+  'overall_pct': 0,
+  'level': 'Novice Level',
+  'skills': [
+    {'id': 'l1_s1', 'title': 'Virtualization & Specs Audit (Lab 1)', 'done': False},
+    {'id': 'l1_s2', 'title': 'Running First Container', 'done': False},
+    {'id': 'l2_s1', 'title': 'Writing Custom Nginx Dockerfiles (Lab 2)', 'done': False},
+    {'id': 'l2_s2', 'title': 'Port Binding & Mapping', 'done': False},
+    {'id': 'l3_s1', 'title': 'Detached Execution Mode (Lab 3)', 'done': False},
+    {'id': 'l3_s2', 'title': 'System Resource Pruning', 'done': False},
+    {'id': 'l4_s1', 'title': 'Flask Microservice API Packaging (Lab 4)', 'done': False},
+    {'id': 'l4_s2', 'title': 'Docker Hub Authentication & Image Registry Push', 'done': False},
+    {'id': 'l5_s1', 'title': 'Multi-Container User-Defined Networking (Lab 5)', 'done': False},
+    {'id': 'l5_s2', 'title': 'Inter-Container HTTP Service Discovery', 'done': False},
+    {'id': 'l6_s1', 'title': 'Docker Compose Multi-Service Stacks (Lab 6)', 'done': False},
+    {'id': 'l6_s2', 'title': 'Dynamic Horizontal Load Replica Scaling', 'done': False}
+  ]
+} %}
+
+<!-- Hero Section (Bauhaus Constructivist Composition) -->
+<section class="hero-wrapper">
+  <div class="hero-constructivist-grid">
+    <!-- Left Hero Typography & CTA -->
+    <div>
+      <div style="margin-bottom:16px">
+        <span class="badge badge-pill badge-yellow">
+          <i class="fa-solid fa-bolt"></i> VIRTUAL DOCKER ENGINE 27.X • ZERO LOCAL SETUP
+        </span>
+      </div>
+
+      <h1 style="margin-bottom:16px;line-height:0.95">
+        MASTER DOCKER IN <span style="color:var(--primary-red);background:var(--accent-yellow-light);padding:0 8px;border:3px solid #121212;box-shadow:4px 4px 0px #121212;display:inline-block;transform:rotate(-1deg)">VIRTUAL LABS</span>
+      </h1>
+
+      <p style="font-size:1.1rem;margin-bottom:24px;max-width:620px">
+        An unapologetically geometric, browser-native learning environment. Practice image builds, Nginx port mapping, container lifecycle states, and microservice packaging with live host telemetry.
+      </p>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:32px">
+        <a href="#curriculum" class="btn btn-lg btn-red">
+          <i class="fa-solid fa-compass"></i> EXPLORE LABS
+        </a>
+        <button onclick="openLoginRoleModal()" class="btn btn-lg btn-yellow">
+          <i class="fa-solid fa-shield-halved"></i> PORTAL LOGIN
+        </button>
+        <a href="#telemetry" class="btn btn-lg btn-outline">
+          <i class="fa-solid fa-chart-line"></i> TELEMETRY
+        </a>
+      </div>
+    </div>
+
+    <!-- Right Hero Constructivist Geometric Art Panel -->
+    <div class="hero-poster-box">
+      <div class="abstract-shape-1" title="Bauhaus Primary Red Circle"></div>
+      <div class="abstract-shape-2" title="Bauhaus Primary Yellow Square (Rotated 45°)"></div>
+      <div class="abstract-shape-3" title="Bauhaus White Triangle"></div>
+
+      <div style="position:relative;z-index:10;background:#FFFFFF;color:#121212;padding:24px;border:4px solid #121212;box-shadow:8px 8px 0px #121212">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:2px solid #121212;padding-bottom:8px">
+          <div style="font-family:var(--font-display);font-weight:900;font-size:1rem;text-transform:uppercase">
+            <i class="fa-brands fa-docker" style="color:var(--primary-blue)"></i> ENGINE DIAGNOSTIC
+          </div>
+          <span class="badge badge-green">DAEMON ONLINE</span>
+        </div>
+        <p style="font-size:.85rem;color:#333;margin-bottom:12px">
+          Isolated container runtime sandboxes provisioned per student session with background task tracking.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--font-mono);font-size:.78rem">
+          <div style="background:#F5F5F5;border:2px solid #121212;padding:6px 8px">HOST: <b>WIN-64/WSL2</b></div>
+          <div style="background:#F5F5F5;border:2px solid #121212;padding:6px 8px">LATENCY: <b>&lt; 2 MS</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Bar (Color Blocked Yellow) -->
+<section>
+  <div class="stats-banner-yellow">
+    <div class="stat-item">
+      <div class="stat-val">6</div>
+      <div class="stat-lbl">Interactive Lab Modules</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">38+</div>
+      <div class="stat-lbl">Guided Hands-on Tasks</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">100%</div>
+      <div class="stat-lbl">Subprocess Telemetry</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">0</div>
+      <div class="stat-lbl">Local Installs Required</div>
+    </div>
+  </div>
+</section>
+
+<!-- Curriculum / Interactive Labs Overview -->
+<section id="curriculum" style="margin-bottom:60px">
+  <div style="border-bottom:4px solid #121212;padding-bottom:12px;margin-bottom:32px">
+    <div class="badge badge-red" style="margin-bottom:6px">PRACTICAL SYLLABUS</div>
+    <h2>CONTAINER VIRTUAL LAB MODULES</h2>
+  </div>
+
+  <div class="grid-2">
+    <!-- Lab 1 Card -->
+    <div class="card" style="border-top:8px solid var(--primary-red)">
+      <div class="corner-decor corner-decor-circle"></div>
+      <span class="badge badge-red" style="margin-bottom:8px">MODULE 01</span>
+      <h3>Install Docker Desktop &amp; System Audit</h3>
+      <p style="margin-bottom:16px;font-size:.92rem">
+        Walkthrough installation of Docker Desktop on Windows/WSL2 or Linux, run virtualization diagnostics, and verify engine status.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #VIRTUALIZATION #INSTALL</span>
+        <a href="{{ url_for('lab1') }}" class="btn btn-sm btn-red">
+          LAUNCH LAB 1 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 2 Card -->
+    <div class="card" style="border-top:8px solid var(--primary-blue)">
+      <div class="corner-decor corner-decor-square"></div>
+      <span class="badge badge-blue" style="margin-bottom:8px">MODULE 02</span>
+      <h3>Containerize Nginx "Hello World!" Web App</h3>
+      <p style="margin-bottom:16px;font-size:.92rem">
+        Write custom index.html, configure Nginx Dockerfile in integrated VS Code, build Docker images, and expose live web servers on port 8080.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #DOCKERFILE #NGINX</span>
+        <a href="{{ url_for('lab2') }}" class="btn btn-sm btn-blue">
+          LAUNCH LAB 2 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 3 Card -->
+    <div class="card" style="border-top:8px solid var(--primary-yellow)">
+      <div class="corner-decor corner-decor-triangle"></div>
+      <span class="badge badge-yellow" style="margin-bottom:8px">MODULE 03</span>
+      <h3>Run Container &amp; Inspect Lifecycle States</h3>
+      <p style="margin-bottom:16px;font-size:.92rem">
+        Pull official hello-world images, manage container start/stop/rm states, run detached background containers, and execute system prunes.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #CLI #LIFECYCLE</span>
+        <a href="{{ url_for('lab3') }}" class="btn btn-sm btn-yellow">
+          LAUNCH LAB 3 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 4 Card -->
+    <div class="card" style="border-top:8px solid var(--accent-green)">
+      <div class="corner-decor corner-decor-rotated"></div>
+      <span class="badge badge-green" style="margin-bottom:8px">MODULE 04</span>
+      <h3>Build &amp; Containerize Sum Microservice</h3>
+      <p style="margin-bottom:16px;font-size:.92rem">
+        Develop containerized arithmetic microservices with Flask, configure requirements specifications, build images, and test REST endpoints.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #MICROSERVICES #API</span>
+        <a href="{{ url_for('lab4') }}" class="btn btn-sm btn-green">
+          LAUNCH LAB 4 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 5 Card -->
+    <div class="card" style="border-top:8px solid var(--orange)">
+      <div class="corner-decor corner-decor-orange"></div>
+      <span class="badge badge-orange" style="margin-bottom:8px">MODULE 05 • CO3</span>
+      <h3>Multi-Container Microservice &amp; Client Network</h3>
+      <p style="margin-bottom:16px;font-size:.92rem">
+        Build a multi-container architecture connecting a Flask Sum Microservice and Client Application over user-defined Docker bridge network (<code>app-net</code>).
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #NETWORKING #MULTI-CONTAINER</span>
+        <a href="{{ url_for('lab5') }}" class="btn btn-sm btn-orange">
+          LAUNCH LAB 5 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 6 Card -->
+    <div class="card" style="border-top:8px solid var(--purple)">
+      <div class="corner-decor corner-decor-purple"></div>
+      <span class="badge badge-purple" style="margin-bottom:8px">MODULE 06 • CO4</span>
+      <h3>Microservice Load Scaling &amp; Replica Management</h3>
+      <p style="margin-bottom:16px;font-size:.92rem">
+        Configure <code>docker-compose.yml</code> and dynamically scale microservice container replicas up (to 3–5 instances) and down based on system load.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #DOCKER-COMPOSE #SCALING</span>
+        <a href="{{ url_for('lab6') }}" class="btn btn-sm btn-purple">
+          LAUNCH LAB 6 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Interactive Command Playground (Terminal Simulator) -->
+<section style="margin-bottom:60px">
+  <div class="terminal-card">
+    <div class="term-topbar">
+      <div class="term-controls">
+        <span class="term-control-dot term-dot-red"></span>
+        <span class="term-control-dot term-dot-yellow"></span>
+        <span class="term-control-dot term-dot-blue"></span>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:.85rem;color:#ECECEC;font-weight:700">
+        <i class="fa-solid fa-terminal" style="color:var(--primary-yellow);margin-right:8px"></i>INTERACTIVE DOCKER CLI PLAYGROUND
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="term-demo-btn active" onclick="runTermDemo('run', this)">docker run</button>
+        <button class="term-demo-btn" onclick="runTermDemo('build', this)">docker build</button>
+        <button class="term-demo-btn" onclick="runTermDemo('ps', this)">docker ps</button>
+        <button class="term-demo-btn" onclick="runTermDemo('prune', this)">system prune</button>
+      </div>
+    </div>
+    <div class="term-output-area" id="interactiveTermOutput">
+      <div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker run -d -p 8080:80 nginx:latest</span></div>
+      <div class="output-dim">Unable to find image 'nginx:latest' locally...</div>
+      <div class="output-dim">latest: Pulling from library/nginx</div>
+      <div class="output-dim">a2abf6c4d29d: Pull complete [===================>] 31.5MB/31.5MB</div>
+      <div class="output-success">Status: Downloaded newer image for nginx:latest</div>
+      <div style="color:#A855F7;font-weight:700">7f9c8d1e2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d</div>
+      <div style="margin-top:6px"><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker ps</span></div>
+      <div class="output-info">CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS</div>
+      <div>7f9c8d1e2a3b   nginx:latest   "/docker-entrypoint.…"   2 seconds ago   Up 2 seconds   0.0.0.0:8080->80/tcp</div>
+    </div>
+  </div>
+</section>
+
+<!-- Curriculum Explorer Section -->
+<section id="curriculum" style="margin-bottom:60px">
+  <div style="border-bottom:4px solid #121212;padding-bottom:12px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
+    <div>
+      <div class="badge badge-red" style="margin-bottom:6px">LAB MODULES</div>
+      <h2>CURRICULUM EXPLORER</h2>
+    </div>
+    <p style="max-width:500px">Structured learning modules designed to take students from initial virtualization setup to microservice architecture.</p>
+  </div>
+
+  <div class="grid-2">
+    <!-- Lab 1 Card -->
+    <div class="card" style="border-top:8px solid var(--primary-red)">
+      <div class="corner-decor corner-decor-circle"></div>
+      <div class="badge badge-red" style="margin-bottom:10px">MODULE 01 • 7 STAGES</div>
+      <h3>Docker Desktop Installation &amp; Environment Audit</h3>
+      <p style="margin-bottom:18px">
+        Perform automated hardware audits, CPU core checks, hypervisor virtualization inspection, and install the complete Docker engine runtime.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #VIRTUALIZATION</span>
+        <a href="{{ url_for('lab1') }}" class="btn btn-sm btn-red">
+          LAUNCH LAB 1 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 2 Card -->
+    <div class="card" style="border-top:8px solid var(--primary-blue)">
+      <div class="corner-decor corner-decor-square"></div>
+      <div class="badge badge-blue" style="margin-bottom:10px">MODULE 02 • 4 STAGES</div>
+      <h3>Nginx Web App Containerization &amp; Port Binding</h3>
+      <p style="margin-bottom:18px">
+        Author custom HTML artifacts, craft multi-stage Dockerfiles, build optimized images, and map host ports (8080:80) to live web services.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #NGINX #PORT-MAPPING</span>
+        <a href="{{ url_for('lab2') }}" class="btn btn-sm btn-blue">
+          LAUNCH LAB 2 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 3 Card -->
+    <div class="card" style="border-top:8px solid var(--primary-yellow)">
+      <div class="corner-decor corner-decor-triangle"></div>
+      <div class="badge badge-yellow" style="margin-bottom:10px">MODULE 03 • 10 STAGES</div>
+      <h3>Container Lifecycle Management &amp; Cleanup</h3>
+      <p style="margin-bottom:18px">
+        Manage detached container execution, start/stop lifecycle states, container inspection tables, and perform system-wide resource pruning.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #LIFECYCLE #PRUNE</span>
+        <a href="{{ url_for('lab3') }}" class="btn btn-sm btn-yellow">
+          LAUNCH LAB 3 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 4 Card -->
+    <div class="card" style="border-top:8px solid var(--accent-green)">
+      <div class="corner-decor corner-decor-rotated"></div>
+      <div class="badge badge-green" style="margin-bottom:10px">MODULE 04 • 5 STAGES</div>
+      <h3>REST Microservice Architecture &amp; Flask API</h3>
+      <p style="margin-bottom:18px">
+        Develop containerized arithmetic microservices with Flask, configure requirements specifications, build images, and test REST endpoints.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #MICROSERVICES #API</span>
+        <a href="{{ url_for('lab4') }}" class="btn btn-sm btn-green">
+          LAUNCH LAB 4 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 5 Card -->
+    <div class="card" style="border-top:8px solid var(--orange)">
+      <div class="corner-decor corner-decor-orange"></div>
+      <div class="badge badge-orange" style="margin-bottom:10px">MODULE 05 • 5 STAGES</div>
+      <h3>Multi-Container Microservice &amp; Client Network</h3>
+      <p style="margin-bottom:18px">
+        Build a multi-container architecture connecting a Flask Sum Microservice and Client Application over user-defined Docker bridge network (app-net).
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #NETWORKING #MULTI-CONTAINER</span>
+        <a href="{{ url_for('lab5') }}" class="btn btn-sm btn-orange">
+          LAUNCH LAB 5 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Lab 6 Card -->
+    <div class="card" style="border-top:8px solid var(--purple)">
+      <div class="corner-decor corner-decor-purple"></div>
+      <div class="badge badge-purple" style="margin-bottom:10px">MODULE 06 • 6 STAGES</div>
+      <h3>Microservice Load Scaling &amp; Replica Management</h3>
+      <p style="margin-bottom:18px">
+        Configure docker-compose.yml and dynamically scale microservice container replicas up (to 3–5 instances) and down based on system load.
+      </p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #E0E0E0;padding-top:14px;margin-top:auto">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700">TAG: #DOCKER-COMPOSE #SCALING</span>
+        <a href="{{ url_for('lab6') }}" class="btn btn-sm btn-purple">
+          LAUNCH LAB 6 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Capabilities & Features Grid -->
+<section id="features" style="margin-bottom:60px">
+  <div style="border-bottom:4px solid #121212;padding-bottom:12px;margin-bottom:32px">
+    <div class="badge badge-blue" style="margin-bottom:6px">SYSTEM ARCHITECTURE</div>
+    <h2>VIRTUAL LAB CAPABILITIES</h2>
+  </div>
+
+  <div class="grid-3">
+    <div class="card card-sm">
+      <div style="font-size:2rem;color:var(--primary-red);margin-bottom:12px"><i class="fa-solid fa-terminal"></i></div>
+      <h3>Subprocess Task Engine</h3>
+      <p style="font-size:.9rem">Native execution manager spawning sandboxed command threads with real-time log streaming and PID controls.</p>
+    </div>
+
+    <div class="card card-sm">
+      <div style="font-size:2rem;color:var(--primary-blue);margin-bottom:12px"><i class="fa-solid fa-code"></i></div>
+      <h3>Integrated VS Code Editor</h3>
+      <p style="font-size:.9rem">Multi-tab source editor supporting syntax-highlighted HTML, Dockerfiles, and Python microservices.</p>
+    </div>
+
+    <div class="card card-sm">
+      <div style="font-size:2rem;color:var(--primary-yellow);margin-bottom:12px"><i class="fa-solid fa-gauge-high"></i></div>
+      <h3>Host System Telemetry</h3>
+      <p style="font-size:.9rem">Continuous psutil diagnostics measuring live CPU, memory utilization, disk volumes, and engine state.</p>
+    </div>
+
+    <div class="card card-sm">
+      <div style="font-size:2rem;color:var(--accent-green);margin-bottom:12px"><i class="fa-solid fa-shield-halved"></i></div>
+      <h3>Role-Based Access Control</h3>
+      <p style="font-size:.9rem">Dual portals separating student workspace environments from faculty administrative roster and analytics tools.</p>
+    </div>
+
+    <div class="card card-sm">
+      <div style="font-size:2rem;color:var(--primary-red);margin-bottom:12px"><i class="fa-solid fa-headset"></i></div>
+      <h3>Live Issue Help Desk</h3>
+      <p style="font-size:.9rem">Direct student ticketing submittals with real-time faculty feedback, status flags, and video tutorial links.</p>
+    </div>
+
+    <div class="card card-sm">
+      <div style="font-size:2rem;color:var(--primary-blue);margin-bottom:12px"><i class="fa-solid fa-certificate"></i></div>
+      <h3>Automated Verification</h3>
+      <p style="font-size:.9rem">Instant step verification auditing container output, port mappings, and process return codes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Live Host Telemetry Section -->
+<section id="telemetry" style="margin-bottom:60px">
+  <div class="card block-yellow" style="padding:32px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;border-bottom:3px solid #121212;padding-bottom:12px">
+      <div>
+        <div class="badge badge-black" style="margin-bottom:6px">HOST DIAGNOSTICS</div>
+        <h2 style="color:#121212">LIVE SERVER TELEMETRY</h2>
+      </div>
+      <button onclick="refreshTelemetry()" class="btn btn-sm btn-black">
+        <i class="fa-solid fa-arrows-rotate"></i> REFRESH METRICS
+      </button>
+    </div>
+
+    <div class="grid-4" id="telemetryGrid">
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:16px;box-shadow:4px 4px 0px #121212">
+        <div style="font-family:var(--font-display);font-weight:900;font-size:.78rem;color:#666;text-transform:uppercase">CPU USAGE</div>
+        <div style="font-size:2.2rem;font-weight:900;font-family:var(--font-display);color:var(--primary-red)" id="telCpu">--%</div>
+        <div style="font-size:.75rem;font-weight:700">HOST MULTI-CORE</div>
+      </div>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:16px;box-shadow:4px 4px 0px #121212">
+        <div style="font-family:var(--font-display);font-weight:900;font-size:.78rem;color:#666;text-transform:uppercase">MEMORY (RAM)</div>
+        <div style="font-size:2.2rem;font-weight:900;font-family:var(--font-display);color:var(--primary-blue)" id="telRam">--%</div>
+        <div style="font-size:.75rem;font-weight:700" id="telRamMb">ALLOCATED</div>
+      </div>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:16px;box-shadow:4px 4px 0px #121212">
+        <div style="font-family:var(--font-display);font-weight:900;font-size:.78rem;color:#666;text-transform:uppercase">DISK UTILIZATION</div>
+        <div style="font-size:2.2rem;font-weight:900;font-family:var(--font-display);color:#121212" id="telDisk">--%</div>
+        <div style="font-size:.75rem;font-weight:700" id="telDiskGb">STORAGE VOLUME</div>
+      </div>
+
+      <div style="background:#FFFFFF;border:3px solid #121212;padding:16px;box-shadow:4px 4px 0px #121212">
+        <div style="font-family:var(--font-display);font-weight:900;font-size:.78rem;color:#666;text-transform:uppercase">RUNTIME DAEMON</div>
+        <div style="font-size:1.8rem;font-weight:900;font-family:var(--font-display);color:var(--accent-green)" id="telDocker">ACTIVE</div>
+        <div style="font-size:.75rem;font-weight:700">DOCKER ENGINE 27.x</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skill Readiness Calculator -->
+<section id="readiness" style="margin-bottom:60px">
+  <div class="card">
+    <div class="corner-decor corner-decor-square"></div>
+    <div style="border-bottom:3px solid #121212;padding-bottom:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="badge badge-yellow" style="margin-bottom:6px">READINESS EVALUATION</div>
+        <h2>DOCKER SKILL READINESS CALCULATOR</h2>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--font-display);font-weight:900;font-size:1.8rem;color:var(--primary-blue)" id="calcScore">
+          {{ score_data.overall_pct }}%
+        </div>
+        <span class="badge badge-pill badge-red" id="calcLevel">{{ score_data.level }}</span>
+      </div>
+    </div>
+
+    <p style="margin-bottom:20px">Check off competencies you have mastered across our 4 Virtual Lab modules to calculate your readiness quotient:</p>
+
+    <div class="grid-2">
+      {% for skill in score_data.skills %}
+        <label style="display:flex;align-items:center;gap:12px;background:#F8F8F8;border:2px solid #121212;padding:12px 16px;box-shadow:2px 2px 0px #121212;cursor:pointer;margin:0">
+          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--primary-red)" class="skill-checkbox" onchange="updateReadinessScore()" {% if skill.done %}checked{% endif %}>
+          <span style="font-weight:700;font-size:.9rem;color:#121212">{{ skill.title }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Bauhaus Accordion FAQ Section -->
+<section id="faq" style="margin-bottom:60px">
+  <div style="border-bottom:4px solid #121212;padding-bottom:12px;margin-bottom:32px">
+    <div class="badge badge-red" style="margin-bottom:6px">KNOWLEDGE BASE</div>
+    <h2>FREQUENTLY ASKED QUESTIONS</h2>
+  </div>
+
+  <div class="bauhaus-accordion">
+    <!-- FAQ 1 -->
+    <div class="bauhaus-accordion-item">
+      <div class="bauhaus-accordion-header" onclick="toggleFaq(this)">
+        <span>DO I NEED DOCKER INSTALLED LOCALLY TO RUN THESE LABS?</span>
+        <div class="bauhaus-accordion-icon"><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+      <div class="bauhaus-accordion-body">
+        No local software or hypervisor installations are required for students! The platform includes a native web-based IDE, interactive CLI emulator, and background task engine that executes instructions directly within an isolated sandbox environment.
+      </div>
+    </div>
+
+    <!-- FAQ 2 -->
+    <div class="bauhaus-accordion-item">
+      <div class="bauhaus-accordion-header" onclick="toggleFaq(this)">
+        <span>HOW DOES THE REAL-TIME SUBPROCESS ENGINE WORK?</span>
+        <div class="bauhaus-accordion-icon"><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+      <div class="bauhaus-accordion-body">
+        When a command is triggered in a lab worksheet (e.g. <code>docker build</code> or <code>docker run</code>), the Flask backend spawns a dedicated subprocess worker thread, collects real-time stdout/stderr, streams the logs back to your interface, and verifies process exit codes.
+      </div>
+    </div>
+
+    <!-- FAQ 3 -->
+    <div class="bauhaus-accordion-item">
+      <div class="bauhaus-accordion-header" onclick="toggleFaq(this)">
+        <span>HOW DO FACULTY MEMBERS MANAGE STUDENT ROSTERS?</span>
+        <div class="bauhaus-accordion-icon"><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+      <div class="bauhaus-accordion-body">
+        Faculty can upload standard <code>.xlsx</code> roster spreadsheets directly via the Faculty Console. The system automatically creates unique Student IDs (e.g. STU001) and generates secure default passwords for the entire class roster.
+      </div>
+    </div>
+
+    <!-- FAQ 4 -->
+    <div class="bauhaus-accordion-item">
+      <div class="bauhaus-accordion-header" onclick="toggleFaq(this)">
+        <span>HOW DO STUDENTS SUBMIT LAB COMPLETIONS FOR GRADING?</span>
+        <div class="bauhaus-accordion-icon"><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+      <div class="bauhaus-accordion-body">
+        Each lab includes a "Submit &amp; Verify" action button. The automated test engine audits all step checkmarks, container inspection results, and port connectivity before committing the verified completion timestamp to the student's persistent database record.
+      </div>
+    </div>
+
+    <!-- FAQ 5 -->
+    <div class="bauhaus-accordion-item">
+      <div class="bauhaus-accordion-header" onclick="toggleFaq(this)">
+        <span>CAN FACULTY ATTACH TUTORIAL VIDEOS TO SPECIFIC LABS?</span>
+        <div class="bauhaus-accordion-icon"><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+      <div class="bauhaus-accordion-body">
+        Yes! The Faculty Dashboard features a Lecture Video Manager allowing instructors to link YouTube or MP4 tutorial URLs for Lab 1, Lab 2, Lab 3, and Lab 4. Students can watch these directly inside their lab worksheets via the "Video Tutorial" modal.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Landing Page Interactive Logic -->
+<script>
+  // Terminal Demo Switcher
+  function runTermDemo(type, btn) {
+    document.querySelectorAll('.term-demo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const out = document.getElementById('interactiveTermOutput');
+    if (type === 'run') {
+      out.innerHTML = `
+        <div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker run -d -p 8080:80 nginx:latest</span></div>
+        <div class="output-dim">latest: Pulling from library/nginx</div>
+        <div class="output-dim">a2abf6c4d29d: Pull complete [===================>] 31.5MB/31.5MB</div>
+        <div class="output-success">Status: Downloaded newer image for nginx:latest</div>
+        <div style="color:#A855F7;font-weight:700">7f9c8d1e2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d</div>
+        <div style="margin-top:6px"><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker ps</span></div>
+        <div class="output-info">CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS</div>
+        <div>7f9c8d1e2a3b   nginx:latest   "/docker-entrypoint.…"   2 seconds ago   Up 2 seconds   0.0.0.0:8080->80/tcp</div>
+      `;
+    } else if (type === 'build') {
+      out.innerHTML = `
+        <div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker build -t hello-web .</span></div>
+        <div class="output-dim">[+] Building 1.2s (6/6) FINISHED</div>
+        <div> => [internal] load build definition from Dockerfile</div>
+        <div> => => transferring dockerfile: 142B</div>
+        <div> => [1/2] FROM docker.io/library/nginx:alpine</div>
+        <div> => [2/2] COPY index.html /usr/share/nginx/html/index.html</div>
+        <div class="output-success"> => exporting to image</div>
+        <div class="output-success"> => => naming to docker.io/library/hello-web</div>
+        <div class="output-success" style="font-weight:800">Successfully built image: hello-web:latest</div>
+      `;
+    } else if (type === 'ps') {
+      out.innerHTML = `
+        <div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker ps -a</span></div>
+        <div class="output-info">CONTAINER ID   IMAGE                COMMAND                  STATUS         PORTS</div>
+        <div>9a8b7c6d5e4f   hello-web            "/docker-entrypoint.…"   Up 14 minutes  0.0.0.0:8080->80/tcp</div>
+        <div>1a2b3c4d5e6f   sum-microservice     "python app.py"          Up 4 minutes   0.0.0.0:5000->5000/tcp</div>
+        <div>3b4c5d6e7f8a   hello-world          "/hello"                 Exited (0)     --</div>
+      `;
+    } else if (type === 'prune') {
+      out.innerHTML = `
+        <div><span class="prompt-symbol">student@vlab:~$</span> <span class="cmd-text">docker system prune -f</span></div>
+        <div class="output-warn">Deleted Containers:</div>
+        <div>3b4c5d6e7f8a</div>
+        <div class="output-warn" style="margin-top:4px">Deleted Networks:</div>
+        <div>default_bridge_tmp</div>
+        <div class="output-success" style="margin-top:6px;font-weight:800">Total reclaimed space: 142.6MB</div>
+      `;
+    }
+  }
+
+  // Bauhaus FAQ Accordion Toggle
+  function toggleFaq(header) {
+    const item = header.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.bauhaus-accordion-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) {
+      item.classList.add('open');
+    }
+  }
+
+  // Live Telemetry Refresher
+  async function refreshTelemetry() {
+    try {
+      const res = await fetch('/api/system-telemetry');
+      if (res.ok) {
+        const d = await res.json();
+        const cpuVal = d.cpu !== undefined ? d.cpu : (d.cpu_percent !== undefined ? d.cpu_percent + '%' : '--%');
+        const ramVal = d.ram_pct !== undefined ? d.ram_pct : (d.memory_percent !== undefined ? d.memory_percent + '%' : '--%');
+        document.getElementById('telCpu').innerText = cpuVal;
+        document.getElementById('telRam').innerText = ramVal;
+        if (d.ram) document.getElementById('telRamMb').innerText = d.ram + ' USED';
+        if (d.disk) document.getElementById('telDisk').innerText = d.disk;
+        if (d.disk_free_gb) document.getElementById('telDiskGb').innerText = d.disk_free_gb + ' GB FREE';
+        if (d.docker_status_text) document.getElementById('telDocker').innerText = d.docker_engine === 'local' ? 'ACTIVE (LOCAL)' : 'ACTIVE (VIRTUAL)';
+      }
+    } catch (e) {
+      console.log('Telemetry fetch error', e);
+    }
+  }
+
+  // Readiness Calculator
+  function updateReadinessScore() {
+    const boxes = document.querySelectorAll('.skill-checkbox');
+    let checked = 0;
+    const checkedStates = [];
+    boxes.forEach((b, idx) => {
+      if (b.checked) {
+        checked++;
+        checkedStates.push(idx);
+      }
+    });
+    localStorage.setItem('vlab_skill_calculator_states', JSON.stringify(checkedStates));
+
+    const pct = boxes.length > 0 ? Math.round((checked / boxes.length) * 100) : 0;
+    document.getElementById('calcScore').innerText = pct + '%';
+    const badge = document.getElementById('calcLevel');
+    if (pct === 100) {
+      badge.innerText = 'MASTER CERTIFIED';
+      badge.className = 'badge badge-pill badge-green';
+    } else if (pct >= 50) {
+      badge.innerText = 'INTERMEDIATE DEVELOPER';
+      badge.className = 'badge badge-pill badge-blue';
+    } else {
+      badge.innerText = 'NOVICE LEVEL';
+      badge.className = 'badge badge-pill badge-red';
+    }
+  }
+
+  function loadReadinessState() {
+    const boxes = document.querySelectorAll('.skill-checkbox');
+    try {
+      const saved = localStorage.getItem('vlab_skill_calculator_states');
+      if (saved) {
+        const checkedIndices = JSON.parse(saved);
+        boxes.forEach((b, idx) => {
+          if (checkedIndices.includes(idx)) {
+            b.checked = true;
+          }
+        });
+      }
+    } catch (e) {}
+    updateReadinessScore();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    refreshTelemetry();
+    loadReadinessState();
+  });
+</script>
+{% endblock %}

@@ -86,6 +86,8 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
           <div class="no-copy-code">import socket<br>from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br>HOST_ID = socket.gethostname()<br><br>@app.route('/add', methods=['GET'])<br>def add():<br>&nbsp;&nbsp;a = float(request.args.get('a', 0))<br>&nbsp;&nbsp;b = float(request.args.get('b', 0))<br>&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b, "handled_by_replica": HOST_ID})<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(1)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step1" class="step-test-result"></div>
       </div>
 
       <!-- Step 2: DOCKERFILE -->
@@ -99,6 +101,8 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
           <div class="no-copy-code">FROM python:3.9-slim<br>WORKDIR /app<br>COPY requirements.txt .<br>RUN pip install -r requirements.txt<br>COPY app.py .<br>EXPOSE 5000<br>CMD ["python", "app.py"]</div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(2)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step2" class="step-test-result"></div>
       </div>
 
       <!-- Step 3: DOCKER-COMPOSE.YML -->
@@ -112,6 +116,8 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
           <div class="no-copy-code">version: '3.8'<br>services:<br>&nbsp;&nbsp;sum-microservice:<br>&nbsp;&nbsp;&nbsp;&nbsp;build: .<br>&nbsp;&nbsp;&nbsp;&nbsp;ports:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "5000:5000"<br>&nbsp;&nbsp;&nbsp;&nbsp;deploy:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replicas: 1</div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(3)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step3" class="step-test-result"></div>
       </div>
 
       <!-- Step 4: DEPLOY STACK -->
@@ -121,7 +127,12 @@
           <span id="badge-deploy" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker compose up -d</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+          <code style="font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker compose up -d</code>
+          <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker compose up -d', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#38bdf8;border-color:#38bdf8"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(4)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step4" class="step-test-result"></div>
       </div>
 
       <!-- Step 5: SCALE UP -->
@@ -131,7 +142,12 @@
           <span id="badge-scale_up" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#c084fc">docker compose up -d --scale sum-microservice=3</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+          <code style="font-family:var(--mono);font-size:.78rem;color:#c084fc">docker compose up -d --scale sum-microservice=3</code>
+          <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker compose up -d --scale sum-microservice=3', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#c084fc;border-color:#c084fc"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(5)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step5" class="step-test-result"></div>
       </div>
 
       <!-- Step 6: SCALE DOWN -->
@@ -141,7 +157,12 @@
           <span id="badge-scale_down" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399">docker compose up -d --scale sum-microservice=1</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+          <code style="font-family:var(--mono);font-size:.78rem;color:#34d399">docker compose up -d --scale sum-microservice=1</code>
+          <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker compose up -d --scale sum-microservice=1', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#34d399;border-color:#34d399"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(7)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step7" class="step-test-result"></div>
       </div>
     </div>
 
@@ -183,9 +204,10 @@
       <div class="vscode-tabs" id="vscodeTabsContainer"></div>
 
       <div class="vscode-editor-toolbar">
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> NEW FILE</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> SAVE (CTRL+S)</button>
+          <button class="editor-pill-btn" style="background:#0284c7;color:#ffffff;border-color:#38bdf8" id="btnTestCode" onclick="validateStudentCode()"><i class="fa-solid fa-vial-circle-check"></i> Test / Validate Code</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> RENAME</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> DELETE</button>
         </div>
@@ -217,13 +239,14 @@
             <i class="fa-solid fa-rotate-right preview-refresh-btn" title="Refresh Compose Preview" onclick="updateReplicaGrid()"></i>
             <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.85rem;color:#059669"></i> <span id="previewUrlText">http://localhost:5000/add?a=10&amp;b=20</span></div>
             <span class="preview-status-badge offline" id="previewBadge">OFFLINE</span>
+            <span class="badge badge-purple" id="l6ReplicaBadge" style="margin-left:8px;font-size:.72rem"><i class="fa-solid fa-cubes"></i> Replicas: 1 Active</span>
           </div>
 
           <div class="vscode-preview-body" id="previewContainer">
             <div class="offline-placeholder" id="lab6OfflineCard">
               <i class="fa-solid fa-server"></i>
-              <div class="offline-title">Web Server Container Not Running</div>
-              <div class="offline-desc">Run <code>docker compose build</code> and <code>docker compose up -d</code> in the terminal below to start port 5000.</div>
+              <div class="offline-title">Microservice Stack Not Running</div>
+              <div class="offline-desc">Follow the steps in the instructions drawer to write code, configure <code>docker-compose.yml</code>, and deploy with <code>docker compose up -d</code>.</div>
             </div>
 
             <div id="lab6ActiveComposeContent" style="display:none;padding:16px;overflow-y:auto;flex:1;background:#0d1117;color:#c9d1d9;font-family:var(--mono);font-size:.82rem">
@@ -878,8 +901,61 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+function copyCommandText(arg1, arg2) {
+  let text = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : '');
+  let btn = (arg1 && arg1.nodeType) ? arg1 : ((arg2 && arg2.nodeType) ? arg2 : null);
+
+  if (!text && btn) {
+    text = btn.getAttribute('data-cmd') || btn.dataset.cmd || '';
+    if (!text && btn.parentElement) {
+      const codeEl = btn.parentElement.querySelector('code');
+      if (codeEl) text = codeEl.innerText.trim();
+    }
+  }
+  if (!text) return;
+
+  const updateBtn = () => {
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.color = '';
+      }, 1800);
+    }
+    if (typeof showToast === 'function') {
+      showToast('Command copied to clipboard!', 'success');
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(updateBtn).catch(() => {
+      const inp = document.createElement('textarea');
+      inp.value = text;
+      inp.style.position = 'fixed';
+      inp.style.opacity = '0';
+      document.body.appendChild(inp);
+      inp.select();
+      document.execCommand('copy');
+      document.body.removeChild(inp);
+      updateBtn();
+    });
+  } else {
+    const inp = document.createElement('textarea');
+    inp.value = text;
+    inp.style.position = 'fixed';
+    inp.style.opacity = '0';
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    updateBtn();
+  }
+}
+
 function execTerminalCommand(cmd) {
-  const cmdLower = cmd.toLowerCase();
+  const cmdLower = cmd.toLowerCase().trim();
 
   fetch("/api/run-command", {
     method: "POST",
@@ -889,7 +965,8 @@ function execTerminalCommand(cmd) {
   .then(res => res.json())
   .then(data => {
     function isCommandSuccess(data) {
-      if (!data || !data.ok) return false;
+      if (!data) return false;
+      if (data.ok === true) return true;
       const out = (data.output || '').toLowerCase();
       const errorSignatures = [
         'error response from daemon',
@@ -907,13 +984,12 @@ function execTerminalCommand(cmd) {
         'port is already allocated',
         'address already in use',
         'fatal:',
-        'invalid argument',
-        'error:'
+        'invalid argument'
       ];
       for (const sig of errorSignatures) {
         if (out.includes(sig)) return false;
       }
-      return true;
+      return Boolean(data.ok);
     }
 
     const success = isCommandSuccess(data);
@@ -921,8 +997,30 @@ function execTerminalCommand(cmd) {
 
     if (success) {
       if (cmdLower.includes("docker compose up") || cmdLower.includes("docker-compose up")) {
-        tested.deploy = true;
-        if (cmdLower.includes("--scale") || cmdLower.includes("scale")) {
+        checkCodeProgress();
+        if (!tested.compose || !tested.df || !tested.app) {
+          tested.deploy = false;
+          appendTermLine("[ERROR] Cannot deploy stack: Compose stack files (app.py, Dockerfile, docker-compose.yml) are missing or incomplete in Explorer! Please write your code first.", "error");
+        } else {
+          tested.deploy = true;
+          if (cmdLower.includes("--scale") || cmdLower.includes("scale")) {
+            if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
+              scaleReplicasTo(3);
+              tested.scale_up = true;
+            } else if (cmdLower.includes("=1") || cmdLower.includes(" 1")) {
+              scaleReplicasTo(1);
+              tested.scale_down = true;
+            }
+          } else {
+            scaleReplicasTo(1);
+          }
+        }
+      }
+      if (cmdLower.includes("docker compose scale") || cmdLower.includes("docker-compose scale")) {
+        checkCodeProgress();
+        if (!tested.compose || !tested.df || !tested.app) {
+          appendTermLine("[ERROR] Cannot scale stack: Compose stack code is missing in Explorer.", "error");
+        } else {
           if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
             scaleReplicasTo(3);
             tested.scale_up = true;
@@ -930,17 +1028,6 @@ function execTerminalCommand(cmd) {
             scaleReplicasTo(1);
             tested.scale_down = true;
           }
-        } else {
-          scaleReplicasTo(1);
-        }
-      }
-      if (cmdLower.includes("docker compose scale") || cmdLower.includes("docker-compose scale")) {
-        if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
-          scaleReplicasTo(3);
-          tested.scale_up = true;
-        } else if (cmdLower.includes("=1") || cmdLower.includes(" 1")) {
-          scaleReplicasTo(1);
-          tested.scale_down = true;
         }
       }
       updateProgressUI();
@@ -957,10 +1044,15 @@ function scaleReplicasTo(count) {
   if (count === 1 && tested.scale_up) tested.scale_down = true;
   tested.deploy = true;
 
-  document.getElementById("l6ReplicaBadge").innerHTML = `<i class="fa-solid fa-cubes"></i> Replicas: ${count} Active`;
-  document.getElementById("l6ReplicaCount").innerText = `${count} / 5 Max`;
-  document.getElementById("scalingStateBadge").innerText = count > 1 ? `Scaled Up (${count} Replicas)` : `Baseline (1 Replica)`;
-  document.getElementById("scalingStateBadge").className = count > 1 ? "badge badge-purple" : "badge badge-blue";
+  const repBadge = document.getElementById("l6ReplicaBadge");
+  if (repBadge) repBadge.innerHTML = `<i class="fa-solid fa-cubes"></i> Replicas: ${count} Active`;
+  const repCountEl = document.getElementById("l6ReplicaCount");
+  if (repCountEl) repCountEl.innerText = `${count} / 5 Max`;
+  const scaleBadge = document.getElementById("scalingStateBadge");
+  if (scaleBadge) {
+    scaleBadge.innerText = count > 1 ? `Scaled Up (${count} Replicas)` : `Baseline (1 Replica)`;
+    scaleBadge.className = count > 1 ? "badge badge-purple" : "badge badge-blue";
+  }
 
   updateReplicaGrid();
   appendTermLine(`[DOCKER COMPOSE] Service 'sum-microservice' scaled to ${count} replica container instances.`, "success");
@@ -984,8 +1076,127 @@ function updateReplicaGrid() {
   }
 }
 
+function markStepBackend(stepId) {
+  fetch("/api/lab6/step", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({step_id: stepId})
+  }).catch(()=>{});
+}
+
+function checkStep1Code() {
+  const code = (files['app.py'] || '').trim().toLowerCase();
+  if (!code) return { ok: false, msg: "app.py: File not created yet. Click '+' in Explorer to create app.py." };
+  if (!code.includes('flask')) return { ok: false, msg: "app.py: Missing 'from flask import Flask, request, jsonify'." };
+  if (!code.includes('hostname') && !code.includes('socket')) return { ok: false, msg: "app.py: Missing 'socket.gethostname()' to report container replica identity." };
+  if (!code.includes('/add')) return { ok: false, msg: "app.py: Missing route definition '@app.route(\"/add\")'." };
+  return { ok: true, msg: "app.py: Valid scalable microservice logic verified." };
+}
+
+function checkStep2Code() {
+  const code = (files['Dockerfile'] || files['dockerfile'] || '').trim().toLowerCase();
+  if (!code) return { ok: false, msg: "Dockerfile: File not created yet. Click '+' in Explorer to create Dockerfile." };
+  if (!code.includes('from') || !code.includes('python')) return { ok: false, msg: "Dockerfile: Must specify Python base image (FROM python:3.9-slim)." };
+  if (!code.includes('app.py')) return { ok: false, msg: "Dockerfile: Must copy and execute app.py." };
+  return { ok: true, msg: "Dockerfile: Valid microservice container configuration verified." };
+}
+
+function checkStep3Code() {
+  const code = (files['docker-compose.yml'] || files['docker-compose.yaml'] || '').trim().toLowerCase();
+  if (!code) return { ok: false, msg: "docker-compose.yml: File not created yet. Click '+' to create docker-compose.yml." };
+  if (!code.includes('services')) return { ok: false, msg: "docker-compose.yml: Missing top-level 'services:' definition." };
+  if (!code.includes('sum-microservice')) return { ok: false, msg: "docker-compose.yml: Missing service name 'sum-microservice:'." };
+  if (!code.includes('build') && !code.includes('image')) return { ok: false, msg: "docker-compose.yml: Must specify 'build: .' or microservice image." };
+  if (!code.includes('5000')) return { ok: false, msg: "docker-compose.yml: Must map port 5000 for the microservice." };
+  return { ok: true, msg: "docker-compose.yml: Valid Docker Compose service stack configuration verified." };
+}
+
+function validateStudentCode() {
+  const ed = document.getElementById('codeEditor');
+  if (ed && activeFile) {
+    files[activeFile] = ed.value;
+    saveFilesToLocalStorage();
+  }
+  const s1 = checkStep1Code();
+  const s2 = checkStep2Code();
+  const s3 = checkStep3Code();
+
+  setTestResult(1, 'app', s1.ok, s1.msg);
+  setTestResult(2, 'dockerfile', s2.ok, s2.msg);
+  setTestResult(3, 'compose', s3.ok, s3.msg);
+
+  updateProgressUI();
+
+  if (s1.ok && s2.ok && s3.ok) {
+    showToast("✓ All workspace code files (app.py, Dockerfile, docker-compose.yml) validated successfully!", "success");
+  } else {
+    showToast("Code validation found issues. Open instructions drawer to check details.", "warning");
+  }
+}
+
+function testStep(stepNum) {
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result running";
+    resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running test case for Step ' + stepNum + '...';
+  }
+
+  setTimeout(() => {
+    const ed = document.getElementById('codeEditor');
+    if (ed && activeFile) {
+      files[activeFile] = ed.value;
+      saveFilesToLocalStorage();
+    }
+
+    if (stepNum === 1) {
+      const res = checkStep1Code();
+      setTestResult(1, 'app', res.ok, res.msg);
+    } else if (stepNum === 2) {
+      const res = checkStep2Code();
+      setTestResult(2, 'dockerfile', res.ok, res.msg);
+    } else if (stepNum === 3) {
+      const res = checkStep3Code();
+      setTestResult(3, 'compose', res.ok, res.msg);
+    } else if (stepNum === 4) {
+      if (tested.deploy) {
+        setTestResult(4, 'deploy', true, "Stack deployed with 'docker compose up -d' and running.");
+      } else {
+        setTestResult(4, 'deploy', false, "Stack not deployed yet. Execute 'docker compose up -d' in the terminal below.");
+      }
+    } else if (stepNum === 5) {
+      if (tested.scale_up) {
+        setTestResult(5, 'scale_up', true, "Microservice scaled to 3 active replicas.");
+      } else {
+        setTestResult(5, 'scale_up', false, "Not scaled up yet. Execute 'docker compose up -d --scale sum-microservice=3' in terminal.");
+      }
+    } else if (stepNum === 7) {
+      if (tested.scale_down) {
+        setTestResult(7, 'scale_down', true, "Microservice scaled down back to 1 replica.");
+      } else {
+        setTestResult(7, 'scale_down', false, "Not scaled down yet. Execute 'docker compose up -d --scale sum-microservice=1' in terminal.");
+      }
+    }
+  }, 350);
+}
+
+function setTestResult(stepNum, key, ok, message) {
+  tested[key] = ok;
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result " + (ok ? "passed" : "failed");
+    resEl.innerHTML = (ok ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-xmark"></i> ') + message;
+  }
+  if (ok) markStepBackend(stepNum);
+  updateProgressUI();
+}
+
 function simulateLoadTraffic() {
   const logBox = document.getElementById("trafficLogBox");
+  if (!tested.deploy) {
+    if (logBox) logBox.innerText = "[ERROR] Microservice stack is not deployed yet. Please complete Steps 1–4 and run 'docker compose up -d' first.";
+    appendTermLine("[ERROR] Cannot simulate traffic: Stack containers are not running.", "error");
+    return;
+  }
   let logs = `[LOAD TESTER] Dispatching 10 HTTP GET requests to port 5000...\n`;
   for (let r = 1; r <= 10; r++) {
     const repId = (r % replicaCount) + 1;
@@ -993,13 +1204,17 @@ function simulateLoadTraffic() {
     logs += `Request #${r}: GET /add?a=${r}&b=${r*2} -> 200 OK (Handled by ${host})\n`;
   }
   logs += `[SUCCESS] 100% requests handled seamlessly across ${replicaCount} active replica(s).`;
-  logBox.innerText = logs;
-  logBox.scrollTop = logBox.scrollHeight;
+  if (logBox) {
+    logBox.innerText = logs;
+    logBox.scrollTop = logBox.scrollHeight;
+  }
   appendTermLine(`[LOAD TEST] Dispatched 10 traffic requests across ${replicaCount} replica(s). Load balancing verified.`, "success");
 }
 
 function refreshComposePreview() {
-  const isOnline = Boolean(tested.deploy || tested.scale_up || tested.scale_down);
+  checkCodeProgress();
+  const hasCode = Boolean(tested.app && tested.df && tested.compose);
+  const isOnline = Boolean(hasCode && (tested.deploy || tested.scale_up || tested.scale_down));
   const offlineCard = document.getElementById("lab6OfflineCard");
   const activeContent = document.getElementById("lab6ActiveComposeContent");
   const badge = document.getElementById("previewBadge");

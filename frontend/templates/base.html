@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Bauhaus Design System Master Stylesheet -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7.2">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7.3">
 
   <style>
     /* Layout utilities */
@@ -196,7 +196,7 @@
       <button onclick="closeVLabSidebar()" class="instructions-drawer-close" title="Close Sidebar">&times;</button>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;flex:1">
       <a href="{{ url_for('index') }}" class="btn btn-outline" style="justify-content:flex-start"><i
           class="fa-solid fa-house" style="color:var(--primary-red)"></i> Home Portal</a>
       <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="justify-content:flex-start"><i
@@ -213,6 +213,10 @@
           class="badge badge-yellow" style="padding:2px 6px">3</span> Container Lifecycle</a>
       <a href="{{ url_for('lab4') }}" class="btn btn-outline" style="justify-content:flex-start"><span
           class="badge badge-green" style="padding:2px 6px">4</span> REST Microservice</a>
+      <a href="{{ url_for('lab5') }}" class="btn btn-outline" style="justify-content:flex-start"><span
+          class="badge badge-orange" style="padding:2px 6px">5</span> Multi-Container Network</a>
+      <a href="{{ url_for('lab6') }}" class="btn btn-outline" style="justify-content:flex-start"><span
+          class="badge badge-purple" style="padding:2px 6px">6</span> Docker Compose Scaling</a>
 
       <div style="margin-top:auto;padding-top:20px;border-top:2px solid #121212">
         {% if session.get('student_id') or session.get('faculty_username') %}
@@ -405,9 +409,20 @@
       window.addEventListener('scroll', hideTooltip, { passive: true });
     })();
 
-    // Global Command Copy Utility
-    window.copyCommandText = function (text, btn) {
+    // Global Command Copy Utility (supports both (text, btn) and (btn, text))
+    window.copyCommandText = function (arg1, arg2) {
+      let text = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : '');
+      let btn = (arg1 && arg1.nodeType) ? arg1 : ((arg2 && arg2.nodeType) ? arg2 : null);
+
+      if (!text && btn) {
+        text = btn.getAttribute('data-cmd') || btn.dataset.cmd || '';
+        if (!text && btn.parentElement) {
+          const codeEl = btn.parentElement.querySelector('code');
+          if (codeEl) text = codeEl.innerText.trim();
+        }
+      }
       if (!text) return;
+
       const finish = () => {
         if (btn) {
           const orig = btn.innerHTML;
@@ -443,6 +458,160 @@
       } catch (e) { }
       document.body.removeChild(ta);
     }
+  </script>
+
+  <!-- Movable Instructions Panel Logic -->
+  <script>
+  (function initMovableInstructionsDrawer() {
+    function setupDrawer() {
+      const drawer = document.getElementById('instructionsDrawer');
+      if (!drawer) return;
+
+      const header = drawer.querySelector('.instructions-drawer-header');
+      if (!header) return;
+
+      header.style.cursor = 'grab';
+      header.setAttribute('title', 'Click and drag to move panel anywhere on the screen');
+
+      // Inject visual Drag Pill indicator if not already added
+      if (!header.querySelector('.drawer-drag-pill')) {
+        const dragPill = document.createElement('span');
+        dragPill.className = 'drawer-drag-pill';
+        dragPill.title = 'Click and drag header to move panel';
+        dragPill.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i> Drag Panel';
+        
+        const closeBtn = header.querySelector('.instructions-drawer-close');
+        if (closeBtn) {
+          header.insertBefore(dragPill, closeBtn);
+        } else {
+          header.appendChild(dragPill);
+        }
+      }
+
+      // Inject Reset Position button if not already added
+      if (!header.querySelector('.instructions-drawer-reset')) {
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'instructions-drawer-reset';
+        resetBtn.title = 'Reset panel position to top-right';
+        resetBtn.setAttribute('aria-label', 'Reset panel position');
+        resetBtn.innerHTML = '<i class="fa-solid fa-arrow-rotate-left"></i>';
+        resetBtn.onclick = (e) => {
+          e.stopPropagation();
+          resetDrawerPosition();
+        };
+
+        const closeBtn = header.querySelector('.instructions-drawer-close');
+        if (closeBtn) {
+          header.insertBefore(resetBtn, closeBtn);
+        }
+      }
+
+      function resetDrawerPosition() {
+        drawer.style.left = '';
+        drawer.style.top = '70px';
+        drawer.style.right = '24px';
+        drawer.style.bottom = '';
+        try {
+          localStorage.removeItem('vlab_drawer_pos');
+        } catch(e) {}
+        if (typeof showToast === 'function') {
+          showToast('Instructions panel position reset to top-right', 'info');
+        }
+      }
+
+      window.resetInstructionsDrawerPos = resetDrawerPosition;
+
+      // Restore previously saved position from localStorage
+      try {
+        const savedPos = localStorage.getItem('vlab_drawer_pos');
+        if (savedPos) {
+          const { left, top } = JSON.parse(savedPos);
+          if (left >= 0 && left < window.innerWidth - 120 && top >= 0 && top < window.innerHeight - 100) {
+            drawer.style.left = left + 'px';
+            drawer.style.top = top + 'px';
+            drawer.style.right = 'auto';
+            drawer.style.bottom = 'auto';
+          }
+        }
+      } catch(e) {}
+
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initLeft = 0, initTop = 0;
+
+      header.addEventListener('mousedown', startDrag);
+      header.addEventListener('touchstart', startDrag, { passive: false });
+
+      function startDrag(e) {
+        if (e.target.closest('button')) return;
+
+        isDragging = true;
+        header.style.cursor = 'grabbing';
+
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+
+        const rect = drawer.getBoundingClientRect();
+        initLeft = rect.left;
+        initTop = rect.top;
+
+        drawer.style.left = initLeft + 'px';
+        drawer.style.top = initTop + 'px';
+        drawer.style.right = 'auto';
+        drawer.style.bottom = 'auto';
+
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+      }
+
+      function onDrag(e) {
+        if (!isDragging) return;
+        if (e.type === 'touchmove') e.preventDefault();
+
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        let newLeft = initLeft + dx;
+        let newTop = initTop + dy;
+
+        const maxLeft = window.innerWidth - drawer.offsetWidth - 10;
+        const maxTop = window.innerHeight - drawer.offsetHeight - 10;
+        newLeft = Math.max(10, Math.min(newLeft, maxLeft));
+        newTop = Math.max(10, Math.min(newTop, maxTop));
+
+        drawer.style.left = newLeft + 'px';
+        drawer.style.top = newTop + 'px';
+      }
+
+      function stopDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        header.style.cursor = 'grab';
+
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('touchmove', onDrag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+
+        try {
+          const rect = drawer.getBoundingClientRect();
+          localStorage.setItem('vlab_drawer_pos', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }));
+        } catch(e) {}
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', setupDrawer);
+    } else {
+      setupDrawer();
+    }
+  })();
   </script>
 </body>
 

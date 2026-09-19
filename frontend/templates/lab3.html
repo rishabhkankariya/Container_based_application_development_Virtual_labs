@@ -86,6 +86,8 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Portal: Defines root web page title, heading and paragraph text for multi-step Docker lab">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;title&gt;Lab 3 Web Server&lt;/title&gt;&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to Lab 3 Containerized Portal&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;p&gt;Multi-step Docker lifecycle&lt;/p&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(1)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step1" class="step-test-result"></div>
       </div>
 
       <!-- Step 2: CREATE DOCKERFILE -->
@@ -97,8 +99,10 @@
         <div class="drawer-step-sub">CLICK + TO CREATE DOCKERFILE WITH NGINX INSTRUCTIONS:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies lightweight Nginx web server base image">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html to Nginx web root folder">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE 80: Informs Docker that container listens on web HTTP port 80">EXPOSE 80</span></div>
+          <div class="no-copy-code" style="white-space:nowrap !important;overflow-x:auto !important;display:block !important"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies lightweight Nginx web server base image">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html to Nginx web root folder">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE 80: Informs Docker that container listens on web HTTP port 80">EXPOSE 80</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(2)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step2" class="step-test-result"></div>
       </div>
 
       <!-- Step 3: PULL HELLO-WORLD IMAGE -->
@@ -108,9 +112,12 @@
           <span id="badge-pull" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#38bdf8">
+        <div class="cmd-box" style="color:#38bdf8;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker pull: Downloads hello-world test image from Docker Hub">docker pull hello-world</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker pull hello-world', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(3)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step3" class="step-test-result"></div>
       </div>
 
       <!-- Step 4: RUN HELLO-WORLD CONTAINER -->
@@ -120,9 +127,12 @@
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#34d399">
+        <div class="cmd-box" style="color:#34d399;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker run: Executes test container instance">docker run hello-world</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker run hello-world', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(4)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step4" class="step-test-result"></div>
       </div>
 
       <!-- Step 5: BUILD CUSTOM WEB IMAGE -->
@@ -132,9 +142,12 @@
           <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#f59e0b">
+        <div class="cmd-box" style="color:#f59e0b;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker build: Compiles Dockerfile into tagged image named my-website">docker build -t my-website .</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker build -t my-website .', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(5)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step5" class="step-test-result"></div>
       </div>
 
       <!-- Step 6: RUN DETACHED CONTAINER -->
@@ -144,9 +157,12 @@
           <span id="badge-run_web" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#10b981">
+        <div class="cmd-box" style="color:#10b981;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker run: Runs container in background (-d) mapping host port 8080 (-p)">docker run -d -p 8080:80 my-website</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker run -d -p 8080:80 my-website', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(6)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step6" class="step-test-result"></div>
       </div>
 
       <!-- Step 7: STOP AND START CONTAINER -->
@@ -156,9 +172,18 @@
           <span id="badge-stop_start" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMANDS IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#f87171">
-          <span class="vlab-hover-target" data-vlab-tooltip="docker stop / start: Manages container power state">docker stop &lt;container_id&gt;<br>docker start &lt;container_id&gt;</span>
+        <div class="cmd-box" style="color:#f87171;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="vlab-hover-target" data-vlab-tooltip="docker stop: Halts running container">docker stop &lt;container_id&gt;</span>
+            <button class="btn-copy-cmd" onclick="copyCommandText('docker stop ', this)" title="Copy docker stop command"><i class="fa-regular fa-copy"></i> Copy</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px dashed #334155;padding-top:4px">
+            <span class="vlab-hover-target" data-vlab-tooltip="docker start: Restarts stopped container">docker start &lt;container_id&gt;</span>
+            <button class="btn-copy-cmd" onclick="copyCommandText('docker start ', this)" title="Copy docker start command"><i class="fa-regular fa-copy"></i> Copy</button>
+          </div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(7)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step7" class="step-test-result"></div>
       </div>
 
       <!-- Step 8: SYSTEM PRUNE -->
@@ -168,9 +193,12 @@
           <span id="badge-prune" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#a855f7">
+        <div class="cmd-box" style="color:#a855f7;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker system prune: Removes unused containers, networks and dangling images">docker system prune</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker system prune', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(8)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step8" class="step-test-result"></div>
       </div>
 
       <!-- Step 9: INSPECT ALL CONTAINERS AGAIN -->
@@ -180,9 +208,12 @@
           <span id="badge-ps2" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#38bdf8">
+        <div class="cmd-box" style="color:#38bdf8;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker ps -a: Lists all container instances including stopped containers">docker ps -a</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker ps -a', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(9)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step9" class="step-test-result"></div>
       </div>
 
       <!-- Step 10: FORCE REMOVE CONTAINER -->
@@ -192,9 +223,12 @@
           <span id="badge-rm" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#ef4444">
+        <div class="cmd-box" style="color:#ef4444;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker rm -f: Force deletes specified container instance">docker rm -f &lt;container_id&gt;</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker rm -f ', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(10)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step10" class="step-test-result"></div>
       </div>
     </div>
 
@@ -238,9 +272,10 @@
 
       <!-- Quick Action Toolbar -->
       <div class="vscode-editor-toolbar">
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> New File</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
+          <button class="editor-pill-btn" style="background:#0284c7;color:#ffffff;border-color:#38bdf8" id="btnTestCode" onclick="validateStudentCode()"><i class="fa-solid fa-vial-circle-check"></i> Test / Validate Code</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> Rename</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
@@ -448,10 +483,10 @@ let containerRunning = false;
 
 // Strictly track compulsory Docker commands (Must be executed in terminal console)
 let testedState = {
-  env: false,
+  index: false,
+  dockerfile: false,
   pull: false,
   run: false,
-  ps: false,
   build: false,
   run_web: false,
   stop_start: false,
@@ -759,6 +794,52 @@ function updateProgressTrack() {
   if (progPct) progPct.textContent = pct + '%';
 }
 
+function validateStudentCode() {
+  const ed = document.getElementById('codeEditor');
+  if (ed && currentFile) {
+    files[currentFile] = ed.value;
+    saveFilesToLocalStorage();
+  }
+  const indexCode = (files['index.html'] || '').trim();
+  const dockerCode = (files['Dockerfile'] || '').trim();
+
+  let missingErrors = [];
+
+  // Check index.html
+  const cleanHtml = indexCode.toLowerCase();
+  const hasHtmlTag = (cleanHtml.includes('<html') || cleanHtml.includes('<!doctype') || cleanHtml.includes('<body')) && cleanHtml.includes('</');
+  const hasContent = cleanHtml.includes('<h1') || cleanHtml.includes('<p') || cleanHtml.includes('hello') || cleanHtml.includes('website') || cleanHtml.includes('welcome') || cleanHtml.includes('virtual lab');
+  const isIndexValid = Boolean(cleanHtml.length >= 25 && hasHtmlTag && hasContent);
+
+  if (isIndexValid) {
+    testedState.index = true;
+    updateChecklistStatus('index', true);
+    markStepBackend(1);
+  } else {
+    missingErrors.push('index.html requires complete HTML structure with tags (<html>, <body>) and heading/content');
+  }
+
+  // Check Dockerfile
+  const cleanDocker = dockerCode.toLowerCase();
+  const hasFromNginx = /\bfrom\s+nginx/i.test(cleanDocker);
+  const hasCopy = /\bcopy\s+/i.test(cleanDocker) && (cleanDocker.includes('index.html') || cleanDocker.includes('/usr/share/nginx/html'));
+  const isDockerValid = Boolean(hasFromNginx && hasCopy);
+
+  if (isDockerValid) {
+    testedState.dockerfile = true;
+    updateChecklistStatus('dockerfile', true);
+    markStepBackend(2);
+  } else {
+    missingErrors.push('Dockerfile requires FROM nginx:alpine and COPY index.html /usr/share/nginx/html/index.html');
+  }
+
+  if (missingErrors.length === 0) {
+    showToast('Code syntax test passed! Step 1 (index.html) and Step 2 (Dockerfile) verified.', 'success');
+  } else {
+    showToast(missingErrors.join(' | '), 'warning');
+  }
+}
+
 function checkCodeProgress() {
   const ed = document.getElementById('codeEditor');
   const indexCode = (currentFile === 'index.html' && ed ? ed.value : (files['index.html'] || '')) || '';
@@ -771,17 +852,19 @@ function checkCodeProgress() {
 
   const cleanDocker = dockerCode.toLowerCase().trim();
   const hasFromNginx = /\bfrom\s+nginx/i.test(cleanDocker);
-  const hasCopy = /\bcopy\s+/i.test(cleanDocker);
+  const hasCopy = /\bcopy\s+/i.test(cleanDocker) && (cleanDocker.includes('index.html') || cleanDocker.includes('/usr/share/nginx/html'));
   const hasDockerfile = Boolean(hasFromNginx && hasCopy);
 
-  testedState.index = hasIndex;
-  testedState.dockerfile = hasDockerfile;
-
-  updateChecklistStatus('index', hasIndex);
-  updateChecklistStatus('dockerfile', hasDockerfile);
-
-  if (hasIndex) markStepBackend(1);
-  if (hasDockerfile) markStepBackend(2);
+  if (hasIndex && !testedState.index) {
+    testedState.index = true;
+    updateChecklistStatus('index', true);
+    markStepBackend(1);
+  }
+  if (hasDockerfile && !testedState.dockerfile) {
+    testedState.dockerfile = true;
+    updateChecklistStatus('dockerfile', true);
+    markStepBackend(2);
+  }
 }
 
 function checkCompulsoryCommand(cmd) {
@@ -803,16 +886,35 @@ function checkCompulsoryCommand(cmd) {
     markStepBackend(5);
   }
   if (c.includes('docker run') && (c.includes('my-website') || c.includes('-p 8080') || c.includes('-d'))) {
-    testedState.run_web = true;
-    updateChecklistUI('run_web');
-    markStepBackend(6);
-    containerRunning = true;
-    refreshPreview();
+    checkCodeProgress();
+    if (!testedState.index || !testedState.dockerfile) {
+      testedState.run_web = false;
+      containerRunning = false;
+      refreshPreview();
+      showToast('Cannot run website container: index.html and Dockerfile must be created in Explorer first!', 'warning');
+    } else {
+      testedState.run_web = true;
+      updateChecklistUI('run_web');
+      markStepBackend(6);
+      containerRunning = true;
+      refreshPreview();
+      showToast('Container started. Web preview is LIVE on port 8080!', 'success');
+    }
   }
-  if (c.includes('docker stop') || c.includes('docker start')) {
+  if (c.includes('docker stop')) {
     testedState.stop_start = true;
     updateChecklistUI('stop_start');
     markStepBackend(7);
+    containerRunning = false;
+    refreshPreview();
+    showToast('Container stopped. Web preview is OFFLINE.', 'info');
+  } else if (c.includes('docker start')) {
+    testedState.stop_start = true;
+    updateChecklistUI('stop_start');
+    markStepBackend(7);
+    containerRunning = true;
+    refreshPreview();
+    showToast('Container started. Web preview is LIVE!', 'success');
   }
   if (c.includes('docker system prune') || c.includes('docker prune')) {
     testedState.prune = true;
@@ -828,6 +930,9 @@ function checkCompulsoryCommand(cmd) {
     testedState.rm = true;
     updateChecklistUI('rm');
     markStepBackend(10);
+    containerRunning = false;
+    refreshPreview();
+    showToast('Container removed. Web preview is OFFLINE.', 'info');
   }
 }
 
@@ -837,6 +942,82 @@ function markStepBackend(stepId) {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({step_id: stepId})
   });
+}
+
+function testStep(stepNum) {
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result running";
+    resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running test case for Step ' + stepNum + '...';
+  }
+
+  setTimeout(() => {
+    const ed = document.getElementById('codeEditor');
+    if (ed && currentFile) {
+      files[currentFile] = ed.value;
+      saveFilesToLocalStorage();
+    }
+    const indexCode = (files['index.html'] || '').trim().toLowerCase();
+    const dockerCode = (files['Dockerfile'] || files['dockerfile'] || '').trim().toLowerCase();
+
+    if (stepNum === 1) {
+      const hasHtml = (indexCode.includes('<html') || indexCode.includes('<!doctype') || indexCode.includes('<body')) && indexCode.includes('</');
+      const hasContent = indexCode.includes('<h1') || indexCode.includes('<p') || indexCode.includes('welcome') || indexCode.includes('website') || indexCode.includes('lab');
+      const ok = Boolean(hasHtml && hasContent && indexCode.length >= 25);
+      const msg = ok ? "index.html verified: Valid HTML document with proper tags and portal content." : "index.html incomplete: Must contain <html>, <body>, and a heading/welcome message.";
+      setLab3TestResult(1, 'index', ok, msg);
+    } else if (stepNum === 2) {
+      const hasFrom = /\bfrom\s+nginx/i.test(dockerCode);
+      const hasCopy = /\bcopy\s+/i.test(dockerCode) && (dockerCode.includes('index.html') || dockerCode.includes('usr/share/nginx/html'));
+      const ok = Boolean(hasFrom && hasCopy);
+      const msg = ok ? "Dockerfile verified: FROM nginx:alpine base image and COPY instruction found." : "Dockerfile incomplete: Must contain FROM nginx:alpine and COPY index.html /usr/share/nginx/html/index.html.";
+      setLab3TestResult(2, 'dockerfile', ok, msg);
+    } else if (stepNum === 3) {
+      const ok = Boolean(testedState.pull);
+      const msg = ok ? "Test passed: 'docker pull hello-world' executed successfully." : "Test failed: Run 'docker pull hello-world' in the terminal console first.";
+      setLab3TestResult(3, 'pull', ok, msg);
+    } else if (stepNum === 4) {
+      const ok = Boolean(testedState.run);
+      const msg = ok ? "Test passed: 'docker run hello-world' executed successfully." : "Test failed: Run 'docker run hello-world' in the terminal console first.";
+      setLab3TestResult(4, 'run', ok, msg);
+    } else if (stepNum === 5) {
+      const ok = Boolean(testedState.build);
+      const msg = ok ? "Test passed: 'docker build -t my-website .' compiled image successfully." : "Test failed: Build not detected. First write index.html and Dockerfile, then run 'docker build -t my-website .' in terminal.";
+      setLab3TestResult(5, 'build', ok, msg);
+    } else if (stepNum === 6) {
+      const ok = Boolean(testedState.run_web);
+      const msg = ok ? "Test passed: Container 'my-website' running detached on port 8080." : "Test failed: Run 'docker run -d -p 8080:80 my-website' in terminal to launch container.";
+      setLab3TestResult(6, 'run_web', ok, msg);
+    } else if (stepNum === 7) {
+      const ok = Boolean(testedState.stop_start);
+      const msg = ok ? "Test passed: Container stop/start lifecycle commands verified." : "Test failed: Run 'docker stop <id>' and then 'docker start <id>' in terminal.";
+      setLab3TestResult(7, 'stop_start', ok, msg);
+    } else if (stepNum === 8) {
+      const ok = Boolean(testedState.prune);
+      const msg = ok ? "Test passed: 'docker system prune' executed to clean unused artifacts." : "Test failed: Run 'docker system prune' in terminal.";
+      setLab3TestResult(8, 'prune', ok, msg);
+    } else if (stepNum === 9) {
+      const ok = Boolean(testedState.ps2);
+      const msg = ok ? "Test passed: 'docker ps -a' executed to inspect container status." : "Test failed: Run 'docker ps -a' in terminal.";
+      setLab3TestResult(9, 'ps2', ok, msg);
+    } else if (stepNum === 10) {
+      const ok = Boolean(testedState.rm);
+      const msg = ok ? "Test passed: 'docker rm -f <id>' executed to remove container." : "Test failed: Run 'docker rm -f <container_id>' in terminal.";
+      setLab3TestResult(10, 'rm', ok, msg);
+    }
+  }, 350);
+}
+
+function setLab3TestResult(stepNum, key, ok, message) {
+  testedState[key] = ok;
+  updateChecklistStatus(key, ok);
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result " + (ok ? "passed" : "failed");
+    resEl.innerHTML = (ok ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-xmark"></i> ') + message;
+  }
+  if (ok) markStepBackend(stepNum);
+  updateProgressTrack();
 }
 
 /* Custom Modal Dialog Handlers */
@@ -1286,6 +1467,11 @@ function insertBoilerplateCode() {
 function refreshPreview() {
   const container = document.getElementById('previewContainer');
   const badge = document.getElementById('previewBadge');
+  const refreshBtn = document.querySelector('.preview-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.classList.add('fa-spin');
+    setTimeout(() => refreshBtn.classList.remove('fa-spin'), 600);
+  }
   if (!container) return;
 
   const currentContent = (currentFile === 'index.html' ? document.getElementById('codeEditor').value : files['index.html']);

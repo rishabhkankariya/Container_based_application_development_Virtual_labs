@@ -198,143 +198,151 @@
         <div class="badge badge-red" style="margin-bottom:6px">CLASS RECORD</div>
         <h2><i class="fa-solid fa-list-ol"></i> Student Roster &amp; Multi-Lab Statuses</h2>
       </div>
-      <span class="badge badge-blue"><i class="fa-solid fa-rotate"></i> AUTO-REFRESH (5S)</span>
+      <span class="badge badge-blue" id="liveSyncBadge"><i class="fa-solid fa-rotate"></i> LIVE SYNC (ACTIVE)</span>
     </div>
 
-    {% if roster|length == 0 %}
-      <div style="text-align:center;padding:40px 20px;border:3px dashed #121212;background:#F8F8F8">
-        <i class="fa-solid fa-clipboard-user" style="font-size:3rem;color:#888;margin-bottom:12px;display:block"></i>
-        <div style="font-weight:700;font-size:1.1rem">No students enrolled yet.</div>
-        <p>Upload a class list Excel file or add a student manually above to begin.</p>
-      </div>
-    {% else %}
-      <!-- Search & Filters Toolbar -->
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#F5F5F5;border:3px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212">
-        <div style="flex:1;min-width:240px;position:relative">
-          <input type="search" id="studentSearchInput" placeholder="Search by name, ID, or email..." onkeyup="filterAndSortRoster()" style="padding-left:36px;margin:0">
-          <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#666"></i>
-        </div>
+    <div id="noStudentsEmptyBox" style="text-align:center;padding:40px 20px;border:3px dashed #121212;background:#F8F8F8;display:{% if roster|length == 0 %}block{% else %}none{% endif %}">
+      <i class="fa-solid fa-clipboard-user" style="font-size:3rem;color:#888;margin-bottom:12px;display:block"></i>
+      <div style="font-weight:700;font-size:1.1rem">No students enrolled yet.</div>
+      <p>Upload a class list Excel file or add a student manually above to begin.</p>
+    </div>
 
-        <select id="studentSortSelect" onchange="filterAndSortRoster()" style="width:auto;margin:0">
-          <option value="name-asc" selected>Sort: Name (A &rarr; Z)</option>
-          <option value="name-desc">Sort: Name (Z &rarr; A)</option>
-          <option value="id-asc">Sort: Student ID (Asc)</option>
-          <option value="id-desc">Sort: Student ID (Desc)</option>
-          <option value="score-desc">Sort: Score (High &rarr; Low)</option>
-          <option value="score-asc">Sort: Score (Low &rarr; High)</option>
-        </select>
-
-        <button type="button" class="btn btn-sm btn-outline" onclick="resetRosterFilters()" style="margin:0">
-          <i class="fa-solid fa-arrow-rotate-left"></i> RESET
-        </button>
-
-        <span class="badge badge-pill badge-yellow" id="rosterCountBadge" style="margin-left:auto">
-          SHOWING {{ roster|length }} / {{ roster|length }} STUDENTS
-        </span>
+    <!-- Search & Filters Toolbar -->
+    <div id="rosterToolbar" style="display:{% if roster|length == 0 %}none{% else %}flex{% endif %};gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#F5F5F5;border:3px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212">
+      <div style="flex:1;min-width:240px;position:relative">
+        <input type="search" id="studentSearchInput" placeholder="Search by name, ID, or email..." onkeyup="filterAndSortRoster()" style="padding-left:36px;margin:0">
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#666"></i>
       </div>
 
-      <!-- Roster Data Grid -->
-      <div class="table-wrap">
-        <table class="bauhaus-table" id="rosterTable">
-          <thead>
-            <tr>
-              <th>STUDENT ID</th>
-              <th>NAME</th>
-              <th>EMAIL</th>
-              <th>DEFAULT PASSWORD</th>
-              <th>STATUS</th>
-              <th>LAB 1</th>
-              <th>LAB 2</th>
-              <th>LAB 3</th>
-              <th>LAB 4</th>
-              <th>LAB 5</th>
-              <th>LAB 6</th>
-              <th>TOTAL SCORE</th>
-              <th>ACTIONS</th>
+      <select id="studentSortSelect" onchange="filterAndSortRoster()" style="width:auto;margin:0">
+        <option value="name-asc" selected>Sort: Name (A &rarr; Z)</option>
+        <option value="name-desc">Sort: Name (Z &rarr; A)</option>
+        <option value="id-asc">Sort: Student ID (Asc)</option>
+        <option value="id-desc">Sort: Student ID (Desc)</option>
+        <option value="score-desc">Sort: Score (High &rarr; Low)</option>
+        <option value="score-asc">Sort: Score (Low &rarr; High)</option>
+      </select>
+
+      <button type="button" class="btn btn-sm btn-outline" onclick="resetRosterFilters()" style="margin:0">
+        <i class="fa-solid fa-arrow-rotate-left"></i> RESET
+      </button>
+
+      <span class="badge badge-pill badge-yellow" id="rosterCountBadge" style="margin-left:auto">
+        SHOWING {{ roster|length }} / {{ roster|length }} STUDENTS
+      </span>
+    </div>
+
+    <!-- Roster Data Grid -->
+    <div class="table-wrap" id="rosterTableWrap" style="display:{% if roster|length == 0 %}none{% else %}block{% endif %}">
+      <table class="bauhaus-table" id="rosterTable">
+        <thead>
+          <tr>
+            <th>STUDENT ID</th>
+            <th>NAME</th>
+            <th>EMAIL</th>
+            <th>DEFAULT PASSWORD</th>
+            <th>STATUS</th>
+            <th>LAB 1</th>
+            <th>LAB 2</th>
+            <th>LAB 3</th>
+            <th>LAB 4</th>
+            <th>LAB 5</th>
+            <th>LAB 6</th>
+            <th>TOTAL SCORE</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="rosterTbody">
+          {% for r in roster %}
+            <tr class="roster-row"
+                data-name="{{ r.name|lower }}"
+                data-id="{{ r.student_id|lower }}"
+                data-email="{{ (r.email or '')|lower }}"
+                data-score="{{ r.overall_pct }}">
+              <td><code>{{ r.student_id }}</code></td>
+              <td><b>{{ r.name }}</b></td>
+              <td>{{ r.email or "—" }}</td>
+              <td><code>{{ r.default_password }}</code></td>
+              <td>
+                {% if r.password_changed %}
+                  <span class="badge badge-green">CHANGED</span>
+                {% else %}
+                  <span class="badge badge-yellow">DEFAULT</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.lab1.verified %}
+                  <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
+                {% else %}
+                  <span class="badge badge-white">{{ r.lab1.steps_done }}/7</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.lab2.verified %}
+                  <span class="badge badge-green"><i class="fa-solid fa-check"></i> 4/4</span>
+                {% else %}
+                  <span class="badge badge-white">{{ r.lab2.steps_done }}/4</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.lab3.verified %}
+                  <span class="badge badge-green"><i class="fa-solid fa-check"></i> 10/10</span>
+                {% else %}
+                  <span class="badge badge-white">{{ r.lab3.steps_done }}/10</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.lab4.verified %}
+                  <span class="badge badge-green"><i class="fa-solid fa-check"></i> 5/5</span>
+                {% else %}
+                  <span class="badge badge-white">{{ r.lab4.steps_done }}/5</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.lab5.verified %}
+                  <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
+                {% else %}
+                  <span class="badge badge-white">{{ r.lab5.steps_done }}/7</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.lab6.verified %}
+                  <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
+                {% else %}
+                  <span class="badge badge-white">{{ r.lab6.steps_done }}/7</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="font-family:var(--font-display);font-weight:900;font-size:1.1rem;color:var(--primary-red)">
+                  {{ r.overall_pct }}%
+                </div>
+              </td>
+              <td>
+                <button type="button" class="btn btn-sm btn-red" data-id="{{ r.student_id }}" data-name="{{ r.name }}" onclick="deleteStudent(this.dataset.id, this.dataset.name)" title="Delete Student Record" style="padding:4px 8px">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody id="rosterTbody">
-            {% for r in roster %}
-              <tr class="roster-row"
-                  data-name="{{ r.name|lower }}"
-                  data-id="{{ r.student_id|lower }}"
-                  data-email="{{ (r.email or '')|lower }}"
-                  data-score="{{ r.overall_pct }}">
-                <td><code>{{ r.student_id }}</code></td>
-                <td><b>{{ r.name }}</b></td>
-                <td>{{ r.email or "—" }}</td>
-                <td><code>{{ r.default_password }}</code></td>
-                <td>
-                  {% if r.password_changed %}
-                    <span class="badge badge-green">CHANGED</span>
-                  {% else %}
-                    <span class="badge badge-yellow">DEFAULT</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if r.lab1.verified %}
-                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
-                  {% else %}
-                    <span class="badge badge-white">{{ r.lab1.steps_done }}/7</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if r.lab2.verified %}
-                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 4/4</span>
-                  {% else %}
-                    <span class="badge badge-white">{{ r.lab2.steps_done }}/4</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if r.lab3.verified %}
-                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 10/10</span>
-                  {% else %}
-                    <span class="badge badge-white">{{ r.lab3.steps_done }}/10</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if r.lab4.verified %}
-                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 5/5</span>
-                  {% else %}
-                    <span class="badge badge-white">{{ r.lab4.steps_done }}/5</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if r.lab5.verified %}
-                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
-                  {% else %}
-                    <span class="badge badge-white">{{ r.lab5.steps_done }}/7</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if r.lab6.verified %}
-                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> 7/7</span>
-                  {% else %}
-                    <span class="badge badge-white">{{ r.lab6.steps_done }}/7</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <div style="font-family:var(--font-display);font-weight:900;font-size:1.1rem;color:var(--primary-red)">
-                    {{ r.overall_pct }}%
-                  </div>
-                </td>
-                <td>
-                  <button type="button" class="btn btn-sm btn-red" data-id="{{ r.student_id }}" data-name="{{ r.name }}" onclick="deleteStudent(this.dataset.id, this.dataset.name)" title="Delete Student Record" style="padding:4px 8px">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>
 
 <!-- Faculty Interactive JavaScript -->
 <script>
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function showFileName(input) {
     const fn = document.getElementById('fileName');
     if (input.files && input.files[0]) {
@@ -385,18 +393,19 @@
       if (d.ok) {
         const s = d.student || d;
         alertBox.className = 'flash flash-success';
-        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${s.name || name}</b> (ID: <code>${s.student_id}</code>, Pass: <code>${s.default_password}</code>)`;
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${escapeHtml(s.name || name)}</b> (ID: <code>${escapeHtml(s.student_id)}</code>, Pass: <code>${escapeHtml(s.default_password)}</code>)`;
         alertBox.style.display = 'flex';
         document.getElementById('manualStudentForm').reset();
-        setTimeout(() => location.reload(), 1200);
+        // Immediately synchronize live roster without page reload
+        syncFacultyLiveData(true);
       } else {
         alertBox.className = 'flash flash-error';
-        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${d.message || d.error || 'Failed to enroll student.'}`;
+        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(d.message || d.error || 'Failed to enroll student.')}`;
         alertBox.style.display = 'flex';
       }
     } catch (err) {
       alertBox.className = 'flash flash-error';
-      alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${err.message || 'Network error'}`;
+      alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${escapeHtml(err.message || 'Network error')}`;
       alertBox.style.display = 'flex';
     }
   }
@@ -409,8 +418,8 @@
       const res = await fetch(`/api/faculty/delete-student/${studentId}`, { method: 'DELETE' });
       const d = await res.json();
       if (d.ok) {
-        alert(d.message);
-        location.reload();
+        // Immediately synchronize live roster without page reload
+        syncFacultyLiveData(true);
       } else {
         alert('Error: ' + (d.message || 'Failed to delete student.'));
       }
@@ -419,28 +428,255 @@
     }
   }
 
-  // Live Auto-Refresh (5s) for Faculty Stats & Roster
-  function pollFacultyStats() {
-    fetch('/api/faculty/stats')
-      .then(r => r.json())
-      .then(d => {
-        if (d) {
-          if (document.getElementById('statTotal')) document.getElementById('statTotal').innerText = d.total || 0;
-          if (document.getElementById('statDone')) document.getElementById('statDone').innerText = d.lab1_completed || 0;
-          if (document.getElementById('statLab2Done')) document.getElementById('statLab2Done').innerText = d.lab2_completed || 0;
-          if (document.getElementById('statLab3Done')) document.getElementById('statLab3Done').innerText = d.lab3_completed || 0;
-          if (document.getElementById('statLab4Done')) document.getElementById('statLab4Done').innerText = d.lab4_completed || 0;
-          if (document.getElementById('statLab5Done')) document.getElementById('statLab5Done').innerText = d.lab5_completed || 0;
-          if (document.getElementById('statLab6Done')) document.getElementById('statLab6Done').innerText = d.lab6_completed || 0;
-        }
-      })
-      .catch(() => {});
+  function renderLabBadge(lab, totalDefault) {
+    if (!lab) return `<span class="badge badge-white">0/${totalDefault}</span>`;
+    const tot = lab.total_steps || totalDefault;
+    if (lab.verified) {
+      return `<span class="badge badge-green"><i class="fa-solid fa-check"></i> ${tot}/${tot}</span>`;
+    }
+    return `<span class="badge badge-white">${lab.steps_done || 0}/${tot}</span>`;
   }
-  setInterval(pollFacultyStats, 5000);
+
+  function renderRosterRow(r) {
+    const pwdBadge = r.password_changed
+      ? `<span class="badge badge-green">CHANGED</span>`
+      : `<span class="badge badge-yellow">DEFAULT</span>`;
+
+    return `
+      <tr class="roster-row"
+          data-name="${escapeHtml((r.name || '').toLowerCase())}"
+          data-id="${escapeHtml((r.student_id || '').toLowerCase())}"
+          data-email="${escapeHtml((r.email || '').toLowerCase())}"
+          data-score="${r.overall_pct || 0}">
+        <td><code>${escapeHtml(r.student_id || '')}</code></td>
+        <td><b>${escapeHtml(r.name || '')}</b></td>
+        <td>${r.email ? escapeHtml(r.email) : '—'}</td>
+        <td><code>${escapeHtml(r.default_password || '')}</code></td>
+        <td>${pwdBadge}</td>
+        <td>${renderLabBadge(r.lab1, 7)}</td>
+        <td>${renderLabBadge(r.lab2, 4)}</td>
+        <td>${renderLabBadge(r.lab3, 10)}</td>
+        <td>${renderLabBadge(r.lab4, 5)}</td>
+        <td>${renderLabBadge(r.lab5, 7)}</td>
+        <td>${renderLabBadge(r.lab6, 7)}</td>
+        <td>
+          <div style="font-family:var(--font-display);font-weight:900;font-size:1.1rem;color:var(--primary-red)">
+            ${r.overall_pct || 0}%
+          </div>
+        </td>
+        <td>
+          <button type="button" class="btn btn-sm btn-red" onclick="deleteStudent('${escapeHtml(r.student_id || '')}', '${escapeHtml(r.name || '')}')" title="Delete Student Record" style="padding:4px 8px">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderStats(stats) {
+    if (!stats) return;
+    if (document.getElementById('statTotal')) document.getElementById('statTotal').innerText = stats.total_students ?? stats.total ?? 0;
+    if (document.getElementById('statDone')) document.getElementById('statDone').innerText = stats.lab1_completed ?? 0;
+    if (document.getElementById('statLab2Done')) document.getElementById('statLab2Done').innerText = stats.lab2_completed ?? 0;
+    if (document.getElementById('statLab3Done')) document.getElementById('statLab3Done').innerText = stats.lab3_completed ?? 0;
+    if (document.getElementById('statLab4Done')) document.getElementById('statLab4Done').innerText = stats.lab4_completed ?? 0;
+    if (document.getElementById('statLab5Done')) document.getElementById('statLab5Done').innerText = stats.lab5_completed ?? 0;
+    if (document.getElementById('statLab6Done')) document.getElementById('statLab6Done').innerText = stats.lab6_completed ?? 0;
+  }
+
+  function renderTickets(tickets) {
+    const container = document.getElementById('facultyTicketsContainer');
+    const badge = document.getElementById('ticketBadge');
+    if (!container) return;
+    if (!tickets) tickets = [];
+
+    const unresolved = tickets.filter(t => (t.status || '').toUpperCase() !== 'RESOLVED').length;
+    if (badge) {
+      badge.innerText = `${tickets.length} TICKETS (${unresolved} OPEN)`;
+      badge.className = unresolved > 0 ? 'badge badge-red' : 'badge badge-yellow';
+    }
+
+    if (tickets.length === 0) {
+      container.innerHTML = `
+        <div style="color:#666;font-size:.88rem;padding:24px 0;text-align:center;background:#F8F8F8;border:2px dashed #121212">
+          <i class="fa-solid fa-circle-check" style="color:var(--accent-green);font-size:1.4rem;margin-bottom:6px;display:block"></i>
+          No active student support tickets reported.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = tickets.map(t => {
+      const isResolved = (t.status || '').toUpperCase() === 'RESOLVED';
+      const statusBadge = isResolved
+        ? `<span class="badge badge-green"><i class="fa-solid fa-check"></i> RESOLVED</span>`
+        : `<span class="badge badge-red"><i class="fa-solid fa-circle-exclamation"></i> OPEN</span>`;
+
+      return `
+        <div style="background:#ffffff;border:2px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212;border-radius:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div>
+              <b>${escapeHtml(t.student_name || t.student_id)}</b>
+              <span style="font-size:.78rem;color:#666;margin-left:6px">Lab ${t.lab_number}</span>
+            </div>
+            ${statusBadge}
+          </div>
+          <div style="font-weight:700;font-size:.9rem;color:#121212;margin-bottom:4px">${escapeHtml(t.title || '')}</div>
+          <div style="font-size:.82rem;color:#444;margin-bottom:8px">${escapeHtml(t.description || '')}</div>
+          ${t.faculty_reply ? `
+            <div style="background:#f0fdf4;border-left:3px solid #10b981;padding:6px 10px;font-size:.8rem;color:#166534;margin-bottom:6px">
+              <b>Faculty Reply:</b> ${escapeHtml(t.faculty_reply)}
+            </div>
+          ` : `
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <input type="text" id="replyInput_${t.id}" placeholder="Type reply..." style="margin:0;padding:4px 8px;font-size:.8rem;flex:1">
+              <button type="button" class="btn btn-sm btn-blue" onclick="submitTicketReply(${t.id})" style="padding:4px 10px;font-size:.78rem">
+                <i class="fa-solid fa-reply"></i> Reply
+              </button>
+            </div>
+          `}
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function submitTicketReply(ticketId) {
+    const inp = document.getElementById(`replyInput_${ticketId}`);
+    if (!inp || !inp.value.trim()) return;
+    const reply = inp.value.trim();
+    try {
+      const res = await fetch('/api/faculty/reply-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: ticketId, reply: reply, status: 'RESOLVED' })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        syncFacultyLiveData(true);
+      } else {
+        alert(d.message || 'Failed to send reply.');
+      }
+    } catch(e) {
+      alert('Network error replying to ticket.');
+    }
+  }
+
+  function renderTasks(tasks) {
+    const container = document.getElementById('facultyTaskContainer');
+    const badge = document.getElementById('facultyTaskBadge');
+    if (!container) return;
+    if (!tasks) tasks = [];
+
+    const running = tasks.filter(t => t.status === 'RUNNING');
+    if (badge) {
+      badge.innerText = `${running.length} ACTIVE`;
+      badge.className = running.length > 0 ? 'badge badge-green' : 'badge badge-yellow';
+    }
+
+    if (tasks.length === 0) {
+      container.innerHTML = `
+        <div style="color:#666;font-size:.85rem;grid-column:1/-1;padding:12px;background:#F8F8F8;border:2px solid #121212">
+          No background execution jobs currently running.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = tasks.map(t => {
+      const isRunning = t.status === 'RUNNING';
+      const statusPill = isRunning
+        ? `<span class="badge badge-green"><i class="fa-solid fa-spinner fa-spin"></i> RUNNING</span>`
+        : `<span class="badge badge-black">${escapeHtml(t.status)}</span>`;
+
+      return `
+        <div style="background:#ffffff;border:2px solid #121212;padding:10px;box-shadow:3px 3px 0px #121212">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <b style="font-size:.85rem">${escapeHtml(t.name || t.task_id)}</b>
+            ${statusPill}
+          </div>
+          <div style="font-size:.76rem;color:#666;font-family:var(--font-mono)">ID: ${escapeHtml(t.task_id)}</div>
+          <div style="font-size:.76rem;color:#666">Duration: ${escapeHtml(String(t.duration || '0s'))}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function updateRosterTable(roster) {
+    const emptyBox = document.getElementById('noStudentsEmptyBox');
+    const toolbar = document.getElementById('rosterToolbar');
+    const tableWrap = document.getElementById('rosterTableWrap');
+    const tbody = document.getElementById('rosterTbody');
+
+    if (!roster || roster.length === 0) {
+      if (emptyBox) emptyBox.style.display = 'block';
+      if (toolbar) toolbar.style.display = 'none';
+      if (tableWrap) tableWrap.style.display = 'none';
+      if (tbody) tbody.innerHTML = '';
+      const badge = document.getElementById('rosterCountBadge');
+      if (badge) badge.innerText = 'SHOWING 0 / 0 STUDENTS';
+      return;
+    }
+
+    if (emptyBox) emptyBox.style.display = 'none';
+    if (toolbar) toolbar.style.display = 'flex';
+    if (tableWrap) tableWrap.style.display = 'block';
+
+    if (tbody) {
+      tbody.innerHTML = roster.map(r => renderRosterRow(r)).join('');
+      filterAndSortRoster();
+    }
+  }
+
+  let lastFacultyDataHash = null;
+  let isSyncingFaculty = false;
+
+  async function syncFacultyLiveData(force = false) {
+    if (isSyncingFaculty && !force) return;
+    isSyncingFaculty = true;
+
+    try {
+      const url = lastFacultyDataHash && !force
+        ? `/api/faculty/live-data?hash=${encodeURIComponent(lastFacultyDataHash)}`
+        : '/api/faculty/live-data';
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (data.ok) {
+        if (data.changed === false && !force) {
+          // Data is already completely up to date
+          return;
+        }
+
+        lastFacultyDataHash = data.hash;
+
+        if (data.stats) renderStats(data.stats);
+        if (data.tickets) renderTickets(data.tickets);
+        if (data.tasks) renderTasks(data.tasks);
+        if (data.roster) updateRosterTable(data.roster);
+
+        const syncBadge = document.getElementById('liveSyncBadge');
+        if (syncBadge) {
+          syncBadge.innerHTML = '<i class="fa-solid fa-circle" style="color:#10b981;font-size:.5rem;margin-right:4px"></i> LIVE SYNC (ACTIVE)';
+        }
+      }
+    } catch (err) {
+      console.debug('Faculty live sync error:', err);
+      const syncBadge = document.getElementById('liveSyncBadge');
+      if (syncBadge) {
+        syncBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;font-size:.65rem;margin-right:4px"></i> LIVE SYNC (CONNECTING)';
+      }
+    } finally {
+      isSyncingFaculty = false;
+    }
+  }
 
   function filterAndSortRoster() {
-    const q = (document.getElementById('studentSearchInput').value || '').toLowerCase().trim();
-    const sortVal = document.getElementById('studentSortSelect').value;
+    const searchInput = document.getElementById('studentSearchInput');
+    const sortSelect = document.getElementById('studentSortSelect');
+    const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    const sortVal = sortSelect ? sortSelect.value : 'name-asc';
     const rows = Array.from(document.querySelectorAll('.roster-row'));
     let visible = 0;
 
@@ -476,9 +712,18 @@
   }
 
   function resetRosterFilters() {
-    document.getElementById('studentSearchInput').value = '';
-    document.getElementById('studentSortSelect').value = 'name-asc';
+    const searchInput = document.getElementById('studentSearchInput');
+    const sortSelect = document.getElementById('studentSortSelect');
+    if (searchInput) searchInput.value = '';
+    if (sortSelect) sortSelect.value = 'name-asc';
     filterAndSortRoster();
   }
+
+  // Polling every 2.5 seconds for near-real-time updates
+  setInterval(() => syncFacultyLiveData(false), 2500);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    syncFacultyLiveData(true);
+  });
 </script>
 {% endblock %}

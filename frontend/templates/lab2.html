@@ -86,6 +86,8 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
           <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="HTML5 Web Page: Defines root page title, heading and Docker welcome text">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&nbsp;&nbsp;&lt;head&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;title&gt;Hello World&lt;/title&gt;<br>&nbsp;&nbsp;&lt;/head&gt;<br>&nbsp;&nbsp;&lt;body&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Hello, World!&lt;/h1&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Welcome to Docker.&lt;/p&gt;<br>&nbsp;&nbsp;&lt;/body&gt;<br>&lt;/html&gt;</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(1)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step1" class="step-test-result"></div>
       </div>
 
       <!-- Step 2: CREATE DOCKERFILE -->
@@ -97,8 +99,10 @@
         <div class="drawer-step-sub">CLICK + TO CREATE DOCKERFILE WITH NGINX INSTRUCTIONS FROM REFERENCE BELOW:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-          <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies base Nginx web server image from Docker Hub">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html into container web root">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE: Opens container network port 80">EXPOSE 80</span></div>
+          <div class="no-copy-code" style="white-space:nowrap !important;overflow-x:auto !important;display:block !important"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies base Nginx web server image from Docker Hub">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html into container web root">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE: Opens container network port 80">EXPOSE 80</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(2)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step2" class="step-test-result"></div>
       </div>
 
       <!-- Step 3: BUILD DOCKER IMAGE -->
@@ -108,9 +112,12 @@
           <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#38bdf8">
+        <div class="cmd-box" style="color:#38bdf8;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker build: Compiles Dockerfile into tagged image named hello-web">docker build -t hello-web .</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker build -t hello-web .', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(3)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step3" class="step-test-result"></div>
       </div>
 
       <!-- Step 4: RUN WEB CONTAINER -->
@@ -120,9 +127,12 @@
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#34d399">
+        <div class="cmd-box" style="color:#34d399;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target" data-vlab-tooltip="docker run: Runs container in background (-d) mapping host port 8080 to container port 80 (-p)">docker run -d -p 8080:80 hello-web</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker run -d -p 8080:80 hello-web', this)" title="Copy command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(4)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step4" class="step-test-result"></div>
       </div>
     </div>
 
@@ -169,9 +179,10 @@
 
       <!-- Quick Action Toolbar -->
       <div class="vscode-editor-toolbar">
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> New File</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> Save (Ctrl+S)</button>
+          <button class="editor-pill-btn" style="background:#0284c7;color:#ffffff;border-color:#38bdf8" id="btnTestCode" onclick="validateStudentCode()"><i class="fa-solid fa-vial-circle-check"></i> Test / Validate Code</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> Rename</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
@@ -810,6 +821,54 @@ function markStepBackend(stepId) {
   }).catch(()=>{});
 }
 
+function validateStudentCode() {
+  const ed = document.getElementById('codeEditor');
+  if (ed && currentFile) {
+    files[currentFile] = ed.value;
+    saveFilesToLocalStorage();
+  }
+  const indexCode = (files['index.html'] || '').trim();
+  const dockerCode = (files['Dockerfile'] || '').trim();
+
+  let missingErrors = [];
+
+  // Step 1: index.html check
+  const cleanHtml = indexCode.toLowerCase();
+  const hasHtmlTag = (cleanHtml.includes('<html') || cleanHtml.includes('<!doctype') || cleanHtml.includes('<body')) && cleanHtml.includes('</');
+  const hasHeading = /<h[1-6][^>]*>[\s\S]*?(hello|world|welcome|docker)[\s\S]*?<\/h[1-6]>/i.test(indexCode)
+                     || (cleanHtml.includes('<h1') && (cleanHtml.includes('hello') || cleanHtml.includes('world')));
+  const isIndexValid = Boolean(cleanHtml.length >= 25 && hasHtmlTag && hasHeading);
+
+  if (isIndexValid) {
+    testedState.html = true;
+    updateChecklistStatus('index', true);
+    markStepBackend(1);
+  } else {
+    missingErrors.push('index.html requires complete HTML structure with tags (<html>, <body>) and a greeting heading (<h1>Hello, World!</h1>)');
+  }
+
+  // Step 2: Dockerfile check
+  const cleanDocker = dockerCode.toLowerCase();
+  const hasFromNginx = /\bfrom\s+nginx/i.test(cleanDocker);
+  const hasCopy = /\bcopy\s+/i.test(cleanDocker) && (cleanDocker.includes('index.html') || cleanDocker.includes('/usr/share/nginx/html'));
+  const hasExpose = /\bexpose\s+80\b/i.test(cleanDocker) || cleanDocker.includes('expose 80');
+  const isDockerValid = Boolean(hasFromNginx && hasCopy && hasExpose);
+
+  if (isDockerValid) {
+    testedState.dockerfile = true;
+    updateChecklistStatus('dockerfile', true);
+    markStepBackend(2);
+  } else {
+    missingErrors.push('Dockerfile requires FROM nginx:alpine, COPY index.html /usr/share/nginx/html/index.html, and EXPOSE 80');
+  }
+
+  if (missingErrors.length === 0) {
+    showToast('Code syntax test passed! Step 1 (index.html) and Step 2 (Dockerfile) verified.', 'success');
+  } else {
+    showToast(missingErrors.join(' | '), 'warning');
+  }
+}
+
 function checkCodeProgress() {
   const ed = document.getElementById('codeEditor');
   const indexCode = (currentFile === 'index.html' && ed ? ed.value : (files['index.html'] || '')) || '';
@@ -820,23 +879,25 @@ function checkCodeProgress() {
   const hasHtmlTag = (cleanHtml.includes('<html') || cleanHtml.includes('<!doctype') || cleanHtml.includes('<body')) && cleanHtml.includes('</');
   const hasHeading = /<h[1-6][^>]*>[\s\S]*?(hello|world|welcome|docker)[\s\S]*?<\/h[1-6]>/i.test(indexCode)
                      || (cleanHtml.includes('<h1') && (cleanHtml.includes('hello') || cleanHtml.includes('world')));
-  const hasIndex = Boolean(hasHtmlTag && hasHeading);
+  const hasIndex = Boolean(cleanHtml.length >= 25 && hasHtmlTag && hasHeading);
 
   // Step 2: Dockerfile must specify FROM nginx, COPY (index.html or .), and EXPOSE 80
   const cleanDocker = dockerCode.toLowerCase().trim();
   const hasFromNginx = /\bfrom\s+nginx/i.test(cleanDocker);
-  const hasCopy = /\bcopy\s+/i.test(cleanDocker) && (cleanDocker.includes('index.html') || cleanDocker.includes('/usr/share/nginx/html') || cleanDocker.includes('.'));
+  const hasCopy = /\bcopy\s+/i.test(cleanDocker) && (cleanDocker.includes('index.html') || cleanDocker.includes('/usr/share/nginx/html'));
   const hasExpose = /\bexpose\s+80\b/i.test(cleanDocker) || cleanDocker.includes('expose 80');
   const hasDockerfile = Boolean(hasFromNginx && hasCopy && hasExpose);
 
-  testedState.html = hasIndex;
-  testedState.dockerfile = hasDockerfile;
-
-  updateChecklistStatus('index', hasIndex);
-  updateChecklistStatus('dockerfile', hasDockerfile);
-
-  if (hasIndex) markStepBackend(1);
-  if (hasDockerfile) markStepBackend(2);
+  if (hasIndex && !testedState.html) {
+    testedState.html = true;
+    updateChecklistStatus('index', true);
+    markStepBackend(1);
+  }
+  if (hasDockerfile && !testedState.dockerfile) {
+    testedState.dockerfile = true;
+    updateChecklistStatus('dockerfile', true);
+    markStepBackend(2);
+  }
 }
 
 function checkCompulsoryCommand(cmd) {
@@ -849,10 +910,77 @@ function checkCompulsoryCommand(cmd) {
   }
   // Step 4: Must run container mapping port 8080:80
   if (c.includes('docker run') && (c.includes('8080') || c.includes('hello-web'))) {
-    testedState.run = true;
-    updateChecklistUI('run');
-    markStepBackend(4);
+    checkCodeProgress();
+    if (!testedState.html || !testedState.dockerfile) {
+      testedState.run = false;
+      containerRunning = false;
+      refreshPreview();
+      showToast('Cannot run web container: index.html and Dockerfile must be created in Explorer first!', 'warning');
+    } else {
+      testedState.run = true;
+      updateChecklistUI('run');
+      markStepBackend(4);
+      containerRunning = true;
+      refreshPreview();
+    }
   }
+}
+
+function testStep(stepNum) {
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result running";
+    resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running test case for Step ' + stepNum + '...';
+  }
+
+  setTimeout(() => {
+    const ed = document.getElementById('codeEditor');
+    if (ed && currentFile) {
+      files[currentFile] = ed.value;
+      saveFilesToLocalStorage();
+    }
+    const indexCode = (files['index.html'] || '').trim();
+    const dockerCode = (files['Dockerfile'] || files['dockerfile'] || '').trim();
+
+    if (stepNum === 1) {
+      const cleanHtml = indexCode.toLowerCase();
+      const hasHtmlTag = (cleanHtml.includes('<html') || cleanHtml.includes('<!doctype') || cleanHtml.includes('<body')) && cleanHtml.includes('</');
+      const hasHeading = /<h[1-6][^>]*>[\s\S]*?(hello|world|welcome|docker)[\s\S]*?<\/h[1-6]>/i.test(indexCode)
+                         || (cleanHtml.includes('<h1') && (cleanHtml.includes('hello') || cleanHtml.includes('world')));
+      const ok = Boolean(cleanHtml.length >= 25 && hasHtmlTag && hasHeading);
+      const msg = ok ? "index.html verified: Proper HTML5 structure and greeting heading found." : "index.html incomplete: Must contain valid HTML tags (<html>, <body>) and a greeting heading (<h1>Hello, World!</h1>).";
+      setLab2TestResult(1, 'html', ok, msg);
+    } else if (stepNum === 2) {
+      const cleanDocker = dockerCode.toLowerCase();
+      const hasFromNginx = /\bfrom\s+nginx/i.test(cleanDocker);
+      const hasCopy = /\bcopy\s+/i.test(cleanDocker) && (cleanDocker.includes('index.html') || cleanDocker.includes('/usr/share/nginx/html'));
+      const hasExpose = /\bexpose\s+80\b/i.test(cleanDocker) || cleanDocker.includes('expose 80');
+      const ok = Boolean(hasFromNginx && hasCopy && hasExpose);
+      const msg = ok ? "Dockerfile verified: FROM nginx:alpine, COPY index.html, and EXPOSE 80 configured." : "Dockerfile incomplete: Must contain FROM nginx:alpine, COPY index.html /usr/share/nginx/html/index.html, and EXPOSE 80.";
+      setLab2TestResult(2, 'dockerfile', ok, msg);
+    } else if (stepNum === 3) {
+      const ok = Boolean(testedState.build);
+      const msg = ok ? "Docker build passed: Image 'hello-web' compiled successfully." : "Build not detected. First ensure Dockerfile exists, then run 'docker build -t hello-web .' in the terminal.";
+      setLab2TestResult(3, 'build', ok, msg);
+    } else if (stepNum === 4) {
+      const ok = Boolean(testedState.run || containerRunning);
+      const msg = ok ? "Docker run passed: Container running on http://localhost:8080." : "Container not running. Run 'docker run -d -p 8080:80 hello-web' in the terminal first.";
+      setLab2TestResult(4, 'run', ok, msg);
+    }
+  }, 350);
+}
+
+function setLab2TestResult(stepNum, key, ok, message) {
+  testedState[key] = ok;
+  const cardKey = (key === 'html') ? 'index' : key;
+  updateChecklistStatus(cardKey, ok);
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result " + (ok ? "passed" : "failed");
+    resEl.innerHTML = (ok ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-xmark"></i> ') + message;
+  }
+  if (ok) markStepBackend(stepNum);
+  updateProgressTrack();
 }
 
 function onCodeInput() {
@@ -969,7 +1097,7 @@ function switchActivityTab(tabName) {
             <div style="flex:1"><b style="color:#38bdf8">2. Dockerfile:</b> Create Nginx container config
               <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false" ondragstart="return false">
                 <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:2px"><i class="fa-solid fa-lock"></i> REFERENCE (HOVER FOR EXPLANATION)</div>
-                <div class="no-copy-code"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies base Nginx web server image from Docker Hub">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html into container web root">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE: Opens container network port 80">EXPOSE 80</span></div>
+                <div class="no-copy-code" style="white-space:nowrap !important;overflow-x:auto !important;display:block !important"><span class="vlab-hover-target" data-vlab-tooltip="FROM: Specifies base Nginx web server image from Docker Hub">FROM nginx:alpine</span><br><span class="vlab-hover-target" data-vlab-tooltip="COPY: Transfers index.html into container web root">COPY index.html /usr/share/nginx/html/index.html</span><br><span class="vlab-hover-target" data-vlab-tooltip="EXPOSE: Opens container network port 80">EXPOSE 80</span></div>
               </div>
             </div>
           </label>

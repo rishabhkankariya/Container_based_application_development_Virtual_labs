@@ -1,3 +1,4 @@
+
 import os
 import io
 import json
@@ -84,12 +85,33 @@ LAB3_STEPS = [
 ]
 
 LAB4_STEPS = [
-    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask to receive two numbers 'a' and 'b' and return their sum as JSON."},
-    {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 80."},
-    {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask and gunicorn dependency packages."},
+    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask to receive two numbers 'a' and 'b' via route '/add' (e.g. /add?a=10&b=20) and return number1, number2, and sum as JSON."},
+    {"id": 2, "title": "Configure Microservice Dockerfile", "desc": "Write Dockerfile using python base image, copy requirements.txt and app.py, and expose port 5000."},
+    {"id": 3, "title": "Create Dependencies Specification (requirements.txt)", "desc": "Write requirements.txt specifying flask==3.0.0 dependency package."},
     {"id": 4, "title": "Build Microservice Docker Image", "desc": "Run 'docker build -t sum-microservice .' in the integrated VS Code terminal."},
-    {"id": 5, "title": "Run Microservice Container", "desc": "Run 'docker run -d -p 8080:80 sum-microservice' to start your calculator microservice."},
+    {"id": 5, "title": "Run Microservice Container", "desc": "Run 'docker run -d -p 5000:5000 sum-microservice' to start your calculator microservice."},
 ]
+
+LAB5_STEPS = [
+    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py using Flask returning JSON sum of parameters 'a' and 'b' on port 5000."},
+    {"id": 2, "title": "Create Client Application (client.py)", "desc": "Write client.py using Flask/Requests to call 'http://sum-microservice:5000/add' over the Docker network."},
+    {"id": 3, "title": "Create Microservice & Client Dockerfiles", "desc": "Create Dockerfile.microservice and Dockerfile.client to package both Python applications."},
+    {"id": 4, "title": "Create User-Defined Docker Network", "desc": "Execute 'docker network create app-net' in integrated terminal to create inter-container network bridge."},
+    {"id": 5, "title": "Build & Run Microservice Container", "desc": "Build sum-microservice image and run with '--name sum-microservice --network app-net -p 5000:5000'."},
+    {"id": 6, "title": "Build & Run Client Container", "desc": "Build sum-client image and run with '--name sum-client --network app-net -p 8080:8080'."},
+    {"id": 7, "title": "Verify Multi-Container Network Communication", "desc": "Test calling client app at port 8080 to trigger microservice calculation over Docker network."},
+]
+
+LAB6_STEPS = [
+    {"id": 1, "title": "Create Microservice Logic (app.py)", "desc": "Write app.py microservice code to handle sum calculations and report container hostname."},
+    {"id": 2, "title": "Create Microservice Dockerfile", "desc": "Write Dockerfile to build lightweight Python microservice image."},
+    {"id": 3, "title": "Configure Docker Compose Stack (docker-compose.yml)", "desc": "Write docker-compose.yml specifying sum-microservice service, ports, environment, and build context."},
+    {"id": 4, "title": "Deploy Baseline Microservice Stack", "desc": "Execute 'docker compose up -d' or 'docker-compose up -d' to start microservice stack."},
+    {"id": 5, "title": "Scale Microservice Replicas Up", "desc": "Execute 'docker compose up -d --scale sum-microservice=3' to dynamically scale to 3 container replicas."},
+    {"id": 6, "title": "Inspect Scaled Container Instances", "desc": "Execute 'docker compose ps' or 'docker ps' to verify all 3 running microservice replica instances."},
+    {"id": 7, "title": "Scale Microservice Replicas Down", "desc": "Execute 'docker compose up -d --scale sum-microservice=1' to dynamically scale down back to 1 instance."},
+]
+
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +372,18 @@ def get_progress(student_id, lab_number=1):
     ).fetchone()
     conn.close()
     return p
+
+
+def safe_parse_steps(p):
+    if not p or not p["steps_completed"]:
+        return []
+    try:
+        val = p["steps_completed"]
+        if isinstance(val, list):
+            return val
+        return json.loads(val)
+    except Exception:
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -651,64 +685,111 @@ def get_student_docker_state(student_id):
         }
     return STUDENT_DOCKER_STATE[student_id]
 
-AUTO_DOCKER_LAUNCH_ATTEMPTED = False
+def find_docker_desktop_executable():
+    """Locates Docker Desktop executable across Windows, macOS, and Linux."""
+    # 1. Search relative to docker CLI in PATH
+    docker_bin = shutil.which("docker")
+    if docker_bin:
+        parent = os.path.dirname(docker_bin)
+        candidates = [
+            os.path.normpath(os.path.join(parent, "..", "..", "Docker Desktop.exe")),
+            os.path.normpath(os.path.join(parent, "..", "Docker Desktop.exe")),
+            os.path.normpath(os.path.join(parent, "Docker Desktop.exe")),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
 
-def auto_start_host_docker():
-    """Attempts to auto-launch Docker Desktop executable if installed on host system."""
-    global AUTO_DOCKER_LAUNCH_ATTEMPTED
-    if AUTO_DOCKER_LAUNCH_ATTEMPTED:
-        return
-    AUTO_DOCKER_LAUNCH_ATTEMPTED = True
-
+    # 2. Search common known install locations
     desktop_paths = [
-        os.path.expandvars(r"%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe"),
-        os.path.expandvars(r"%ProgramFiles%\Docker\Docker\Docker Desktop.exe"),
-        os.path.expandvars(r"%ProgramFiles(x86)%\Docker\Docker\Docker Desktop.exe"),
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Programs\DockerDesktop\Docker Desktop.exe"),
+        os.path.join(os.environ.get("ProgramFiles", ""), r"Docker\Docker\Docker Desktop.exe"),
+        os.path.join(os.environ.get("ProgramFiles(x86)", ""), r"Docker\Docker\Docker Desktop.exe"),
         r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+        r"C:\Program Files\Docker\Docker Desktop\Docker Desktop.exe",
         "/Applications/Docker.app/Contents/MacOS/Docker"
     ]
-    
-    exe_path = None
     for p in desktop_paths:
-        if os.path.exists(p):
-            exe_path = p
-            break
+        if p and os.path.isfile(p):
+            return p
 
-    if exe_path:
-        try:
-            if platform.system() == "Windows":
-                subprocess.Popen([exe_path], creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW)
-            else:
-                subprocess.Popen([exe_path])
-        except Exception:
-            pass
+    return None
 
+_DOCKER_STATUS_CACHE = {"status": False, "msg": "Virtual Docker Simulator (Active)", "expires": 0}
+AUTO_DOCKER_LAUNCH_ATTEMPTED = False
 
-def check_host_docker_status(retry_auto_start=True):
-    """Checks if real Docker daemon is running on the host system. Automatically launches Docker Desktop if installed."""
+def auto_start_host_docker(force=False):
+    """Attempts to launch Docker Desktop GUI executable so it visibly opens on the user's desktop."""
+    global AUTO_DOCKER_LAUNCH_ATTEMPTED
+    if AUTO_DOCKER_LAUNCH_ATTEMPTED and not force:
+        return True
+    AUTO_DOCKER_LAUNCH_ATTEMPTED = True
+
+    exe_path = find_docker_desktop_executable()
+    if not exe_path:
+        print("[Docker Manager] Docker Desktop executable not found in standard paths.")
+        return False
+
+    print(f"[Docker Manager] Opening Docker Desktop GUI from: {exe_path}")
     try:
-        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=4)
-        if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
-            return True, "Local Docker Engine (Connected)"
+        if platform.system() == "Windows":
+            # On Windows, os.startfile opens the desktop GUI application cleanly
+            # and signals the dashboard window to show on the user's screen.
+            if hasattr(os, "startfile"):
+                os.startfile(exe_path)
+            else:
+                subprocess.Popen([exe_path], shell=True)
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", "-a", "Docker"])
+        else:
+            subprocess.Popen([exe_path])
+        print("[Docker Manager] Docker Desktop launch request initiated successfully.")
+        return True
+    except Exception as e:
+        print(f"[Docker Manager] Failed to launch Docker Desktop: {e}")
+        return False
+
+
+def check_host_docker_status(retry_auto_start=False):
+    """Checks if real Docker daemon is running on the host system cleanly, with fast caching."""
+    global _DOCKER_STATUS_CACHE
+    now = time.time()
+    if now < _DOCKER_STATUS_CACHE["expires"]:
+        return _DOCKER_STATUS_CACHE["status"], _DOCKER_STATUS_CACHE["msg"]
+
+    try:
+        # Fast query: takes ~100ms vs ~4000ms for 'docker info'
+        res = subprocess.run(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            capture_output=True, text=True, timeout=3
+        )
+        if res.returncode == 0 and res.stdout.strip() and "failed to connect" not in (res.stderr or "").lower():
+            ver = res.stdout.strip()
+            msg = "Local Docker Engine (Connected)"
+            _DOCKER_STATUS_CACHE = {"status": True, "msg": msg, "expires": now + 4}
+            return True, msg
     except Exception:
         pass
 
-    # If Docker daemon is not connected, attempt auto-starting Docker Desktop if installed
-    if retry_auto_start:
-        auto_start_host_docker()
-        # Retry polling docker info for a few seconds to allow daemon initialization
-        for _ in range(4):
-            time.sleep(1)
-            try:
-                res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=4)
-                if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
-                    return True, "Local Docker Engine (Connected)"
-            except Exception:
-                pass
+    # Fallback to docker info in case docker version format was unexpected
+    try:
+        res = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=3)
+        if res.returncode == 0 and "failed to connect" not in (res.stderr or "").lower():
+            msg = "Local Docker Engine (Connected)"
+            _DOCKER_STATUS_CACHE = {"status": True, "msg": msg, "expires": now + 4}
+            return True, msg
+    except Exception:
+        pass
 
-    return False, "Virtual Docker Simulator (Active)"
+    if retry_auto_start:
+        auto_start_host_docker(force=True)
+
+    msg = "Virtual Docker Simulator (Active)"
+    _DOCKER_STATUS_CACHE = {"status": False, "msg": msg, "expires": now + 2}
+    return False, msg
 
 @app.route("/api/terminal/exec", methods=["POST"])
+@app.route("/api/run-command", methods=["POST"])
 @login_required_student
 def api_terminal_exec():
     data = request.get_json(force=True) or {}
@@ -727,6 +808,19 @@ def api_terminal_exec():
     student_id = session.get("student_id", "guest")
     workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
     os.makedirs(workspace_dir, exist_ok=True)
+    state = get_student_docker_state(student_id)
+
+    # Clean workspace directory on disk so it strictly matches active browser workspace
+    if os.path.exists(workspace_dir):
+        for item in os.listdir(workspace_dir):
+            item_path = os.path.join(workspace_dir, item)
+            try:
+                if os.path.isfile(item_path) or os.path.islink(item_path):
+                    os.unlink(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+            except Exception:
+                pass
 
     # Clean and write client workspace files passed from browser
     client_files = data.get("files", {})
@@ -740,10 +834,91 @@ def api_terminal_exec():
                 with open(fpath, "w", encoding="utf-8") as f:
                     f.write(clean_text)
 
-    state = get_student_docker_state(student_id)
+    # Multi-lab file bridges: support Dockerfile, Dockerfile.microservice, Dockerfile.client, docker-compose.yml
+    df_path = os.path.join(workspace_dir, "Dockerfile")
+    df_micro_path = os.path.join(workspace_dir, "Dockerfile.microservice")
+    df_client_path = os.path.join(workspace_dir, "Dockerfile.client")
+    compose_path = os.path.join(workspace_dir, "docker-compose.yml")
+
+    # If user created Dockerfile, mirror to Dockerfile.microservice and vice-versa
+    if os.path.exists(df_path) and not os.path.exists(df_micro_path):
+        shutil.copyfile(df_path, df_micro_path)
+    elif os.path.exists(df_micro_path) and not os.path.exists(df_path):
+        shutil.copyfile(df_micro_path, df_path)
+    elif not os.path.exists(df_path):
+        with open(df_path, "w", encoding="utf-8") as f:
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD [\"python\", \"app.py\"]\n")
+        with open(df_micro_path, "w", encoding="utf-8") as f:
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD [\"python\", \"app.py\"]\n")
+
+    if not os.path.exists(df_client_path):
+        with open(df_client_path, "w", encoding="utf-8") as f:
+            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY client.py .\nEXPOSE 8080\nCMD [\"python\", \"client.py\"]\n")
+
+    req_file_path = os.path.join(workspace_dir, "requirements.txt")
+    if not os.path.exists(req_file_path) or os.path.getsize(req_file_path) == 0:
+        with open(req_file_path, "w", encoding="utf-8") as f:
+            f.write("flask==3.0.0\nrequests\n")
+
+    app_file_path = os.path.join(workspace_dir, "app.py")
+    if not os.path.exists(app_file_path):
+        with open(app_file_path, "w", encoding="utf-8") as f:
+            f.write("import socket\nfrom flask import Flask, request, jsonify\napp = Flask(__name__)\nHOST_ID = socket.gethostname()\n@app.route('/add')\ndef add():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({'result': a + b, 'sum': a + b, 'status': 'success', 'handled_by_replica': HOST_ID, 'container': 'sum-microservice'})\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n")
+
+    client_file_path = os.path.join(workspace_dir, "client.py")
+    if not os.path.exists(client_file_path):
+        with open(client_file_path, "w", encoding="utf-8") as f:
+            f.write("from flask import Flask, request, jsonify\nimport requests\napp = Flask(__name__)\nMICROSERVICE_URL = 'http://sum-microservice:5000/add'\n@app.route('/calc')\ndef calc():\n    try:\n        res = requests.get(f'{MICROSERVICE_URL}?a=10&b=20', timeout=2)\n        return jsonify({'client_status': 'success', 'network_result': res.json()})\n    except Exception as e:\n        return jsonify({'client_status': 'error', 'error': str(e)})\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=8080)\n")
+
+    if not os.path.exists(compose_path):
+        with open(compose_path, "w", encoding="utf-8") as f:
+            f.write("version: '3.8'\nservices:\n  sum-microservice:\n    build: .\n    ports:\n      - \"5001-5005:5000\"\n    deploy:\n      replicas: 1\n")
+    else:
+        try:
+            with open(compose_path, "r", encoding="utf-8") as cf:
+                compose_data = cf.read()
+            if "5000:5000" in compose_data:
+                compose_data = compose_data.replace("5000:5000", "5001-5005:5000")
+                with open(compose_path, "w", encoding="utf-8") as cf:
+                    cf.write(compose_data)
+        except Exception:
+            pass
 
     # Hybrid Docker Execution Selector: Real System Docker vs Virtual Docker Simulator
     has_real_docker, docker_msg = check_host_docker_status()
+
+    # Pre-validation for docker run: check if target image exists
+    if cmd_lower.startswith("docker run"):
+        tokens = cmd.split()
+        target_img = ""
+        skip_next = False
+        for i in range(2, len(tokens)):
+            if skip_next:
+                skip_next = False
+                continue
+            tok = tokens[i]
+            if tok in ("-p", "--name", "-e", "-v", "--port", "--publish", "--net", "--network", "--restart", "-u", "--user", "-w", "--workdir"):
+                skip_next = True
+                continue
+            if tok.startswith("-"):
+                continue
+            target_img = tok.strip()
+            break
+
+        repo_name = target_img.split(":")[0] if target_img else ""
+        if repo_name and repo_name != "hello-world":
+            image_exists = (repo_name in state.get("images", {}))
+            if not image_exists and has_real_docker:
+                try:
+                    insp = subprocess.run(f"docker image inspect {repo_name}", shell=True, capture_output=True, text=True, timeout=5)
+                    if insp.returncode == 0:
+                        image_exists = True
+                        state["images"][repo_name] = {"repo": repo_name, "tag": "latest"}
+                except Exception:
+                    pass
+            if not image_exists:
+                out = f"Unable to find image '{target_img}:latest' locally\ndocker: Error response from daemon: No such image: {target_img}:latest.\nRun 'docker build -t {target_img} .' first!"
+                return jsonify({"ok": False, "output": out})
 
     if cmd_lower.startswith("docker") and has_real_docker:
         try:
@@ -751,30 +926,70 @@ def api_terminal_exec():
             if "system prune" in cmd_lower and "-f" not in cmd_lower and "--force" not in cmd_lower:
                 exec_cmd = cmd + " -f"
 
-            # Handle placeholder <container_id> cleanly to prevent Windows Shell redirect error
+            # Avoid host port 5000 hijacking: The Virtual Lab platform itself runs on port 5000.
+            # Map student container host port 5000 to 5001 so platform remains accessible.
+            if "5000:5000" in exec_cmd:
+                exec_cmd = exec_cmd.replace("5000:5000", "5001:5000")
+
+            # Handle docker compose running in background
+            if ("docker compose up" in cmd_lower or "docker-compose up" in cmd_lower) and "-d" not in cmd_lower:
+                exec_cmd = exec_cmd + " -d"
+
+            # Proactive network resolution: If creating network that already exists, succeed immediately
+            if "network create" in cmd_lower:
+                net_tokens = cmd.split()
+                net_name = net_tokens[-1] if len(net_tokens) >= 4 else "app-net"
+                net_chk = subprocess.run(f"docker network inspect {net_name}", shell=True, capture_output=True, text=True, timeout=5)
+                if net_chk.returncode == 0:
+                    return jsonify({"ok": True, "output": f"Network '{net_name}' is active and ready."})
+
+            # Proactive container name collision avoidance
+            for named_c in ["sum-microservice", "sum-client", "hello-web"]:
+                if f"--name {named_c}" in exec_cmd or f"--name={named_c}" in exec_cmd:
+                    subprocess.run(f"docker rm -f {named_c}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+
+            # Handle placeholder <container_id> validation
             if "<container_id>" in cmd_lower or "<container" in cmd_lower or ("<" in cmd and ">" in cmd):
-                ps_res = subprocess.run("docker ps -a --format \"{{.ID}}\"", shell=True, capture_output=True, text=True)
-                container_ids = [line.strip() for line in ps_res.stdout.splitlines() if line.strip()]
-                if container_ids:
-                    real_id = container_ids[0]
-                    exec_cmd = re.sub(r'<[^>]+>', real_id, exec_cmd)
-                    res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
-                else:
-                    return jsonify({"ok": True, "output": "e7a9c31b8f42", "docker_engine": "local"})
+                return jsonify({
+                    "ok": False,
+                    "output": "docker: Error response from daemon: No such container. Please replace '<container_id>' with a valid Container ID (e.g. from 'docker ps -a')."
+                })
             else:
-                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=40)
             
-            # Auto-healing: If port allocation failed (e.g. port 8080 already bound by old container), auto-free port 8080 and retry!
-            if res.returncode != 0 and ("port is already allocated" in res.stderr.lower() or "port is already allocated" in res.stdout.lower()):
-                ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True)
+            # Special auto-healing for docker network create if already exists
+            err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
+            if "already exists" in err_lower and "network" in cmd_lower:
+                return jsonify({"ok": True, "output": "Network 'app-net' already exists and is active."})
+
+            # Auto-healing: If port allocation failed or address already in use, free port and retry
+            if res.returncode != 0 and ("port is already allocated" in err_lower or "address already in use" in err_lower):
+                ps_res = subprocess.run("docker ps -a --format \"{{.ID}} {{.Ports}}\"", shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
                 if ps_res.stdout:
                     for line in ps_res.stdout.splitlines():
-                        if "8080" in line:
+                        if "8080" in line or "80" in line or "5000" in line or "5001" in line:
                             cnt_id = line.split()[0]
-                            subprocess.run(f"docker rm -f {cnt_id}", shell=True, capture_output=True)
-                res = subprocess.run(cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, timeout=30)
+                            subprocess.run(f"docker rm -f {cnt_id}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
 
-            is_ok = (res.returncode == 0)
+            # Auto-healing: If container name already in use, remove conflicting container and retry
+            if res.returncode != 0 and "is already in use by container" in err_lower:
+                for cname in ["sum-microservice", "sum-client", "hello-web"]:
+                    if cname in err_lower or cname in cmd_lower:
+                        subprocess.run(f"docker rm -f {cname}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+                match = re.search(r'is already in use by container "?([a-f0-9]+)"?', err_lower)
+                if match:
+                    old_id = match.group(1)
+                    subprocess.run(f"docker rm -f {old_id}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                err_lower = ((res.stderr or "") + (res.stdout or "")).lower()
+
+            # Auto-healing: If Windows Docker Desktop meta.json file lock occurred, sleep briefly and retry
+            if res.returncode != 0 and "is being used by another process" in err_lower:
+                time.sleep(1.2)
+                res = subprocess.run(exec_cmd, cwd=workspace_dir, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+
             stdout_text = res.stdout.strip() if res.stdout else ""
             stderr_text = res.stderr.strip() if res.stderr else ""
             
@@ -786,6 +1001,24 @@ def api_terminal_exec():
                 out = stdout_text
             else:
                 out = ""
+
+            err_check = out.lower()
+            has_fatal_err = any(err_sig in err_check for err_sig in [
+                "error response from daemon",
+                "cannot connect to the docker daemon",
+                "failed to solve",
+                "failed to build",
+                "no such image",
+                "no such container",
+                "unable to find image",
+                "is not recognized as an internal or external command",
+                "command not found",
+                "executable file not found",
+                "unknown shorthand flag",
+                "unknown flag",
+                "fatal:"
+            ])
+            is_ok = (res.returncode == 0) and not has_fatal_err
 
             if is_ok and not out:
                 out = "Command executed successfully."
@@ -812,6 +1045,18 @@ def api_terminal_exec():
                         "created": "Just now",
                         "size": "13.3kB"
                     }
+                    if not out or out.strip() == "Command executed successfully.":
+                        out = (
+                            f"[+] Building 1.4s (6/6) FINISHED\n"
+                            f" => [internal] load build definition from Dockerfile\n"
+                            f" => => transferring dockerfile: 210B\n"
+                            f" => [1/4] FROM docker.io/library/python:3.9-slim\n"
+                            f" => [2/4] WORKDIR /app\n"
+                            f" => [3/4] COPY requirements.txt . && RUN pip install -r requirements.txt\n"
+                            f" => [4/4] COPY app.py .\n"
+                            f" => exporting to image {repo_name}:{tag_ver}\n"
+                            f"Successfully built docker image {repo_name}:{tag_ver}"
+                        )
                 elif cmd_lower.startswith("docker run"):
                     tokens = cmd.split()
                     target_img = ""
@@ -855,283 +1100,18 @@ def api_terminal_exec():
             # Seamless fallback to Virtual Docker Simulator if system Docker encounters an issue
             pass
 
-    # Intercept all Docker CLI commands directly in Python for deterministic, strict per-student validation
-    if cmd_lower.startswith("docker"):
-        if cmd_lower.startswith("docker build"):
-            df_path = os.path.join(workspace_dir, "Dockerfile")
-            if not os.path.exists(df_path) or os.path.getsize(df_path) == 0:
-                out = "ERROR: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory\nPlease click + in VS Code Explorer to create a Dockerfile first!"
-                return jsonify({"ok": False, "output": out})
-
-            tag_name = ""
-            tokens = cmd.split()
-            for i, tok in enumerate(tokens):
-                if tok in ("-t", "--tag") and i + 1 < len(tokens):
-                    tag_name = tokens[i + 1].strip()
-                    break
-                elif tok.startswith("-t=") or tok.startswith("--tag="):
-                    tag_name = tok.split("=", 1)[1].strip()
-                    break
-            
-            if not tag_name:
-                tag_name = "hello-web:latest"
-
-            repo_name = tag_name.split(":")[0]
-            tag_ver = tag_name.split(":")[1] if ":" in tag_name else "latest"
-            img_id = hashlib.md5(tag_name.encode()).hexdigest()[:12]
-
-            state["images"][repo_name] = {
-                "repo": repo_name,
-                "tag": tag_ver,
-                "id": img_id,
-                "created": "Just now",
-                "size": "13.3kB"
-            }
-
-            out = (
-                f"[+] Building 1.2s (4/4) FINISHED\n"
-                f" => [internal] load build definition from Dockerfile\n"
-                f" => => transferring dockerfile: 210B\n"
-                f" => [internal] load .dockerignore\n"
-                f" => [1/2] FROM docker.io/library/nginx:alpine\n"
-                f" => [2/2] COPY index.html /usr/share/nginx/html/index.html\n"
-                f" => exporting to image {repo_name}:{tag_ver}\n"
-                f"Successfully built docker image {repo_name}:{tag_ver}"
-            )
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker run"):
-            tokens = cmd.split()
-            target_img = ""
-            skip_next = False
-            for i in range(2, len(tokens)):
-                if skip_next:
-                    skip_next = False
-                    continue
-                tok = tokens[i]
-                if tok in ("-p", "--name", "-e", "-v", "--port", "--publish", "--net", "--network", "--restart", "-u", "--user", "-w", "--workdir"):
-                    skip_next = True
-                    continue
-                if tok.startswith("-"):
-                    continue
-                target_img = tok.strip()
-                break
-
-            repo_name = target_img.split(":")[0] if target_img else ""
-            if not repo_name:
-                return jsonify({"ok": False, "output": '"docker run" requires at least 1 argument.\nSee \'docker run --help\'.'})
-
-            was_image_present = (repo_name in state["images"])
-            is_hello_world = (repo_name == "hello-world")
-
-            # If image is not local, auto-pull / register image from registry (standard Docker behavior)
-            if not was_image_present:
-                tag_ver = target_img.split(":")[1] if ":" in target_img else "latest"
-                img_id = hashlib.md5(target_img.encode()).hexdigest()[:12]
-                state["images"][repo_name] = {
-                    "repo": repo_name,
-                    "tag": tag_ver,
-                    "id": img_id,
-                    "created": "Just now",
-                    "size": "13.3kB"
-                }
-
-            # Create container instance
-            cnt_id = hashlib.md5((target_img + str(time.time())).encode()).hexdigest()[:12]
-            cnt_name = repo_name + "-container"
-            state["containers"].append({
-                "id": cnt_id,
-                "image": repo_name,
-                "command": '"/hello"' if is_hello_world else '"/docker-entrypoint.…"',
-                "created": "Just now",
-                "status": "Exited (0) Just now" if is_hello_world else "Up 1 minute",
-                "ports": "" if is_hello_world else "0.0.0.0:8080->80/tcp",
-                "name": cnt_name
-            })
-
-            if is_hello_world:
-                pull_prefix = ""
-                if not was_image_present:
-                    pull_prefix = (
-                        "Unable to find image 'hello-world:latest' locally\n"
-                        "latest: Pulling from library/hello-world\n"
-                        "c1ec31b23086: Pull complete\n"
-                        "Digest: sha256:7d92237b5100e2802c89288e285a85532a76f2812480373\n"
-                        "Status: Downloaded newer image for hello-world:latest\n\n"
-                    )
-                hello_msg = (
-                    "Hello from Docker!\n"
-                    "This message shows that your installation appears to be working correctly.\n\n"
-                    "To generate this message, Docker took the following steps:\n"
-                    " 1. The Docker client contacted the Docker daemon.\n"
-                    " 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.\n"
-                    "    (amd64)\n"
-                    " 3. The Docker daemon created a new container from that image which runs the\n"
-                    "    executable that produces the output you are currently reading.\n"
-                    " 4. The Docker daemon streamed that output to the Docker client, which sent it\n"
-                    "    to your terminal.\n\n"
-                    "To run an interactive container, try:\n"
-                    " $ docker run -it ubuntu bash\n\n"
-                    "For more examples and ideas, visit:\n"
-                    " https://docs.docker.com/get-started/"
-                )
-                return jsonify({"ok": True, "output": pull_prefix + hello_msg})
-
-            full_hash = cnt_id * 5
-            pull_prefix = ""
-            if not was_image_present:
-                tag_ver = target_img.split(":")[1] if ":" in target_img else "latest"
-                pull_prefix = (
-                    f"Unable to find image '{target_img}' locally\n"
-                    f"{tag_ver}: Pulling from library/{repo_name}\n"
-                    f"c1ec31b23086: Pull complete\n"
-                    f"Digest: sha256:{cnt_id}7b92237b5100e2802c89288e285a85532a76f2812480373\n"
-                    f"Status: Downloaded newer image for {repo_name}:{tag_ver}\n\n"
-                )
-            out = f"{pull_prefix}{full_hash}\nContainer '{cnt_name}' (Image: {repo_name}) launched in background on http://localhost:8080!"
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker pull"):
-            tokens = cmd.split()
-            pulled_img = "hello-world"
-            for tok in tokens[2:]:
-                if not tok.startswith("-"):
-                    pulled_img = tok.strip()
-                    break
-
-            repo_name = pulled_img.split(":")[0]
-            tag_ver = pulled_img.split(":")[1] if ":" in pulled_img else "latest"
-            img_id = hashlib.md5(pulled_img.encode()).hexdigest()[:12]
-
-            state["images"][repo_name] = {
-                "repo": repo_name,
-                "tag": tag_ver,
-                "id": img_id,
-                "created": "Just now",
-                "size": "13.3kB"
-            }
-
-            out = (
-                f"Using default tag: {tag_ver}\n"
-                f"{tag_ver}: Pulling from library/{repo_name}\n"
-                f"c1ec31b23086: Pull complete\n"
-                f"Digest: sha256:{img_id}7b92237b5100e2802c89288e285a85532a76f2812480373\n"
-                f"Status: Downloaded newer image for {repo_name}:{tag_ver}\n"
-                f"docker.io/library/{repo_name}:{tag_ver}"
-            )
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker images"):
-            images_db = state["images"]
-            lines = [f"{'REPOSITORY':<20}{'TAG':<10}{'IMAGE ID':<15}{'CREATED':<15}{'SIZE'}"]
-            if not images_db:
-                out = "REPOSITORY           TAG        IMAGE ID       CREATED        SIZE"
-            else:
-                for img in images_db.values():
-                    lines.append(f"{img['repo']:<20}{img['tag']:<10}{img['id']:<15}{img['created']:<15}{img['size']}")
-                out = "\n".join(lines)
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker ps"):
-            containers_db = state["containers"]
-            lines = [f"{'CONTAINER ID':<15}{'IMAGE':<20}{'COMMAND':<25}{'CREATED':<15}{'STATUS':<15}{'PORTS':<22}{'NAMES'}"]
-            if not containers_db:
-                out = "CONTAINER ID   IMAGE   COMMAND   CREATED   STATUS   PORTS   NAMES"
-            else:
-                for cnt in containers_db:
-                    lines.append(f"{cnt['id']:<15}{cnt['image']:<20}{cnt['command']:<25}{cnt['created']:<15}{cnt['status']:<15}{cnt['ports']:<22}{cnt['name']}")
-                out = "\n".join(lines)
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker stop"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            found_id = ""
-            for cnt in state["containers"]:
-                if not target or target in (cnt["id"], cnt["name"], cnt["image"]) or target.startswith("<"):
-                    cnt["status"] = "Exited (0) Just now"
-                    found_id = cnt["id"]
-                    break
-            out = found_id if found_id else (target if (target and not target.startswith("<")) else "e7a9c31b8f42")
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker start"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            found_id = ""
-            for cnt in state["containers"]:
-                if not target or target in (cnt["id"], cnt["name"], cnt["image"]) or target.startswith("<"):
-                    cnt["status"] = "Up 1 minute"
-                    found_id = cnt["id"]
-                    break
-            out = found_id if found_id else (target if (target and not target.startswith("<")) else "e7a9c31b8f42")
-            return jsonify({"ok": True, "output": out})
-
-        elif "system prune" in cmd_lower or "docker prune" in cmd_lower:
-            state["containers"] = [c for c in state["containers"] if "Exited" not in c.get("status", "")]
-            out = (
-                "WARNING! This will remove:\n"
-                "  - all stopped containers\n"
-                "  - all networks not used by at least one container\n"
-                "  - all dangling images\n"
-                "  - all dangling build cache\n\n"
-                "Deleted Containers:\n"
-                "e7a9c31b8f42d90a12f5a6b0c9d8e7f6a5b4c3d2e1\n\n"
-                "Total reclaimed space: 14.8MB"
-            )
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker rmi") or cmd_lower.startswith("docker image rm"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            repo_name = target.split(":")[0] if target else ""
-            is_force = "-f" in tokens or "--force" in tokens
-
-            if not repo_name or repo_name not in state["images"]:
-                return jsonify({"ok": False, "output": f"Error response from daemon: No such image: {target}:latest"})
-
-            # Check if container is running from this image
-            using_containers = [c for c in state["containers"] if c["image"] == repo_name]
-            if using_containers and not is_force:
-                cnt_id = using_containers[0]["id"]
-                out = f"Error response from daemon: conflict: unable to remove repository reference \"{repo_name}\" (must force -f) - container {cnt_id} is using its referenced image"
-                return jsonify({"ok": False, "output": out})
-
-            # Remove image
-            img_data = state["images"].pop(repo_name, {})
-            if is_force and using_containers:
-                state["containers"] = [c for c in state["containers"] if c["image"] != repo_name]
-
-            out = f"Untagged: {repo_name}:latest\nDeleted: sha256:{img_data.get('id', 'd2c45389635d')}7b92237b5100e2802c89288e285a85532a76f2812480373"
-            return jsonify({"ok": True, "output": out})
-
-        elif cmd_lower.startswith("docker rm") or cmd_lower.startswith("docker container rm"):
-            tokens = cmd.split()
-            target = tokens[-1] if len(tokens) >= 3 else ""
-            is_force = "-f" in tokens or "--force" in tokens
-            
-            new_containers = []
-            removed = []
-            for cnt in state["containers"]:
-                if target and (target in cnt["id"] or target in cnt["name"] or target in cnt["image"] or target.startswith("<")):
-                    removed.append(cnt["id"])
-                else:
-                    new_containers.append(cnt)
-            
-            if removed:
-                state["containers"] = new_containers
-                return jsonify({"ok": True, "output": "\n".join(removed)})
-            elif state["containers"]:
-                cnt = state["containers"].pop(0)
-                return jsonify({"ok": True, "output": cnt["id"]})
-            else:
-                return jsonify({"ok": True, "output": "e7a9c31b8f42"})
-
-        elif cmd_lower.startswith("docker info"):
-            cnt_count = len(state["containers"])
-            img_count = len(state["images"])
-            out = f"Client:\n Context:    default\n Debug Mode: false\n\nServer:\n Containers: {cnt_count}\n  Running: {cnt_count}\n  Paused: 0\n  Stopped: 0\n Images: {img_count}\n Server Version: 27.3.1\n Storage Driver: overlay2"
-            return jsonify({"ok": True, "output": out})
+    # Require real Docker Desktop daemon to be running for all Docker CLI execution
+    if cmd_lower.startswith("docker") and not has_real_docker:
+        auto_start_host_docker(force=True)
+        out = (
+            "NOTICE: Docker Desktop is not currently active.\n"
+            "----------------------------------------------------------------------\n"
+            "We have automatically triggered the startup of Docker Desktop.\n"
+            "Please allow 10-20 seconds for the Docker daemon to initialize in\n"
+            "the system tray, and then re-run your command.\n"
+            "----------------------------------------------------------------------"
+        )
+        return jsonify({"ok": False, "output": out})
 
     # Run non-docker command in subshell with timeout inside workspace directory
     try:
@@ -1166,6 +1146,95 @@ def api_terminal_exec():
 # ---------------------------------------------------------------------------
 @app.route("/", methods=["GET"])
 def index():
+    student_id = session.get("student_id")
+    role = session.get("role")
+
+    score_data = {
+        "is_logged_in": False,
+        "student_name": "",
+        "overall_pct": 0,
+        "level": "Novice Level",
+        "skills": [
+            {"id": "l1_s1", "title": "Virtualization & Specs Audit (Lab 1)", "done": False},
+            {"id": "l1_s2", "title": "Running First Container", "done": False},
+            {"id": "l2_s1", "title": "Writing Custom Nginx Dockerfiles (Lab 2)", "done": False},
+            {"id": "l2_s2", "title": "Port Binding & Mapping", "done": False},
+            {"id": "l3_s1", "title": "Detached Execution Mode (Lab 3)", "done": False},
+            {"id": "l3_s2", "title": "System Resource Pruning", "done": False},
+            {"id": "l4_s1", "title": "Flask Microservice API Packaging (Lab 4)", "done": False},
+            {"id": "l4_s2", "title": "Docker Hub Authentication & Image Registry Push", "done": False},
+            {"id": "l5_s1", "title": "Multi-Container User-Defined Networking (Lab 5)", "done": False},
+            {"id": "l5_s2", "title": "Inter-Container HTTP Service Discovery", "done": False},
+            {"id": "l6_s1", "title": "Docker Compose Multi-Service Stacks (Lab 6)", "done": False},
+            {"id": "l6_s2", "title": "Dynamic Horizontal Load Replica Scaling", "done": False},
+        ]
+    }
+
+    if role == "student" and student_id:
+        try:
+            student = get_student(student_id)
+            p1 = get_progress(student_id, 1)
+            p2 = get_progress(student_id, 2)
+            p3 = get_progress(student_id, 3)
+            p4 = get_progress(student_id, 4)
+            p5 = get_progress(student_id, 5)
+            p6 = get_progress(student_id, 6)
+
+            steps1 = safe_parse_steps(p1)
+            v1 = bool(p1["verification_passed"]) if p1 else False
+
+            steps2 = safe_parse_steps(p2)
+            v2 = bool(p2["verification_passed"]) if p2 else False
+
+            steps3 = safe_parse_steps(p3)
+            v3 = bool(p3["verification_passed"]) if p3 else False
+
+            steps4 = safe_parse_steps(p4)
+            v4 = bool(p4["verification_passed"]) if p4 else False
+
+            steps5 = safe_parse_steps(p5)
+            v5 = bool(p5["verification_passed"]) if p5 else False
+
+            steps6 = safe_parse_steps(p6)
+            v6 = bool(p6["verification_passed"]) if p6 else False
+
+            total_done = len(steps1) + len(steps2) + len(steps3) + len(steps4) + len(steps5) + len(steps6)
+            total_possible = len(LAB1_STEPS) + len(LAB2_STEPS) + len(LAB3_STEPS) + len(LAB4_STEPS) + len(LAB5_STEPS) + len(LAB6_STEPS)
+            score_pct = int(round((total_done / total_possible) * 100)) if total_possible > 0 else 0
+
+            level = "Novice Level"
+            if score_pct >= 80:
+                level = "Master Docker Engineer"
+            elif score_pct >= 50:
+                level = "Advanced Level"
+            elif score_pct >= 25:
+                level = "Practitioner Level"
+
+            score_data["is_logged_in"] = True
+            score_data["student_name"] = student["name"] if (student and "name" in student and student["name"]) else str(student_id)
+            score_data["overall_pct"] = score_pct
+            score_data["level"] = level
+
+            score_data["skills"][0]["done"] = len(steps1) >= 1 or v1
+            score_data["skills"][1]["done"] = len(steps1) >= len(LAB1_STEPS) or v1
+            score_data["skills"][2]["done"] = len(steps2) >= 1 or v2
+            score_data["skills"][3]["done"] = len(steps2) >= len(LAB2_STEPS) or v2
+            score_data["skills"][4]["done"] = len(steps3) >= 1 or v3
+            score_data["skills"][5]["done"] = len(steps3) >= len(LAB3_STEPS) or v3
+            score_data["skills"][6]["done"] = len(steps4) >= 1 or v4
+            score_data["skills"][7]["done"] = len(steps4) >= len(LAB4_STEPS) or v4
+            score_data["skills"][8]["done"] = len(steps5) >= 1 or v5
+            score_data["skills"][9]["done"] = len(steps5) >= len(LAB5_STEPS) or v5
+            score_data["skills"][10]["done"] = len(steps6) >= 1 or v6
+            score_data["skills"][11]["done"] = len(steps6) >= len(LAB6_STEPS) or v6
+        except Exception as e:
+            print(f"Warning: Failed to parse student score data in index route: {e}")
+
+    return render_template("home.html", score_data=score_data)
+
+
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
     if session.get("role") == "student":
         return redirect(url_for("student_dashboard"))
     if session.get("role") == "faculty":
@@ -1304,20 +1373,28 @@ def change_password():
 def student_dashboard():
     student = get_student(session["student_id"])
     progress1 = get_progress(session["student_id"], 1)
-    steps_done1 = json.loads(progress1["steps_completed"]) if progress1 else []
+    steps_done1 = safe_parse_steps(progress1)
     verified1 = bool(progress1["verification_passed"]) if progress1 else False
 
     progress2 = get_progress(session["student_id"], 2)
-    steps_done2 = json.loads(progress2["steps_completed"]) if progress2 else []
+    steps_done2 = safe_parse_steps(progress2)
     verified2 = bool(progress2["verification_passed"]) if progress2 else False
 
     progress3 = get_progress(session["student_id"], 3)
-    steps_done3 = json.loads(progress3["steps_completed"]) if progress3 else []
+    steps_done3 = safe_parse_steps(progress3)
     verified3 = bool(progress3["verification_passed"]) if progress3 else False
 
     progress4 = get_progress(session["student_id"], 4)
-    steps_done4 = json.loads(progress4["steps_completed"]) if progress4 else []
+    steps_done4 = safe_parse_steps(progress4)
     verified4 = bool(progress4["verification_passed"]) if progress4 else False
+
+    progress5 = get_progress(session["student_id"], 5)
+    steps_done5 = safe_parse_steps(progress5)
+    verified5 = bool(progress5["verification_passed"]) if progress5 else False
+
+    progress6 = get_progress(session["student_id"], 6)
+    steps_done6 = safe_parse_steps(progress6)
+    verified6 = bool(progress6["verification_passed"]) if progress6 else False
 
     return render_template(
         "student_dashboard.html",
@@ -1334,6 +1411,12 @@ def student_dashboard():
         steps_done4=steps_done4,
         total_steps4=len(LAB4_STEPS),
         verified4=verified4,
+        steps_done5=steps_done5,
+        total_steps5=len(LAB5_STEPS),
+        verified5=verified5,
+        steps_done6=steps_done6,
+        total_steps6=len(LAB6_STEPS),
+        verified6=verified6,
     )
 
 
@@ -1407,15 +1490,21 @@ def api_lab4_verify():
     data = request.get_json(force=True) or {}
     tested = data.get("tested", {})
     
-    req_keys = ["build", "run"]
+    req_keys = ["app", "dockerfile", "req", "build", "run"]
     missing = [k for k in req_keys if not tested.get(k)]
     
     if missing:
         missing_labels = []
+        if not tested.get("app"):
+            missing_labels.append("Create 'app.py' Flask microservice logic")
+        if not tested.get("dockerfile"):
+            missing_labels.append("Configure 'Dockerfile' for Python container")
+        if not tested.get("req"):
+            missing_labels.append("Create 'requirements.txt' with flask dependency")
         if not tested.get("build"):
             missing_labels.append("Run 'docker build -t sum-microservice .' in terminal")
         if not tested.get("run"):
-            missing_labels.append("Run 'docker run -d -p 8080:80 sum-microservice' in terminal")
+            missing_labels.append("Run 'docker run -d -p 5000:5000 sum-microservice' in terminal")
             
         msg = "Verification failed! You must complete all required tasks:\n" + "\n".join(f"• {lbl}" for lbl in missing_labels)
         return jsonify({"ok": False, "message": msg})
@@ -1440,30 +1529,286 @@ def api_lab4_verify():
         )
     conn.commit()
     conn.close()
-    return jsonify({"ok": True, "message": "Lab 4 Verification Passed! Sum Microservice created, containerized, and verified successfully."})
+    return jsonify({"ok": True})
 
 
-@app.route("/api/calculator/sum", methods=["GET", "POST"])
-def api_calculator_sum():
-    """Live Sum Microservice API Endpoint for Lab 4 container testing."""
-    if request.method == "POST":
-        data = request.get_json(silent=True) or request.form
-        a_val = data.get("a", "")
-        b_val = data.get("b", "")
+# ---------------------------------------------------------------------------
+# Lab 5: Multi-Container Microservice & Client Application Network Routes
+# ---------------------------------------------------------------------------
+@app.route("/student/lab5")
+@login_required_student
+def lab5():
+    student_id = session["student_id"]
+    progress4 = get_progress(student_id, 4)
+    verified4 = bool(progress4["verification_passed"]) if progress4 else False
+    if not verified4:
+        flash("🔒 Prerequisite Locked: You must complete and verify Lab 4 before accessing Lab 5.", "error")
+        return redirect(url_for("student_dashboard"))
+
+    student = get_student(student_id)
+    progress = get_progress(student_id, 5)
+    steps_done = json.loads(progress["steps_completed"]) if progress else []
+    verified = bool(progress["verification_passed"]) if progress else False
+    return render_template(
+        "lab5.html",
+        student=student,
+        steps=LAB5_STEPS,
+        steps_done=steps_done,
+        verified=verified,
+    )
+
+
+@app.route("/api/lab5/step", methods=["POST"])
+@login_required_student
+def api_lab5_step():
+    student_id = session["student_id"]
+    progress4 = get_progress(student_id, 4)
+    if not progress4 or not progress4["verification_passed"]:
+        return jsonify({"ok": False, "message": "Prerequisite required: Complete Lab 4 first."})
+
+    data = request.get_json(force=True)
+    step_id = data.get("step_id")
+
+    conn = get_db()
+    now = datetime.utcnow().isoformat()
+    row = conn.execute(
+        "SELECT * FROM lab_progress WHERE student_id=? AND lab_number=5", (student_id,)
+    ).fetchone()
+
+    if row is None:
+        steps = [step_id]
+        conn.execute(
+            "INSERT INTO lab_progress (student_id, lab_number, steps_completed, updated_at) VALUES (?,5,?,?)",
+            (student_id, json.dumps(steps), now),
+        )
     else:
-        a_val = request.args.get("a", "")
-        b_val = request.args.get("b", "")
+        steps = json.loads(row["steps_completed"])
+        if step_id not in steps:
+            steps.append(step_id)
+        conn.execute(
+            "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=5",
+            (json.dumps(steps), now, student_id),
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
-    if a_val == "" or b_val == "":
-        return jsonify({"sum": 0})
+
+@app.route("/api/lab5/verify", methods=["POST"])
+@login_required_student
+def api_lab5_verify():
+    student_id = session["student_id"]
+    progress4 = get_progress(student_id, 4)
+    if not progress4 or not progress4["verification_passed"]:
+        return jsonify({"ok": False, "message": "Prerequisite required: Complete Lab 4 first."})
+
+    data = request.get_json(force=True) or {}
+    tested = data.get("tested", {})
+    
+    req_keys = ["app", "client", "df_micro", "df_client", "network", "run_micro", "run_client", "test_net"]
+    missing = [k for k in req_keys if not tested.get(k)]
+    
+    if missing:
+        missing_labels = []
+        if not tested.get("app"):
+            missing_labels.append("Create 'app.py' Flask sum microservice logic")
+        if not tested.get("client"):
+            missing_labels.append("Create 'client.py' Client application logic")
+        if not tested.get("df_micro"):
+            missing_labels.append("Create 'Dockerfile.microservice' for Microservice container")
+        if not tested.get("df_client"):
+            missing_labels.append("Create 'Dockerfile.client' for Client application container")
+        if not tested.get("network"):
+            missing_labels.append("Run 'docker network create app-net' in terminal")
+        if not tested.get("run_micro"):
+            missing_labels.append("Run microservice container on '--network app-net'")
+        if not tested.get("run_client"):
+            missing_labels.append("Run client container on '--network app-net'")
+        if not tested.get("test_net"):
+            missing_labels.append("Verify client application calling sum-microservice over Docker network")
+            
+        msg = "Verification failed! You must complete all required tasks:\n" + "\n".join(f"• {lbl}" for lbl in missing_labels)
+        return jsonify({"ok": False, "message": msg})
+
+    conn = get_db()
+    now = datetime.utcnow().isoformat()
+    all_steps = [s["id"] for s in LAB5_STEPS]
+
+    row = conn.execute(
+        "SELECT * FROM lab_progress WHERE student_id=? AND lab_number=5", (student_id,)
+    ).fetchone()
+
+    if row is None:
+        conn.execute(
+            "INSERT INTO lab_progress (student_id, lab_number, steps_completed, verification_passed, completed_at, updated_at) VALUES (?,5,?,1,?,?)",
+            (student_id, json.dumps(all_steps), now, now),
+        )
+    else:
+        conn.execute(
+            "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=5",
+            (json.dumps(all_steps), now, now, student_id),
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# Lab 6: Microservice Load Scaling & Replica Management Routes
+# ---------------------------------------------------------------------------
+@app.route("/student/lab6")
+@login_required_student
+def lab6():
+    student_id = session["student_id"]
+    progress5 = get_progress(student_id, 5)
+    verified5 = bool(progress5["verification_passed"]) if progress5 else False
+    if not verified5:
+        flash("🔒 Prerequisite Locked: You must complete and verify Lab 5 before accessing Lab 6.", "error")
+        return redirect(url_for("student_dashboard"))
+
+    student = get_student(student_id)
+    progress = get_progress(student_id, 6)
+    steps_done = json.loads(progress["steps_completed"]) if progress else []
+    verified = bool(progress["verification_passed"]) if progress else False
+    return render_template(
+        "lab6.html",
+        student=student,
+        steps=LAB6_STEPS,
+        steps_done=steps_done,
+        verified=verified,
+    )
+
+
+@app.route("/api/lab6/step", methods=["POST"])
+@login_required_student
+def api_lab6_step():
+    student_id = session["student_id"]
+    progress5 = get_progress(student_id, 5)
+    if not progress5 or not progress5["verification_passed"]:
+        return jsonify({"ok": False, "message": "Prerequisite required: Complete Lab 5 first."})
+
+    data = request.get_json(force=True)
+    step_id = data.get("step_id")
+
+    conn = get_db()
+    now = datetime.utcnow().isoformat()
+    row = conn.execute(
+        "SELECT * FROM lab_progress WHERE student_id=? AND lab_number=6", (student_id,)
+    ).fetchone()
+
+    if row is None:
+        steps = [step_id]
+        conn.execute(
+            "INSERT INTO lab_progress (student_id, lab_number, steps_completed, updated_at) VALUES (?,6,?,?)",
+            (student_id, json.dumps(steps), now),
+        )
+    else:
+        steps = json.loads(row["steps_completed"])
+        if step_id not in steps:
+            steps.append(step_id)
+        conn.execute(
+            "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=6",
+            (json.dumps(steps), now, student_id),
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/lab6/verify", methods=["POST"])
+@login_required_student
+def api_lab6_verify():
+    student_id = session["student_id"]
+    progress5 = get_progress(student_id, 5)
+    if not progress5 or not progress5["verification_passed"]:
+        return jsonify({"ok": False, "message": "Prerequisite required: Complete Lab 5 first."})
+
+    data = request.get_json(force=True) or {}
+    tested = data.get("tested", {})
+    
+    req_keys = ["app", "dockerfile", "compose", "deploy", "scale_up", "scale_down"]
+    missing = [k for k in req_keys if not tested.get(k)]
+    
+    if missing:
+        missing_labels = []
+        if not tested.get("app"):
+            missing_labels.append("Write 'app.py' microservice logic")
+        if not tested.get("dockerfile"):
+            missing_labels.append("Configure 'Dockerfile' for Python app")
+        if not tested.get("compose"):
+            missing_labels.append("Configure 'docker-compose.yml' service stack")
+        if not tested.get("deploy"):
+            missing_labels.append("Run 'docker compose up -d' stack deployment")
+        if not tested.get("scale_up"):
+            missing_labels.append("Execute 'docker compose up -d --scale sum-microservice=3' to scale up")
+        if not tested.get("scale_down"):
+            missing_labels.append("Execute 'docker compose up -d --scale sum-microservice=1' to scale down")
+            
+        msg = "Verification failed! You must complete all required tasks:\n" + "\n".join(f"• {lbl}" for lbl in missing_labels)
+        return jsonify({"ok": False, "message": msg})
+
+    conn = get_db()
+    now = datetime.utcnow().isoformat()
+    all_steps = [s["id"] for s in LAB6_STEPS]
+
+    row = conn.execute(
+        "SELECT * FROM lab_progress WHERE student_id=? AND lab_number=6", (student_id,)
+    ).fetchone()
+
+    if row is None:
+        conn.execute(
+            "INSERT INTO lab_progress (student_id, lab_number, steps_completed, verification_passed, completed_at, updated_at) VALUES (?,6,?,1,?,?)",
+            (student_id, json.dumps(all_steps), now, now),
+        )
+    else:
+        conn.execute(
+            "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=6",
+            (json.dumps(all_steps), now, now, student_id),
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/add", methods=["GET", "POST"])
+@app.route("/api/calculator/add", methods=["GET", "POST"])
+@app.route("/api/calculator/sum/<path:a_val>/<path:b_val>", methods=["GET", "POST"])
+@app.route("/api/calculator/sum", methods=["GET", "POST"])
+def api_calculator_sum(a_val=None, b_val=None):
+    """Live Sum Microservice API Endpoint for Lab 4 container testing."""
+    student_id = session.get("student_id", "guest")
+    app_path = os.path.join(app.root_path, "workspaces", str(student_id), "app.py")
+    
+    app_has_code = False
+    if os.path.exists(app_path):
+        try:
+            with open(app_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content and "flask" in content.lower():
+                    app_has_code = True
+        except Exception:
+            pass
+
+    if a_val is None or b_val is None:
+        if request.method == "POST":
+            data = request.get_json(silent=True) or request.form
+            a_val = data.get("a")
+            b_val = data.get("b")
+        else:
+            a_val = request.args.get("a")
+            b_val = request.args.get("b")
 
     try:
         a = float(a_val)
         b = float(b_val)
         res_sum = a + b
-        return jsonify({"sum": int(res_sum) if res_sum.is_integer() else res_sum})
+        return jsonify({
+            "number1": a,
+            "number2": b,
+            "sum": int(res_sum) if res_sum.is_integer() else res_sum
+        })
     except (ValueError, TypeError):
-        return jsonify({"sum": 0})
+        return jsonify({"error": "Please provide two valid numbers"}), 400
 
 
 @app.route("/student/lab3")
@@ -1776,6 +2121,8 @@ def faculty_dashboard():
     lab2_completed_count = 0
     lab3_completed_count = 0
     lab4_completed_count = 0
+    lab5_completed_count = 0
+    lab6_completed_count = 0
 
     for s in students:
         sid = s["student_id"]
@@ -1783,38 +2130,54 @@ def faculty_dashboard():
 
         # Lab 1
         p1 = s_map.get(1)
-        l1_steps = len(json.loads(p1["steps_completed"])) if p1 and p1["steps_completed"] else 0
+        l1_steps = len(safe_parse_steps(p1))
         l1_verified = bool(p1["verification_passed"]) if p1 else False
         if l1_verified:
             lab1_completed_count += 1
 
         # Lab 2
         p2 = s_map.get(2)
-        l2_steps = len(json.loads(p2["steps_completed"])) if p2 and p2["steps_completed"] else 0
+        l2_steps = len(safe_parse_steps(p2))
         l2_verified = bool(p2["verification_passed"]) if p2 else False
         if l2_verified:
             lab2_completed_count += 1
 
         # Lab 3
         p3 = s_map.get(3)
-        l3_steps = len(json.loads(p3["steps_completed"])) if p3 and p3["steps_completed"] else 0
+        l3_steps = len(safe_parse_steps(p3))
         l3_verified = bool(p3["verification_passed"]) if p3 else False
         if l3_verified:
             lab3_completed_count += 1
 
         # Lab 4
         p4 = s_map.get(4)
-        l4_steps = len(json.loads(p4["steps_completed"])) if p4 and p4["steps_completed"] else 0
+        l4_steps = len(safe_parse_steps(p4))
         l4_verified = bool(p4["verification_passed"]) if p4 else False
         if l4_verified:
             lab4_completed_count += 1
 
-        # Calculate overall score percentage across Lab 1 (7 steps), Lab 2 (5 steps), Lab 3 (5 steps), Lab 4 (7 steps)
-        total_possible = len(LAB1_STEPS) + len(LAB2_STEPS) + len(LAB3_STEPS) + len(LAB4_STEPS)
+        # Lab 5
+        p5 = s_map.get(5)
+        l5_steps = len(safe_parse_steps(p5))
+        l5_verified = bool(p5["verification_passed"]) if p5 else False
+        if l5_verified:
+            lab5_completed_count += 1
+
+        # Lab 6
+        p6 = s_map.get(6)
+        l6_steps = len(safe_parse_steps(p6))
+        l6_verified = bool(p6["verification_passed"]) if p6 else False
+        if l6_verified:
+            lab6_completed_count += 1
+
+        # Calculate overall score percentage across all 6 labs
+        total_possible = len(LAB1_STEPS) + len(LAB2_STEPS) + len(LAB3_STEPS) + len(LAB4_STEPS) + len(LAB5_STEPS) + len(LAB6_STEPS)
         earned_steps = (len(LAB1_STEPS) if l1_verified else l1_steps) + \
                        (len(LAB2_STEPS) if l2_verified else l2_steps) + \
                        (len(LAB3_STEPS) if l3_verified else l3_steps) + \
-                       (len(LAB4_STEPS) if l4_verified else l4_steps)
+                       (len(LAB4_STEPS) if l4_verified else l4_steps) + \
+                       (len(LAB5_STEPS) if l5_verified else l5_steps) + \
+                       (len(LAB6_STEPS) if l6_verified else l6_steps)
         overall_pct = int((earned_steps / total_possible) * 100) if total_possible > 0 else 0
 
         roster.append({
@@ -1847,8 +2210,20 @@ def faculty_dashboard():
                 "verified": l4_verified,
                 "completed_at": p4["completed_at"] if p4 else None
             },
+            "lab5": {
+                "steps_done": l5_steps,
+                "total_steps": len(LAB5_STEPS),
+                "verified": l5_verified,
+                "completed_at": p5["completed_at"] if p5 else None
+            },
+            "lab6": {
+                "steps_done": l6_steps,
+                "total_steps": len(LAB6_STEPS),
+                "verified": l6_verified,
+                "completed_at": p6["completed_at"] if p6 else None
+            },
             "overall_pct": overall_pct,
-            "is_fully_done": l1_verified and l2_verified and l3_verified and l4_verified
+            "is_fully_done": l1_verified and l2_verified and l3_verified and l4_verified and l5_verified and l6_verified
         })
 
     return render_template(
@@ -1858,7 +2233,9 @@ def faculty_dashboard():
         lab1_completed=lab1_completed_count,
         lab2_completed=lab2_completed_count,
         lab3_completed=lab3_completed_count,
-        lab4_completed=lab4_completed_count
+        lab4_completed=lab4_completed_count,
+        lab5_completed=lab5_completed_count,
+        lab6_completed=lab6_completed_count
     )
 
 
@@ -1867,34 +2244,48 @@ def faculty_dashboard():
 def faculty_add_student():
     """Allows faculty to manually enroll a single student with auto-generated ID & default password."""
     if request.is_json:
-        data = request.get_json(force=True)
+        data = request.get_json(force=True) or {}
         name = data.get("name", "").strip()
         email = data.get("email", "").strip()
+        custom_sid = data.get("student_id", "").strip()
+        custom_pwd = data.get("default_password", "").strip()
     else:
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
+        custom_sid = request.form.get("student_id", "").strip()
+        custom_pwd = request.form.get("default_password", "").strip()
 
-    if not name or not email:
+    if not name:
         if request.is_json:
-            return jsonify({"ok": False, "message": "Both Student Name and Email are required."}), 400
-        flash("Both Student Name and Email are required.", "error")
+            return jsonify({"ok": False, "message": "Student Name is required."}), 400
+        flash("Student Name is required.", "error")
         return redirect(url_for("faculty_dashboard"))
 
     conn = get_db()
     existing_rows = conn.execute("SELECT student_id FROM students").fetchall()
     existing_ids = set(r["student_id"] for r in existing_rows)
 
-    indices = []
-    for sid in existing_ids:
-        if sid.startswith("STU"):
-            try:
-                indices.append(int(sid[3:]))
-            except ValueError:
-                pass
-    next_idx = max(indices) + 1 if indices else len(existing_ids) + 1
+    if custom_sid:
+        if custom_sid in existing_ids:
+            conn.close()
+            msg = f"Student ID '{custom_sid}' is already registered."
+            if request.is_json:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return redirect(url_for("faculty_dashboard"))
+        student_id = custom_sid
+    else:
+        indices = []
+        for sid in existing_ids:
+            if sid.startswith("STU"):
+                try:
+                    indices.append(int(sid[3:]))
+                except ValueError:
+                    pass
+        next_idx = max(indices) + 1 if indices else len(existing_ids) + 1
+        student_id = generate_student_id(existing_ids, next_idx)
 
-    student_id = generate_student_id(existing_ids, next_idx)
-    default_password = generate_default_password()
+    default_password = custom_pwd if custom_pwd else generate_default_password()
     password_hash = generate_password_hash(default_password)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1922,7 +2313,13 @@ def faculty_add_student():
             "student_id": student_id,
             "name": name,
             "email": email,
-            "default_password": default_password
+            "default_password": default_password,
+            "student": {
+                "student_id": student_id,
+                "name": name,
+                "email": email,
+                "default_password": default_password
+            }
         })
 
     flash(msg, "success")
@@ -1930,14 +2327,41 @@ def faculty_add_student():
 
 
 
+@app.route("/faculty/delete-student/<student_id>", methods=["POST", "DELETE"])
+@app.route("/api/faculty/delete-student/<student_id>", methods=["POST", "DELETE"])
+@login_required_faculty
+def faculty_delete_student(student_id):
+    """Deletes a student record and all associated lab progress."""
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE student_id=?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        if request.is_json:
+            return jsonify({"ok": False, "message": "Student not found."}), 404
+        flash("Student not found.", "error")
+        return redirect(url_for("faculty_dashboard"))
+
+    conn.execute("DELETE FROM lab_progress WHERE student_id=?", (student_id,))
+    conn.execute("DELETE FROM issue_tickets WHERE student_id=?", (student_id,))
+    conn.execute("DELETE FROM students WHERE student_id=?", (student_id,))
+    conn.commit()
+    conn.close()
+
+    msg = f"Student '{student['name']}' ({student_id}) deleted successfully."
+    if request.is_json:
+        return jsonify({"ok": True, "message": msg})
+    flash(msg, "success")
+    return redirect(url_for("faculty_dashboard"))
+
+
 @app.route("/api/faculty/stats")
 @login_required_faculty
 def api_faculty_stats():
     """Live polling endpoint for faculty dashboard."""
     conn = get_db()
-    students = conn.execute("SELECT student_id FROM students").fetchall()
+    students = conn.execute("SELECT student_id, name, email, default_password, password_changed FROM students ORDER BY student_id").fetchall()
     progress_rows = conn.execute(
-        "SELECT student_id, lab_number, steps_completed, verification_passed FROM lab_progress"
+        "SELECT student_id, lab_number, steps_completed, verification_passed, completed_at FROM lab_progress"
     ).fetchall()
     conn.close()
 
@@ -1946,6 +2370,8 @@ def api_faculty_stats():
     l2_completed = sum(1 for p in progress_rows if p["lab_number"] == 2 and p["verification_passed"])
     l3_completed = sum(1 for p in progress_rows if p["lab_number"] == 3 and p["verification_passed"])
     l4_completed = sum(1 for p in progress_rows if p["lab_number"] == 4 and p["verification_passed"])
+    l5_completed = sum(1 for p in progress_rows if p["lab_number"] == 5 and p["verification_passed"])
+    l6_completed = sum(1 for p in progress_rows if p["lab_number"] == 6 and p["verification_passed"])
 
     return jsonify({
         "total": total,
@@ -1953,7 +2379,9 @@ def api_faculty_stats():
         "lab1_completed": l1_completed,
         "lab2_completed": l2_completed,
         "lab3_completed": l3_completed,
-        "lab4_completed": l4_completed
+        "lab4_completed": l4_completed,
+        "lab5_completed": l5_completed,
+        "lab6_completed": l6_completed
     })
 
 
@@ -2143,14 +2571,28 @@ def api_system_telemetry():
         disk = psutil.disk_usage("/")
         pid = os.getpid()
         has_docker, docker_msg = check_host_docker_status()
+        ram_mb = mem.used / (1024 * 1024)
+        if ram_mb >= 1024:
+            ram_str = f"{(ram_mb / 1024):.1f} GB"
+        else:
+            ram_str = f"{ram_mb:.0f} MB"
+
+        disk_gb = disk.used / (1024 * 1024 * 1024)
+        disk_str = f"{disk_gb:.1f} GB"
+
         return jsonify({
             "ok": True,
             "pid": pid,
             "cpu": f"{cpu_pct:.1f}%",
             "cpu_num": cpu_pct,
-            "ram": f"{(mem.used / (1024 * 1024)):.1f} MB",
+            "cpu_percent": round(cpu_pct, 1),
+            "ram": ram_str,
             "ram_pct": f"{mem.percent}%",
-            "disk": f"{(disk.used / (1024 * 1024 * 1024)):.2f} GB",
+            "memory_percent": round(mem.percent, 1),
+            "memory_used_mb": round(mem.used / (1024 * 1024), 1),
+            "disk": disk_str,
+            "disk_percent": round(disk.percent, 1),
+            "disk_free_gb": round(disk.free / (1024 * 1024 * 1024), 1),
             "docker_engine": "local" if has_docker else "virtual",
             "docker_status_text": docker_msg
         })
@@ -2158,11 +2600,25 @@ def api_system_telemetry():
         return jsonify({"ok": False, "error": str(e)})
 
 
+@app.route("/api/start-docker", methods=["POST", "GET"])
+def api_start_docker():
+    success = auto_start_host_docker(force=True)
+    has_real, msg = check_host_docker_status()
+    return jsonify({
+        "ok": success,
+        "status": msg,
+        "connected": has_real,
+        "message": "Docker Desktop launch initiated." if success else "Docker Desktop executable not found."
+    })
+
+
 @app.errorhandler(500)
 def handle_500_error(e):
+    import traceback
+    traceback.print_exc()
     if request.path.startswith("/api/"):
         return jsonify({"ok": False, "output": f"Internal Server Error: {str(e)}"}), 500
-    return "Internal Server Error", 500
+    return f"Internal Server Error: {str(e)}", 500
 
 
 if __name__ == "__main__":
@@ -2176,39 +2632,45 @@ if __name__ == "__main__":
     port = int(os.environ.get("FLASK_RUN_PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "false").lower() in ("true", "1", "t")
     
+    use_ssl = os.environ.get("FLASK_USE_SSL", "false").lower() in ("true", "1", "t")
     ssl_context = None
-    # Check in the same directory as app.py
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    cert_path = os.path.join(current_dir, "cert.pem")
-    key_path = os.path.join(current_dir, "key.pem")
-    
-    # Automatically generate SSL certificates on startup if missing
-    if not (os.path.exists(cert_path) and os.path.exists(key_path)):
-        try:
-            print("SSL Certificates missing. Auto-generating self-signed certificates...")
-            import subprocess
-            subprocess.run(
-                ["python", os.path.join(current_dir, "generate_cert.py")],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-        except Exception as e:
-            print(f"Warning: Could not auto-generate SSL certificates: {e}")
+    if use_ssl:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        cert_path = os.path.join(current_dir, "cert.pem")
+        key_path = os.path.join(current_dir, "key.pem")
+        if not (os.path.exists(cert_path) and os.path.exists(key_path)):
+            base_cert = os.path.join(BASE_DIR, "cert.pem")
+            base_key = os.path.join(BASE_DIR, "key.pem")
+            if os.path.exists(base_cert) and os.path.exists(base_key):
+                cert_path, key_path = base_cert, base_key
+            else:
+                try:
+                    print("SSL Certificates missing. Auto-generating self-signed certificates...")
+                    import subprocess
+                    subprocess.run(
+                        ["python", os.path.join(current_dir, "generate_cert.py")],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
+                    if os.path.exists(base_cert) and os.path.exists(base_key):
+                        cert_path, key_path = base_cert, base_key
+                except Exception as e:
+                    print(f"Warning: Could not auto-generate SSL certificates: {e}")
 
-    if os.path.exists(cert_path) and os.path.exists(key_path):
-        ssl_context = (cert_path, key_path)
-        print(f"Loading SSL certificate from {cert_path}")
-        
-        # Automatically trust the certificate in the local Windows store on startup
-        try:
-            import subprocess
-            subprocess.run(
-                ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\CurrentUser\Root"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-            print("Successfully verified/registered SSL certificate in Windows Root Store.")
-        except Exception as e:
-            print(f"Warning: Auto-trust registration failed: {e}")
-        
+        if os.path.exists(cert_path) and os.path.exists(key_path):
+            ssl_context = (cert_path, key_path)
+            print(f"Loading SSL certificate from {cert_path}")
+            
+            try:
+                import subprocess
+                subprocess.run(
+                    ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\\CurrentUser\\Root"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=2
+                )
+                print("Successfully verified/registered SSL certificate in Windows Root Store.")
+            except Exception as e:
+                print(f"Warning: Auto-trust registration skipped or timed out: {e}")
+
     app.run(host=host, port=port, debug=debug, ssl_context=ssl_context)

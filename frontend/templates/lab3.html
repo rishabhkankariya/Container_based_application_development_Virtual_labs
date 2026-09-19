@@ -5,48 +5,61 @@
 <div class="wrap" style="max-width:100%;padding:0 0 40px">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
     <div>
-      <a href="{{ url_for('student_dashboard') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:var(--blue)"></i> Lab 3: Build Custom "Hello World!" Web App &amp; Run Container</h2>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.84rem;color:var(--text-muted);font-weight:700;text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:#121212;margin-right:6px"></i> Lab 3: Build Custom "Hello World!" Web App &amp; Run Container</h2>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-blue" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> Step Instructions &amp; Checkmarks</button>
-      <button class="btn btn-outline" onclick="showLabVideoModal(3)"><i class="fa-solid fa-play" style="color:var(--blue)"></i> Video Tutorial</button>
-      <button class="btn btn-outline" onclick="showTicketModal(3)"><i class="fa-solid fa-headset" style="color:var(--purple)"></i> Ask Faculty</button>
-      <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:var(--purple)"></i> Interactive Tour</button>
-      <button class="btn btn-green" onclick="submitLab3Completion()"><i class="fa-solid fa-circle-check"></i> Submit &amp; Verify Lab 3</button>
+      <button class="btn btn-blue" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> STEP INSTRUCTIONS &amp; CHECKMARKS</button>
+      <button class="btn btn-outline" onclick="showLabVideoModal(3)"><i class="fa-solid fa-play"></i> VIDEO TUTORIAL</button>
+      <button class="btn btn-outline" onclick="showTicketModal(3)"><i class="fa-solid fa-headset" style="color:var(--primary-red)"></i> ASK FACULTY</button>
+      <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:#7C3AED"></i> INTERACTIVE TOUR</button>
+      <button class="btn btn-green" onclick="submitLab3Completion()"><i class="fa-solid fa-circle-check"></i> SUBMIT &amp; VERIFY LAB 3</button>
     </div>
   </div>
 
-  <!-- Connected Step Guidance Banner with Arrows -->
-  <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-bottom:12px">
-    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 1 details & guidance">
-      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">1</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Inspect &amp; Create Files <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Click + to create index.html &amp; Dockerfile</span></div>
+  <!-- Connected Bauhaus Stepper -->
+  <div class="bauhaus-stepper">
+    <div class="stepper-stage" onclick="toggleInstructionsDrawer()" title="Click to view Step 1 details &amp; guidance">
+      <div class="stepper-num stepper-num-red">1</div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem;text-transform:uppercase">INSPECT &amp; CREATE FILES</div>
+        <div style="font-size:.75rem;color:#475569;font-weight:600">Click + to create index.html &amp; Dockerfile</div>
+      </div>
     </div>
-    <div style="color:var(--blue);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
-    <div style="background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(2,132,199,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 2 details & commands">
-      <span style="background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">2</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">Test Compulsory Docker Commands <i class="fa-solid fa-circle-info" style="color:var(--blue);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">docker pull, docker run &amp; docker ps -a</span></div>
+
+    <div class="stepper-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <div class="stepper-stage" onclick="toggleInstructionsDrawer()" title="Click to view Step 2 details &amp; commands">
+      <div class="stepper-num stepper-num-blue">2</div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem;text-transform:uppercase">TEST COMPULSORY DOCKER COMMANDS</div>
+        <div style="font-size:.75rem;color:#475569;font-weight:600">docker pull, docker run &amp; docker ps -a</div>
+      </div>
     </div>
-    <div style="color:var(--green);font-size:1.2rem;text-align:center"><i class="fa-solid fa-arrow-right-long"></i></div>
-    <div style="background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(5,150,105,0.12);cursor:pointer;transition:transform .15s ease" onclick="toggleInstructionsDrawer()" title="Click to view Step 3 details & verification">
-      <span style="background:var(--green);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0">3</span>
-      <div style="font-size:.82rem"><b style="color:var(--text);display:flex;align-items:center;gap:6px">View Live Web Page &amp; Verify <i class="fa-solid fa-circle-info" style="color:var(--green);font-size:.76rem"></i></b><span style="color:var(--muted);font-size:.76rem">Test app on port 8080 &amp; submit</span></div>
+
+    <div class="stepper-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <div class="stepper-stage" onclick="toggleInstructionsDrawer()" title="Click to view Step 3 details &amp; verification">
+      <div class="stepper-num stepper-num-yellow"><span>3</span></div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem;text-transform:uppercase">VIEW LIVE WEB PAGE &amp; VERIFY</div>
+        <div style="font-size:.75rem;color:#475569;font-weight:600">Test app on port 8080 &amp; submit</div>
+      </div>
     </div>
   </div>
 
   <!-- Telemetry Bar -->
-  <div class="telemetry-bar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-family:var(--mono);font-size:.78rem">
-    <div style="display:flex;align-items:center;gap:8px">
-      <i class="fa-brands fa-docker" style="color:var(--blue);font-size:1.1rem"></i>
-      <span style="font-weight:700;color:var(--text)">docker.desktop telemetry</span>
-      <span class="badge badge-green" style="font-size:.68rem;padding:2px 8px" id="lab3EngineStatus"><i class="fa-solid fa-circle"></i> Engine Ready</span>
+  <div class="telemetry-bar-bauhaus">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="fa-brands fa-docker" style="color:#121212;font-size:1.15rem"></i>
+      <span style="font-weight:800;font-family:var(--font-mono);font-size:.82rem;color:#121212">docker.desktop telemetry</span>
+      <span class="telemetry-pill-connected" id="lab3EngineStatus"><i class="fa-solid fa-circle" style="font-size:.45rem"></i> LOCAL DOCKER ENGINE (CONNECTED)</span>
     </div>
-    <div style="display:flex;align-items:center;gap:20px">
-      <div>PID: <b style="color:var(--blue)" id="l3Pid">14608</b></div>
-      <div>CPU: <b style="color:var(--green)" id="l3Cpu">0.12%</b></div>
-      <div>RAM: <b style="color:var(--amber)" id="l3Ram">8.4 MB</b></div>
-      <div>Disk: <b style="color:var(--purple)">14.57 GB</b></div>
+    <div style="display:flex;align-items:center;gap:18px;font-family:var(--font-mono);font-size:.78rem;color:#121212">
+      <div>PID: <b id="l3Pid">25160</b></div>
+      <div>CPU: <b id="l3Cpu">42.1%</b></div>
+      <div>RAM: <b id="l3Ram">12.2 GB</b></div>
+      <div>Disk: <b style="color:#7c3aed" id="l3Disk">14.57 GB</b></div>
     </div>
   </div>
 
@@ -95,7 +108,9 @@
           <span id="badge-pull" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8"><span class="vlab-hover-target" data-vlab-tooltip="docker pull: Downloads hello-world test image from Docker Hub">docker pull hello-world</span></div>
+        <div class="cmd-box" style="color:#38bdf8">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker pull: Downloads hello-world test image from Docker Hub">docker pull hello-world</span>
+        </div>
       </div>
 
       <!-- Step 4: RUN HELLO-WORLD CONTAINER -->
@@ -105,7 +120,9 @@
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399"><span class="vlab-hover-target" data-vlab-tooltip="docker run: Executes test container instance">docker run hello-world</span></div>
+        <div class="cmd-box" style="color:#34d399">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker run: Executes test container instance">docker run hello-world</span>
+        </div>
       </div>
 
       <!-- Step 5: BUILD CUSTOM WEB IMAGE -->
@@ -115,7 +132,9 @@
           <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#f59e0b"><span class="vlab-hover-target" data-vlab-tooltip="docker build: Compiles Dockerfile into tagged image named my-website">docker build -t my-website .</span></div>
+        <div class="cmd-box" style="color:#f59e0b">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker build: Compiles Dockerfile into tagged image named my-website">docker build -t my-website .</span>
+        </div>
       </div>
 
       <!-- Step 6: RUN DETACHED CONTAINER -->
@@ -125,7 +144,9 @@
           <span id="badge-run_web" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#10b981"><span class="vlab-hover-target" data-vlab-tooltip="docker run: Runs container in background (-d) mapping host port 8080 (-p)">docker run -d -p 8080:80 my-website</span></div>
+        <div class="cmd-box" style="color:#10b981">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker run: Runs container in background (-d) mapping host port 8080 (-p)">docker run -d -p 8080:80 my-website</span>
+        </div>
       </div>
 
       <!-- Step 7: STOP AND START CONTAINER -->
@@ -135,7 +156,9 @@
           <span id="badge-stop_start" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMANDS IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#f87171"><span class="vlab-hover-target" data-vlab-tooltip="docker stop / start: Manages container power state">docker stop &lt;container_id&gt;<br>docker start &lt;container_id&gt;</span></div>
+        <div class="cmd-box" style="color:#f87171">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker stop / start: Manages container power state">docker stop &lt;container_id&gt;<br>docker start &lt;container_id&gt;</span>
+        </div>
       </div>
 
       <!-- Step 8: SYSTEM PRUNE -->
@@ -145,7 +168,9 @@
           <span id="badge-prune" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#a855f7"><span class="vlab-hover-target" data-vlab-tooltip="docker system prune: Removes unused containers, networks and dangling images">docker system prune</span></div>
+        <div class="cmd-box" style="color:#a855f7">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker system prune: Removes unused containers, networks and dangling images">docker system prune</span>
+        </div>
       </div>
 
       <!-- Step 9: INSPECT ALL CONTAINERS AGAIN -->
@@ -155,7 +180,9 @@
           <span id="badge-ps2" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8"><span class="vlab-hover-target" data-vlab-tooltip="docker ps -a: Lists all container instances including stopped containers">docker ps -a</span></div>
+        <div class="cmd-box" style="color:#38bdf8">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker ps -a: Lists all container instances including stopped containers">docker ps -a</span>
+        </div>
       </div>
 
       <!-- Step 10: FORCE REMOVE CONTAINER -->
@@ -165,7 +192,9 @@
           <span id="badge-rm" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#ef4444"><span class="vlab-hover-target" data-vlab-tooltip="docker rm -f: Force deletes specified container instance">docker rm -f &lt;container_id&gt;</span></div>
+        <div class="cmd-box" style="color:#ef4444">
+          <span class="vlab-hover-target" data-vlab-tooltip="docker rm -f: Force deletes specified container instance">docker rm -f &lt;container_id&gt;</span>
+        </div>
       </div>
     </div>
 
@@ -222,7 +251,7 @@
 
       <!-- Interactive Instruction & Hover Guidance Bar -->
       <div style="background:#222222;border-bottom:2px solid #121212;padding:6px 14px;display:flex;align-items:center;justify-content:space-between;font-size:.76rem;font-family:var(--font-display);color:#FFFFFF">
-        <span><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
+        <span style="color:#FFFFFF"><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b style="color:#FFFFFF">Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
         <button onclick="toggleInstructionsDrawer()" class="btn btn-sm btn-yellow" style="padding:2px 10px;font-size:.72rem"><i class="fa-solid fa-book-open"></i> Open Instructions &rarr;</button>
       </div>
 
@@ -240,15 +269,15 @@
         <!-- Right: Live Browser Preview -->
         <div class="vscode-preview-pane">
           <div class="vscode-preview-header">
-            <i class="fa-solid fa-rotate-right" style="cursor:pointer;color:var(--blue)" title="Refresh Live Web App" onclick="refreshPreview()"></i>
-            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.7rem;color:#059669"></i> http://localhost:8080</div>
-            <span class="badge badge-green" id="previewBadge">Offline</span>
+            <i class="fa-solid fa-rotate-right preview-refresh-btn" title="Refresh Live Web App" onclick="refreshPreview()"></i>
+            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.85rem;color:#059669"></i> <span id="previewUrlText">http://localhost:8080</span></div>
+            <span class="preview-status-badge offline" id="previewBadge">OFFLINE</span>
           </div>
           <div class="vscode-preview-body" id="previewContainer">
-            <div style="text-align:center;padding:60px 20px;color:#64748b">
-              <i class="fa-solid fa-server" style="font-size:2.5rem;margin-bottom:12px;display:block"></i>
-              <div style="font-weight:600;font-size:.95rem">Web Server Container Not Running</div>
-              <div style="font-size:.82rem;margin-top:4px">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 8080.</div>
+            <div class="offline-placeholder">
+              <i class="fa-solid fa-server"></i>
+              <div class="offline-title">Web Server Container Not Running</div>
+              <div class="offline-desc">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 8080.</div>
             </div>
           </div>
         </div>
@@ -288,20 +317,18 @@
 </div>
 
 <!-- Backdrop Blur Tour Modal Overlay -->
-<div id="tourOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s ease">
-  <div style="background:var(--surface);border:1px solid var(--border-bright);border-radius:16px;width:100%;max-width:520px;padding:28px;box-shadow:0 25px 50px rgba(0,0,0,0.3);position:relative">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <span class="badge badge-blue" id="tourStepBadge"><i class="fa-solid fa-compass"></i> Step 1 of 3</span>
-      <button onclick="closeTourModal()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer">&times;</button>
+<div id="tourOverlay" class="tour-overlay">
+  <div class="tour-card">
+    <div class="tour-header">
+      <span class="tour-step-badge" id="tourStepBadge">STEP 1 OF 3</span>
+      <button onclick="closeTourModal()" class="tour-close-btn" title="Close">&times;</button>
     </div>
-    <h2 id="tourTitle" style="font-size:1.3rem;margin-bottom:8px;color:var(--text)">Step Title</h2>
-    <p id="tourDesc" style="color:var(--muted);font-size:.92rem;line-height:1.5;margin-bottom:24px">Step description goes here.</p>
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <button class="btn btn-outline btn-sm" id="tourPrevBtn" onclick="prevTourStep()">&larr; Previous</button>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-outline btn-sm" onclick="closeTourModal()">Skip Tour</button>
-        <button class="btn btn-blue btn-sm" id="tourNextBtn" onclick="nextTourStep()">Next Step &rarr;</button>
-      </div>
+    <h2 class="tour-title" id="tourTitle">STEP 1: INSPECT &amp; EDIT CODE FILES</h2>
+    <div class="tour-desc" id="tourDesc"></div>
+    <div class="tour-footer">
+      <button class="tour-btn tour-btn-white" id="tourPrevBtn" onclick="prevTourStep()">&larr; PREVIOUS</button>
+      <button class="tour-btn tour-btn-white" id="tourSkipBtn" onclick="closeTourModal()">SKIP TOUR</button>
+      <button class="tour-btn tour-btn-blue" id="tourNextBtn" onclick="nextTourStep()">NEXT STEP &rarr;</button>
     </div>
   </div>
 </div>
@@ -319,27 +346,24 @@
   </div>
 </div>
 
-<!-- Help Ticket Support Modal -->
-<div id="ticketOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--surface);border:1px solid var(--border-bright);border-radius:16px;width:100%;max-width:540px;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.3)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="font-size:1.1rem;margin:0;color:var(--text)"><i class="fa-solid fa-headset" style="color:var(--amber)"></i> Ask Faculty &amp; View Responses</h3>
-      <button onclick="closeTicketModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">&times;</button>
+<!-- Ask Faculty Support Ticket Modal -->
+<div id="ticketModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-headset" style="color:var(--primary-red)"></i> ASK FACULTY A QUESTION</h2>
+      <button onclick="closeTicketModal()" class="modal-close-btn">&times;</button>
     </div>
-    <input type="hidden" id="ticketLabNum" value="3">
-    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text);font-weight:600">Issue Summary / Title</label>
-    <input type="text" id="ticketTitleInput" placeholder="e.g. docker pull hello-world command failing" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:12px;box-sizing:border-box">
-    <label style="display:block;margin-bottom:6px;font-size:.85rem;color:var(--text);font-weight:600">Detailed Problem Description</label>
-    <textarea id="ticketDescInput" rows="3" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:var(--radius-sm);outline:none;font-family:var(--sans);font-size:.9rem;margin-bottom:14px;box-sizing:border-box" placeholder="Describe the error code or obstacle you encountered..."></textarea>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" onclick="closeTicketModal()">Cancel</button>
-      <button class="btn btn-blue btn-sm" onclick="submitSupportTicket()"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
-    </div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
-    <h4 style="font-size:.9rem;margin:0 0 10px;color:var(--text)"><i class="fa-solid fa-reply-all" style="color:var(--blue)"></i> Previous Questions &amp; Faculty Answers</h4>
-    <div id="modalTicketsHistory" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto">
-      <div style="font-size:.82rem;color:var(--muted)">Loading previous support questions...</div>
-    </div>
+    <form onsubmit="submitTicket(event, 3)">
+      <label>Issue Title / Subject</label>
+      <input type="text" id="ticketTitle" placeholder="e.g. WSL2 hypervisor flag error" required>
+
+      <label>Describe your question or issue</label>
+      <textarea id="ticketDesc" rows="4" placeholder="Provide details about the error or question..." required></textarea>
+
+      <button type="submit" class="btn btn-red" style="width:100%;margin-top:16px">
+        <i class="fa-solid fa-paper-plane"></i> SUBMIT TICKET TO FACULTY
+      </button>
+    </form>
   </div>
 </div>
 
@@ -377,18 +401,49 @@
 </div>
 
 <!-- Custom Toast Notification Container -->
-<div id="customToastContainer" style="position:fixed;top:20px;right:20px;z-index:9999999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
+<div id="customToastContainer" class="custom-toast-container" style="position:fixed;top:24px;right:24px;z-index:9999999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
 
 <div id="labConfig" data-verified="{{ 'true' if verified else 'false' }}" style="display:none"></div>
 
 <script>
 const isAlreadyVerified = document.getElementById('labConfig').dataset.verified === 'true';
 
-let files = {
-  'index.html': ''
-};
+const STUDENT_ID = "{{ student.student_id if student else session.get('student_id', 'guest') }}";
+window.STUDENT_ID = STUDENT_ID;
+const STORAGE_KEY_LAB3 = 'vlab_code_lab3_' + (STUDENT_ID || 'guest');
+let files = {};
+try {
+  let savedCode = localStorage.getItem(STORAGE_KEY_LAB3);
+  if (!savedCode && STUDENT_ID && STUDENT_ID !== 'guest') {
+    savedCode = localStorage.getItem('vlab_code_lab3_guest');
+  }
+  if (savedCode) {
+    files = JSON.parse(savedCode);
+  }
+} catch(e) {
+  console.error("Error loading saved code from localStorage:", e);
+}
+if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
+  files = { 'index.html': '' };
+}
 
-let currentFile = 'index.html';
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB3, JSON.stringify(files));
+    if (STUDENT_ID && STUDENT_ID !== 'guest') {
+      localStorage.setItem('vlab_code_lab3_guest', JSON.stringify(files));
+    }
+  } catch(e) {
+    console.error("Error saving files to localStorage:", e);
+  }
+}
+
+const ACTIVE_FILE_KEY_LAB3 = 'vlab_active_file_lab3_' + (STUDENT_ID || 'guest');
+let savedActive = null;
+try {
+  savedActive = localStorage.getItem(ACTIVE_FILE_KEY_LAB3);
+} catch(e) {}
+let currentFile = (savedActive && files[savedActive] !== undefined) ? savedActive : (Object.keys(files)[0] || 'index.html');
 let containerRunning = false;
 
 // Strictly track compulsory Docker commands (Must be executed in terminal console)
@@ -410,20 +465,20 @@ let currentTourStep = 1;
 const tourSteps = [
   {
     num: 1,
-    title: "Step 1: Inspect & Create Files",
+    title: "STEP 1: INSPECT & CREATE CODE FILES",
     desc: "Click '+' in the Explorer sidebar on the left to create index.html and Dockerfile. Type your HTML content and Docker Nginx instructions according to the step instructions drawer.",
     highlightId: "fileTreeContainer"
   },
   {
     num: 2,
-    title: "Step 2: Test Compulsory Docker Commands",
-    desc: "Click inside the Integrated Terminal at the bottom and test all 9 compulsory Docker commands",
+    title: "STEP 2: TEST COMPULSORY DOCKER COMMANDS",
+    desc: "Click inside the Integrated Terminal at the bottom and test all compulsory Docker commands: pull, run, build, stop, start, prune, ps, and rm.",
     highlightId: "vsTerminal"
   },
   {
     num: 3,
-    title: "Step 3: View Live Web Page & Verify Lab 3",
-    desc: "Verify that your containerized web application is active on http://localhost:8080. Click 'Submit & Verify Lab 3' at top right to complete the lab.",
+    title: "STEP 3: VIEW LIVE WEB PAGE & VERIFY LAB 3",
+    desc: "Verify that your containerized web application is active on http://localhost:8080. Click 'SUBMIT & VERIFY LAB 3' at top right to complete the lab.",
     highlightId: "previewContainer"
   }
 ];
@@ -436,11 +491,11 @@ function startGuidedTour() {
 
 function renderTourModal() {
   const step = tourSteps[currentTourStep - 1];
-  document.getElementById('tourStepBadge').textContent = `Step ${step.num} of 3`;
+  document.getElementById('tourStepBadge').textContent = `STEP ${step.num} OF 3`;
   document.getElementById('tourTitle').textContent = step.title;
   document.getElementById('tourDesc').textContent = step.desc;
   document.getElementById('tourPrevBtn').disabled = currentTourStep === 1;
-  document.getElementById('tourNextBtn').textContent = currentTourStep === 3 ? 'Finish Tour' : 'Next Step →';
+  document.getElementById('tourNextBtn').textContent = currentTourStep === 3 ? 'FINISH TOUR' : 'NEXT STEP \u2192';
 }
 
 function nextTourStep() {
@@ -520,77 +575,79 @@ function loadModalTicketsHistory(labNum) {
 }
 
 function showTicketModal(labNum) {
-  document.getElementById('ticketLabNum').value = labNum;
-  document.getElementById('ticketTitleInput').value = '';
-  document.getElementById('ticketDescInput').value = '';
-  loadModalTicketsHistory(labNum);
-  document.getElementById('ticketOverlay').style.display = 'flex';
+  document.getElementById('ticketModal').classList.add('open');
 }
 
 function closeTicketModal() {
-  document.getElementById('ticketOverlay').style.display = 'none';
+  document.getElementById('ticketModal').classList.remove('open');
 }
 
-function submitSupportTicket() {
-  const lab_number = parseInt(document.getElementById('ticketLabNum').value);
-  const title = document.getElementById('ticketTitleInput').value.trim();
-  const description = document.getElementById('ticketDescInput').value.trim();
-
-  if(!title || !description) {
-    alert('Please enter a title and problem description!');
+async function submitTicket(e, labNum) {
+  e.preventDefault();
+  const title = document.getElementById('ticketTitle').value.trim();
+  const description = document.getElementById('ticketDesc').value.trim();
+  if (!title || !description) {
+    alert('Please provide a title and description for your issue.');
     return;
   }
-  fetch('/api/support/ticket', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ lab_number, title, description })
-  })
-  .then(r => r.json())
-  .then(data => {
-    alert(data.message);
-    document.getElementById('ticketTitleInput').value = '';
-    document.getElementById('ticketDescInput').value = '';
-    loadModalTicketsHistory(lab_number);
-  });
+  try {
+    const res = await fetch('/api/support/ticket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lab_number: labNum || 3, title, description })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      alert(d.message || 'Ticket successfully submitted to faculty.');
+      document.getElementById('ticketTitle').value = '';
+      document.getElementById('ticketDesc').value = '';
+      closeTicketModal();
+    } else {
+      alert('Error submitting ticket: ' + (d.message || d.error || 'Failed'));
+    }
+  } catch (err) {
+    alert('Network error submitting ticket.');
+  }
 }
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('customToastContainer');
   if (!container) return;
   const toast = document.createElement('div');
-  toast.style.background = type === 'success' ? '#059669' : (type === 'error' ? '#ef4444' : '#0284c7');
-  toast.style.color = '#ffffff';
-  toast.style.padding = '10px 18px';
-  toast.style.borderRadius = '8px';
-  toast.style.fontSize = '0.85rem';
-  toast.style.fontWeight = '600';
-  toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.4)';
-  toast.style.pointerEvents = 'auto';
-  toast.style.display = 'flex';
-  toast.style.alignItems = 'center';
-  toast.style.gap = '8px';
-  toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i> ${message}`;
+  const bgColors = {
+    success: 'background:rgba(16,185,129,0.95);border:1px solid #059669;color:#ffffff',
+    error: 'background:rgba(239,68,68,0.95);border:1px solid #dc2626;color:#ffffff',
+    warning: 'background:rgba(245,158,11,0.95);border:1px solid #d97706;color:#ffffff',
+    info: 'background:rgba(2,132,199,0.95);border:1px solid #0284c7;color:#ffffff'
+  };
+  const icons = {
+    success: '<i class="fa-solid fa-circle-check"></i>',
+    error: '<i class="fa-solid fa-circle-xmark"></i>',
+    warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+    info: '<i class="fa-solid fa-circle-info"></i>'
+  };
+  toast.style.cssText = `${bgColors[type] || bgColors.info};padding:12px 18px;border-radius:10px;font-size:.88rem;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 10px 25px rgba(0,0,0,0.3);backdrop-filter:blur(8px);pointer-events:auto;animation:toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)`;
+  toast.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s ease';
+    toast.style.transform = 'translateY(-10px)';
+    toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  }, 2500);
 }
 
 function toggleInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
-  if (drawer.style.transform === 'translateX(0px)') {
-    drawer.style.transform = 'translateX(-100%)';
-  } else {
-    drawer.style.transform = 'translateX(0px)';
+  if (drawer) {
+    drawer.classList.toggle('open');
   }
 }
 
 function closeInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(-100%)';
+    drawer.classList.remove('open');
   }
 }
 
@@ -703,11 +760,19 @@ function updateProgressTrack() {
 }
 
 function checkCodeProgress() {
-  const indexCode = files['index.html'] || '';
-  const dockerCode = files['Dockerfile'] || '';
+  const ed = document.getElementById('codeEditor');
+  const indexCode = (currentFile === 'index.html' && ed ? ed.value : (files['index.html'] || '')) || '';
+  const dockerCode = (currentFile === 'Dockerfile' && ed ? ed.value : (files['Dockerfile'] || '')) || '';
 
-  const hasIndex = Boolean(indexCode.trim().length > 10 && indexCode.toLowerCase().includes('html'));
-  const hasDockerfile = Boolean(dockerCode.trim().length > 5 && dockerCode.toLowerCase().includes('from'));
+  const cleanHtml = indexCode.toLowerCase().trim();
+  const hasHtmlTag = (cleanHtml.includes('<html') || cleanHtml.includes('<!doctype') || cleanHtml.includes('<body')) && cleanHtml.includes('</');
+  const hasContent = cleanHtml.includes('<h1') || cleanHtml.includes('<p') || cleanHtml.includes('hello') || cleanHtml.includes('website') || cleanHtml.includes('welcome');
+  const hasIndex = Boolean(hasHtmlTag && hasContent && cleanHtml.length >= 25);
+
+  const cleanDocker = dockerCode.toLowerCase().trim();
+  const hasFromNginx = /\bfrom\s+nginx/i.test(cleanDocker);
+  const hasCopy = /\bcopy\s+/i.test(cleanDocker);
+  const hasDockerfile = Boolean(hasFromNginx && hasCopy);
 
   testedState.index = hasIndex;
   testedState.dockerfile = hasDockerfile;
@@ -855,7 +920,7 @@ function createNewFilePrompt() {
       renderFileTree();
       renderTabs();
       switchFile(fname);
-      showToast(`Created file '${fname}'`, 'success');
+      showToast(`Created '${fname}' successfully!`, 'success');
     }
   );
 }
@@ -877,6 +942,10 @@ function renameCurrentFilePrompt() {
       const oldName = currentFile;
       files[newName] = files[oldName];
       delete files[oldName];
+      currentFile = newName;
+      try {
+        localStorage.setItem(ACTIVE_FILE_KEY_LAB3, newName);
+      } catch(e) {}
       switchFile(newName);
       showToast(`Renamed '${oldName}' to '${newName}'`, 'success');
     }
@@ -898,9 +967,13 @@ function deleteFile(filename, e) {
     (confirmed) => {
       if (!confirmed) return;
       delete files[filename];
+      saveFilesToLocalStorage();
       if (currentFile === filename) {
         const keys = Object.keys(files);
         currentFile = keys.length ? keys[0] : null;
+        try {
+          localStorage.setItem(ACTIVE_FILE_KEY_LAB3, currentFile || '');
+        } catch(e) {}
       }
       renderFileTree();
       renderTabs();
@@ -910,7 +983,7 @@ function deleteFile(filename, e) {
         document.getElementById('codeEditor').value = '';
         document.getElementById('lineNumbers').innerHTML = '1';
       }
-      showToast(`Deleted file '${filename}'`, 'error');
+      showToast(`Deleted '${filename}' successfully!`, 'success');
     }
   );
 }
@@ -1072,15 +1145,19 @@ function performRedo() {
 }
 
 function switchFile(filename) {
-  if (currentFile && files[currentFile] !== undefined) {
-    files[currentFile] = document.getElementById('codeEditor').value;
+  if (!filename) return;
+  const editor = document.getElementById('codeEditor');
+  if (currentFile && currentFile !== filename && files[currentFile] !== undefined) {
+    if (editor) files[currentFile] = editor.value;
   }
   currentFile = filename;
+  try {
+    localStorage.setItem(ACTIVE_FILE_KEY_LAB3, filename);
+  } catch(e) {}
   initUndoStack(filename);
   renderFileTree();
   renderTabs();
   
-  const editor = document.getElementById('codeEditor');
   if (editor) {
     editor.value = files[filename] !== undefined ? files[filename] : '';
     updateLineNumbers();
@@ -1100,6 +1177,11 @@ function saveCurrentFile() {
   }
   const editor = document.getElementById('codeEditor');
   files[currentFile] = editor.value;
+  saveFilesToLocalStorage();
+  const statusEl = document.getElementById('editorFileStatus');
+  if (statusEl) {
+    statusEl.innerHTML = `Editing: <b>${currentFile}</b> <span style="color:#10b981;font-size:.72rem;margin-left:6px;font-weight:700">&#10003; Saved</span>`;
+  }
   refreshPreview();
   checkCodeProgress();
   showToast(`Saved '${currentFile}' successfully!`, 'success');
@@ -1131,7 +1213,7 @@ function updateBreadcrumb() {
     if (statusEl) statusEl.textContent = 'No file open';
     return;
   }
-  if (statusEl) statusEl.textContent = 'Editing: ' + currentFile;
+  if (statusEl) statusEl.innerHTML = `Editing: <b>${currentFile}</b>`;
   if (langEl) langEl.textContent = currentFile.endsWith('.html') ? 'HTML' : (currentFile === 'Dockerfile' ? 'Dockerfile' : 'PLAIN TEXT');
 }
 
@@ -1148,6 +1230,10 @@ function onCodeInput() {
   syncHighlight();
   if (currentFile && files[currentFile] !== undefined) {
     files[currentFile] = document.getElementById('codeEditor').value;
+  }
+  const statusEl = document.getElementById('editorFileStatus');
+  if (statusEl && currentFile) {
+    statusEl.innerHTML = `Editing: <b>${currentFile}</b> <span style="color:#f59e0b;font-size:.72rem;margin-left:6px;font-weight:700">&#9679; Unsaved</span>`;
   }
   if (containerRunning && (currentFile === 'index.html' || currentFile.endsWith('.html'))) {
     refreshPreview();
@@ -1205,7 +1291,10 @@ function refreshPreview() {
   const currentContent = (currentFile === 'index.html' ? document.getElementById('codeEditor').value : files['index.html']);
 
   if (!containerRunning) {
-    if (badge) { badge.className = 'badge badge-muted'; badge.textContent = 'Offline'; }
+    if (badge) {
+      badge.className = 'preview-status-badge offline';
+      badge.textContent = 'OFFLINE';
+    }
     container.innerHTML = `
       <div class="offline-placeholder">
         <i class="fa-solid fa-server"></i>
@@ -1214,7 +1303,10 @@ function refreshPreview() {
       </div>
     `;
   } else {
-    if (badge) { badge.className = 'badge badge-green'; badge.textContent = '• Live'; }
+    if (badge) {
+      badge.className = 'preview-status-badge online';
+      badge.textContent = 'LIVE (PORT 8080)';
+    }
     container.innerHTML = '<iframe id="livePreviewIframe" style="width:100%;height:100%;border:none;background:#ffffff"></iframe>';
     const iframe = document.getElementById('livePreviewIframe');
     const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -1232,7 +1324,7 @@ function refreshPreview() {
 function openInstructionsDrawer() {
   const drawer = document.getElementById('instructionsDrawer');
   if (drawer) {
-    drawer.style.transform = 'translateX(0px)';
+    drawer.classList.add('open');
   }
 }
 
@@ -1250,7 +1342,7 @@ function submitLab3Completion() {
   if (!testedState.rm) missing.push('• 10. docker rm -f <container_id>');
 
   if (missing.length > 0) {
-    const formattedText = '⚠️ <b>Lab 3 Verification Blocked!</b><br><br>You must test all compulsory Docker functions in the inbuilt console before completing Lab 3:<br><br>' + missing.join('<br>');
+    const formattedText = '⚠️ Lab 3 Verification Blocked!\n\nYou must test all compulsory Docker functions in the inbuilt console before completing Lab 3:\n\n' + missing.join('\n');
     alert(formattedText);
     openInstructionsDrawer();
     return;
@@ -1275,7 +1367,7 @@ function submitLab3Completion() {
 document.addEventListener('DOMContentLoaded', function() {
   renderFileTree();
   renderTabs();
-  switchFile('index.html');
+  switchFile(currentFile || 'index.html');
   refreshPreview();
 
   checkCodeProgress();
@@ -1455,9 +1547,9 @@ document.addEventListener('DOMContentLoaded', function() {
       historyIndex = -1;
 
       const echo = document.createElement('div');
-      echo.className = 'line';
-      echo.style.color = '#38bdf8';
-      echo.innerHTML = '<span class="prompt">hello-web$&nbsp;</span>' + val.replace(/</g, '&lt;');
+      echo.className = 'line cmd-line';
+      echo.style.color = '#ffffff';
+      echo.innerHTML = '<span class="prompt">hello-web$&nbsp;</span><span class="cmd-text" style="color:#ffffff !important">' + val.replace(/</g, '&lt;') + '</span>';
       term.insertBefore(echo, this.closest('.cursor-row'));
       this.value = '';
 
@@ -1477,26 +1569,47 @@ document.addEventListener('DOMContentLoaded', function() {
           term.querySelectorAll('.line').forEach(l => l.remove());
           return;
         }
-        if (res.ok) {
+
+        function isCommandSuccess(data) {
+          if (!data || !data.ok) return false;
+          const out = (data.output || '').toLowerCase();
+          const errorSignatures = [
+            'error response from daemon',
+            'cannot connect to the docker daemon',
+            'failed to solve',
+            'failed to build',
+            'no such image',
+            'no such container',
+            'unable to find image',
+            'is not recognized as an internal or external command',
+            'command not found',
+            'executable file not found',
+            'unknown shorthand flag',
+            'unknown flag',
+            'port is already allocated',
+            'address already in use',
+            'fatal:',
+            'invalid argument',
+            'error:'
+          ];
+          for (const sig of errorSignatures) {
+            if (out.includes(sig)) return false;
+          }
+          return true;
+        }
+
+        const success = isCommandSuccess(res);
+        if (success) {
           checkCompulsoryCommand(val);
         }
 
         const out = document.createElement('div');
-        out.className = 'line';
+        out.className = success ? 'line success-line' : 'line err';
         out.style.whiteSpace = 'pre-wrap';
+        out.style.color = success ? '#ffffff' : '#ef4444';
 
         const cleanOutput = res.output ? res.output.trim() : '';
-        const firstLine = cleanOutput.split('\n')[0].trim();
-        const isContainerId = /^[a-f0-9]{12,64}$/i.test(firstLine);
-
-        if (res.ok && (isContainerId || cleanOutput.toLowerCase().includes('container launched'))) {
-          out.className = 'line success-line';
-          out.style.color = '#38bdf8';
-          out.textContent = cleanOutput;
-        } else {
-          out.className = res.ok ? 'line success-line' : 'line err';
-          out.textContent = cleanOutput || 'Command executed with no output.';
-        }
+        out.textContent = cleanOutput || (success ? 'Command executed successfully.' : 'Command execution failed.');
 
         const cursorRow = input.closest('.cursor-row');
         term.insertBefore(out, cursorRow);
@@ -1507,6 +1620,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(err => {
         const out = document.createElement('div');
         out.className = 'line err';
+        out.style.color = '#ef4444';
         out.textContent = 'Execution error: ' + err.message;
         const cursorRow = input.closest('.cursor-row');
         term.insertBefore(out, cursorRow);
@@ -1532,13 +1646,8 @@ setInterval(() => {
         if(c) c.textContent = d.cpu;
         if(r) r.textContent = d.ram;
         if(statusBadge && d.docker_status_text) {
-          if(d.docker_engine === 'local') {
-            statusBadge.className = 'badge badge-green';
-            statusBadge.innerHTML = '<i class="fa-solid fa-plug"></i> ' + d.docker_status_text;
-          } else {
-            statusBadge.className = 'badge badge-blue';
-            statusBadge.innerHTML = '<i class="fa-solid fa-bolt"></i> ' + d.docker_status_text;
-          }
+          statusBadge.className = 'telemetry-pill-connected';
+          statusBadge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:.45rem"></i> ' + d.docker_status_text;
         }
       }
     }).catch(() => {});

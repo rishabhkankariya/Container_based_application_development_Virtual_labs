@@ -1,0 +1,1154 @@
+{% extends "base.html" %}
+{% block title %}Lab 6: Microservice Load Scaling & Replica Management - Container Virtual Labs{% endblock %}
+{% block body %}
+
+<div class="wrap" style="max-width:100%;padding:0 0 40px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <a href="{{ url_for('student_dashboard') }}" style="font-size:.84rem;color:var(--text-muted);font-weight:700;text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <h2 style="font-size:1.25rem;margin-top:4px;font-weight:800"><i class="fa-brands fa-docker" style="color:#121212;margin-right:6px"></i> Lab 6: Microservice Load Scaling &amp; Replica Management</h2>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-blue" onclick="toggleInstructionsDrawer()"><i class="fa-solid fa-list-check"></i> STEP INSTRUCTIONS &amp; CHECKMARKS</button>
+      <button class="btn btn-outline" onclick="showLabVideoModal(6)"><i class="fa-solid fa-play"></i> VIDEO TUTORIAL</button>
+      <button class="btn btn-outline" onclick="showTicketModal(6)"><i class="fa-solid fa-headset" style="color:var(--primary-red)"></i> ASK FACULTY</button>
+      <button class="btn btn-outline" onclick="startGuidedTour()"><i class="fa-solid fa-compass" style="color:#7C3AED"></i> INTERACTIVE TOUR</button>
+      <button class="btn btn-green" onclick="submitLab6Completion()"><i class="fa-solid fa-circle-check"></i> SUBMIT &amp; VERIFY LAB 6</button>
+    </div>
+  </div>
+
+  <!-- Connected Bauhaus Stepper -->
+  <div class="bauhaus-stepper">
+    <div class="stepper-stage" onclick="toggleInstructionsDrawer()" title="Click to view Step 1 details &amp; guidance">
+      <div class="stepper-num stepper-num-red">1</div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem;text-transform:uppercase">CONFIGURE DOCKER-COMPOSE.YML</div>
+        <div style="font-size:.75rem;color:#475569;font-weight:600">Write app.py, Dockerfile, &amp; Compose stack</div>
+      </div>
+    </div>
+
+    <div class="stepper-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <div class="stepper-stage" onclick="toggleInstructionsDrawer()" title="Click to view Step 2 details &amp; commands">
+      <div class="stepper-num stepper-num-blue">2</div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem;text-transform:uppercase">SCALE REPLICAS UP &amp; DOWN</div>
+        <div style="font-size:.75rem;color:#475569;font-weight:600">docker compose up -d --scale sum-microservice=3</div>
+      </div>
+    </div>
+
+    <div class="stepper-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <div class="stepper-stage" onclick="toggleInstructionsDrawer()" title="Click to view Step 3 details &amp; verification">
+      <div class="stepper-num stepper-num-yellow"><span>3</span></div>
+      <div>
+        <div style="font-weight:900;font-size:.88rem;text-transform:uppercase">INSPECT REPLICAS &amp; SUBMIT</div>
+        <div style="font-size:.75rem;color:#475569;font-weight:600">Verify multi-replica load distribution &amp; submit</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telemetry Bar -->
+  <div class="telemetry-bar-bauhaus">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="fa-brands fa-docker" style="color:#121212;font-size:1.15rem"></i>
+      <span style="font-weight:800;font-family:var(--font-mono);font-size:.82rem;color:#121212">docker.desktop telemetry</span>
+      <span class="telemetry-pill-connected" id="lab6EngineStatus"><i class="fa-solid fa-circle" style="font-size:.45rem"></i> LOCAL DOCKER ENGINE (CONNECTED)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font-family:var(--font-mono);font-size:.78rem;color:#121212">
+      <div>Service: <b style="color:#2563eb">sum-microservice</b></div>
+      <div>Replicas: <b style="color:#7c3aed" id="l6ReplicaCount">1 Active</b></div>
+      <div>Port: <b style="color:#059669">5000</b></div>
+      <div>Disk: <b style="color:#7c3aed" id="l6Disk">14.57 GB</b></div>
+    </div>
+  </div>
+
+  <!-- Slide-in Drawer for Lab 6 Instructions & Checkmarks -->
+  <div id="instructionsDrawer" class="instructions-drawer">
+    <div class="instructions-drawer-header">
+      <h3><i class="fa-solid fa-list-check" style="color:var(--purple)"></i> LAB 6 INSTRUCTIONS</h3>
+      <button onclick="toggleInstructionsDrawer()" class="instructions-drawer-close" title="Close Instructions">&times;</button>
+    </div>
+    
+    <div class="drawer-subtitle">
+      Scale microservice container instances up and down dynamically using Docker Compose to manage load:
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px">
+      <!-- Step 1: APP.PY -->
+      <div id="checkCard-app" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-brands fa-python" style="color:#38bdf8"></i> 1. WRITE MICROSERVICE (app.py)</b>
+          <span id="badge-app" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE app.py FEATURING HOSTNAME IDENTIFIER TO TRACK REPLICAS:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
+          <div class="no-copy-code">import socket<br>from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br>HOST_ID = socket.gethostname()<br><br>@app.route('/add', methods=['GET'])<br>def add():<br>&nbsp;&nbsp;a = float(request.args.get('a', 0))<br>&nbsp;&nbsp;b = float(request.args.get('b', 0))<br>&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b, "handled_by_replica": HOST_ID})<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</div>
+        </div>
+      </div>
+
+      <!-- Step 2: DOCKERFILE -->
+      <div id="checkCard-dockerfile" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 2. CREATE DOCKERFILE</b>
+          <span id="badge-dockerfile" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE Dockerfile IN VS CODE EXPLORER:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
+          <div class="no-copy-code">FROM python:3.9-slim<br>WORKDIR /app<br>COPY requirements.txt .<br>RUN pip install -r requirements.txt<br>COPY app.py .<br>EXPOSE 5000<br>CMD ["python", "app.py"]</div>
+        </div>
+      </div>
+
+      <!-- Step 3: DOCKER-COMPOSE.YML -->
+      <div id="checkCard-compose" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-file-code" style="color:#a855f7"></i> 3. CONFIGURE DOCKER-COMPOSE.YML</b>
+          <span id="badge-compose" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE docker-compose.yml DEFINING SCALABLE STACK:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
+          <div class="no-copy-code">version: '3.8'<br>services:<br>&nbsp;&nbsp;sum-microservice:<br>&nbsp;&nbsp;&nbsp;&nbsp;build: .<br>&nbsp;&nbsp;&nbsp;&nbsp;ports:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "5000:5000"<br>&nbsp;&nbsp;&nbsp;&nbsp;deploy:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replicas: 1</div>
+        </div>
+      </div>
+
+      <!-- Step 4: DEPLOY STACK -->
+      <div id="checkCard-deploy" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--blue)"></i> 4. DEPLOY BASELINE STACK</b>
+          <span id="badge-deploy" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker compose up -d</div>
+      </div>
+
+      <!-- Step 5: SCALE UP -->
+      <div id="checkCard-scale_up" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-up-right-and-down-left-from-center" style="color:var(--purple)"></i> 5. SCALE MICROSERVICE REPLICAS UP</b>
+          <span id="badge-scale_up" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#c084fc">docker compose up -d --scale sum-microservice=3</div>
+      </div>
+
+      <!-- Step 6: SCALE DOWN -->
+      <div id="checkCard-scale_down" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-compress" style="color:var(--green)"></i> 6. SCALE MICROSERVICE REPLICAS DOWN</b>
+          <span id="badge-scale_down" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399">docker compose up -d --scale sum-microservice=1</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;flex-shrink:0">
+      <div class="progress-track"><div class="progress-fill" id="mainProg" style="width:0%"></div></div>
+      <div class="progress-labels">
+        <span id="progLabel">0 / 6 Tasks Completed</span>
+        <span id="progPct" class="prog-pct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Integrated VS Code Workplace Layout -->
+  <div class="vscode-container" style="height:calc(100vh - 170px);min-height:720px">
+    <!-- Activity Bar -->
+    <div class="vscode-activitybar">
+      <div class="vscode-activity-icon active" id="act-explorer" title="Explorer (Ctrl+Shift+E)" onclick="switchActivityTab('explorer')"><i class="fa-regular fa-copy"></i></div>
+      <div class="vscode-activity-icon" id="act-search" title="Search (Ctrl+Shift+F)" onclick="switchActivityTab('search')"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="vscode-activity-icon" id="act-git" title="Source Control" onclick="switchActivityTab('git')"><i class="fa-solid fa-code-branch"></i></div>
+      <div class="vscode-activity-icon" id="act-docker" title="Docker Compose Scaling Extension" onclick="switchActivityTab('docker')"><i class="fa-brands fa-docker"></i></div>
+    </div>
+
+    <!-- Explorer Sidebar -->
+    <div class="vscode-sidebar" id="vscodeSidebar">
+      <div class="vscode-sidebar-title" style="display:flex;justify-content:space-between;align-items:center" id="sidebarHeaderTitle">
+        <span>EXPLORER &mdash; COMPOSE-SCALE</span>
+        <div class="sidebar-action-icons">
+          <span class="sidebar-action-icon add-file" id="sbNewFile" onclick="createNewFilePrompt()" title="Create New File"><i class="fa-solid fa-plus"></i></span>
+          <span class="sidebar-action-icon rename-file" id="sbRenameFile" onclick="renameCurrentFilePrompt()" title="Rename Selected File"><i class="fa-solid fa-pen"></i></span>
+          <span class="sidebar-action-icon delete-file" id="sbDeleteFile" onclick="deleteCurrentFilePrompt()" title="Delete Selected File"><i class="fa-solid fa-trash"></i></span>
+          <span class="sidebar-action-icon save-file" id="sbSaveFile" onclick="saveCurrentFile()" title="Save File (Ctrl+S)"><i class="fa-solid fa-floppy-disk"></i></span>
+        </div>
+      </div>
+      <div class="vscode-file-tree" id="fileTreeContainer"></div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="vscode-main">
+      <div class="vscode-tabs" id="vscodeTabsContainer"></div>
+
+      <div class="vscode-editor-toolbar">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> NEW FILE</button>
+          <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> SAVE (CTRL+S)</button>
+          <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> RENAME</button>
+          <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> DELETE</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:.76rem;color:#E0E0E0;font-family:var(--font-mono);font-weight:700" id="editorFileStatus">Editing: app.py</span>
+        </div>
+      </div>
+
+      <!-- Interactive Instruction & Hover Guidance Bar -->
+      <div class="notice-banner-bar">
+        <span><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
+        <button onclick="toggleInstructionsDrawer()" class="btn btn-sm btn-yellow" style="padding:2px 10px;font-size:.72rem"><i class="fa-solid fa-book-open"></i> OPEN INSTRUCTIONS &rarr;</button>
+      </div>
+
+      <!-- Editor & Replica Visualizer Split Pane -->
+      <div class="vscode-editor-pane">
+        <!-- Left: Code Editor -->
+        <div class="vscode-code-area">
+          <div class="vscode-line-numbers" id="lineNumbers">1</div>
+          <div class="vscode-editor-wrapper">
+            <pre class="vscode-highlight-layer" id="codeHighlight" aria-hidden="true"></pre>
+            <textarea class="vscode-textarea" id="codeEditor" spellcheck="false" placeholder="Write your Docker Compose / YAML code here ..." oninput="onCodeInput()" onscroll="syncEditorScroll()"></textarea>
+          </div>
+        </div>
+
+        <!-- Right: Real-Time Dynamic Replica Scaling Visualizer Widget -->
+        <div class="vscode-preview-pane">
+          <div class="vscode-preview-header">
+            <i class="fa-solid fa-rotate-right preview-refresh-btn" title="Refresh Compose Preview" onclick="updateReplicaGrid()"></i>
+            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.85rem;color:#059669"></i> <span id="previewUrlText">http://localhost:5000/add?a=10&amp;b=20</span></div>
+            <span class="preview-status-badge offline" id="previewBadge">OFFLINE</span>
+          </div>
+
+          <div class="vscode-preview-body" id="previewContainer">
+            <div class="offline-placeholder" id="lab6OfflineCard">
+              <i class="fa-solid fa-server"></i>
+              <div class="offline-title">Web Server Container Not Running</div>
+              <div class="offline-desc">Run <code>docker compose build</code> and <code>docker compose up -d</code> in the terminal below to start port 5000.</div>
+            </div>
+
+            <div id="lab6ActiveComposeContent" style="display:none;padding:16px;overflow-y:auto;flex:1;background:#0d1117;color:#c9d1d9;font-family:var(--mono);font-size:.82rem">
+              <div style="border:1px solid #30363d;border-radius:6px;padding:12px;background:#161b22;margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <h4 style="color:#a855f7;margin:0;font-size:.9rem"><i class="fa-solid fa-server"></i> Active Microservice Container Replicas</h4>
+                  <span class="badge badge-purple" id="scalingStateBadge">Baseline (1 Replica)</span>
+                </div>
+                <div id="replicaContainerGrid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-top:10px">
+                  <!-- Replica cards injected dynamically -->
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <button class="btn btn-purple" style="flex:1" onclick="scaleReplicasTo(3)"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Quick Scale to 3 Replicas</button>
+                <button class="btn btn-outline" style="flex:1" onclick="scaleReplicasTo(1)"><i class="fa-solid fa-compress"></i> Quick Scale to 1 Replica</button>
+              </div>
+
+              <button class="btn btn-green" style="width:100%;margin-bottom:12px" onclick="simulateLoadTraffic()"><i class="fa-solid fa-chart-line"></i> Simulate 10 High Traffic Requests (Observe Load Distribution)</button>
+
+              <div style="border:1px solid #30363d;border-radius:6px;padding:12px;background:#161b22">
+                <div style="color:#8b949e;font-size:.75rem;margin-bottom:6px">LOAD BALANCER RESPONSE LOGS:</div>
+                <pre id="trafficLogBox" style="margin:0;color:#38bdf8;font-size:.78rem;white-space:pre-wrap;max-height:160px;overflow-y:auto">Run 'docker compose up -d --scale sum-microservice=3' in terminal or use Quick Scale buttons above to monitor replicas.</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integrated Terminal -->
+      <div class="vscode-bottom-terminal">
+        <div class="vscode-terminal-header">
+          <span class="vscode-terminal-tab active" id="termTab-terminal" onclick="switchTerminalTab('terminal')"><span style="color:#F0C020;font-weight:900">&gt;_</span> TERMINAL</span>
+          <span class="vscode-terminal-tab" id="termTab-problems" onclick="switchTerminalTab('problems')"><i class="fa-solid fa-circle-exclamation"></i> PROBLEMS (0)</span>
+          <span class="vscode-terminal-tab" id="termTab-output" onclick="switchTerminalTab('output')"><i class="fa-solid fa-chart-simple"></i> OUTPUT</span>
+        </div>
+        <div class="terminal" id="vsTerminal" style="border:none;border-radius:0;flex:1;max-height:none" onclick="focusTerminalInput()">
+          <div class="line out" style="color:#ffffff;font-family:var(--font-mono);font-size:.84rem;margin-bottom:8px">VS Code Integrated Terminal [bash/cmd]. Type docker commands below:</div>
+          <div id="terminalOutput"></div>
+          <div class="cursor-row">
+            <span class="prompt">compose-scale$&nbsp;</span>
+            <input type="text" id="terminalInput" autocomplete="off" placeholder="type docker compose up -d or docker compose up -d --scale sum-microservice=3" onkeydown="handleTerminalKeydown(event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="vscode-statusbar">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="cursor:pointer" onclick="alert('Git Branch: main (sync up to date)')"><i class="fa-solid fa-code-branch"></i> MAIN*</span>
+          <span style="cursor:pointer"><i class="fa-regular fa-circle-xmark"></i> 0</span>
+          <span style="cursor:pointer"><i class="fa-solid fa-triangle-exclamation"></i> 0</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <span style="cursor:pointer">UTF-8</span>
+          <span style="cursor:pointer" id="statusLang">PYTHON</span>
+          <span style="cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles"></i> PRETTIER</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ask Faculty Support Ticket Modal -->
+<div id="ticketModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-headset" style="color:var(--primary-red)"></i> ASK FACULTY A QUESTION</h2>
+      <button onclick="closeTicketModal()" class="modal-close-btn">&times;</button>
+    </div>
+    <form onsubmit="submitTicket(event, 6)">
+      <label>Issue Title / Subject</label>
+      <input type="text" id="ticketTitle" placeholder="e.g. WSL2 hypervisor flag error" required>
+
+      <label>Describe your question or issue</label>
+      <textarea id="ticketDesc" rows="4" placeholder="Provide details about the error or question..." required></textarea>
+
+      <button type="submit" class="btn btn-red" style="width:100%;margin-top:16px">
+        <i class="fa-solid fa-paper-plane"></i> SUBMIT TICKET TO FACULTY
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Video Tutorial Modal -->
+<div id="videoModal" class="modal-backdrop">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-video" style="color:var(--primary-blue)"></i> LAB 6 VIDEO TUTORIAL</h2>
+      <button onclick="closeVideoModal()" class="modal-close-btn">&times;</button>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border:3px solid #121212;margin-bottom:16px">
+      <iframe id="videoIframe" src="" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop Blur Tour Modal Overlay -->
+<div id="tourOverlay" class="tour-overlay">
+  <div class="tour-card">
+    <div class="tour-header">
+      <span class="tour-step-badge" id="tourStepBadge">STEP 1 OF 3</span>
+      <button onclick="closeTourModal()" class="tour-close-btn" title="Close">&times;</button>
+    </div>
+    <h2 class="tour-title" id="tourTitle">STEP 1: CONFIGURE DOCKER-COMPOSE.YML</h2>
+    <div class="tour-desc" id="tourDesc"></div>
+    <div class="tour-footer">
+      <button class="tour-btn tour-btn-white" id="tourPrevBtn" onclick="prevTourStep()">&larr; PREVIOUS</button>
+      <button class="tour-btn tour-btn-white" id="tourSkipBtn" onclick="closeTourModal()">SKIP TOUR</button>
+      <button class="tour-btn tour-btn-blue" id="tourNextBtn" onclick="nextTourStep()">NEXT STEP &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Dark Input Prompt Modal -->
+<div id="customPromptModal"
+  style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);z-index:9999999;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease">
+  <div
+    style="background:#1e293b;border:1px solid #334155;border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 60px rgba(0,0,0,0.5);color:#f8fafc">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3
+        style="font-size:1.15rem;margin:0;color:#f8fafc;display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:0.04em"
+        id="customPromptTitle"><i class="fa-solid fa-file-circle-plus" style="color:#38bdf8"></i> CREATE NEW FILE</h3>
+      <button onclick="closeCustomPromptModal()"
+        style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer">&times;</button>
+    </div>
+    <div style="font-size:.86rem;color:#94a3b8;margin-bottom:14px" id="customPromptMessage">Enter file name to add to
+      workspace (e.g. app.py, Dockerfile):</div>
+    <input type="text" id="customPromptInput"
+      style="width:100%;background:#0f172a;border:2px solid #0284c7;box-shadow:0 0 0 2px rgba(2,132,199,0.35);color:#f8fafc;padding:12px 14px;border-radius:8px;outline:none;font-family:var(--font-mono, monospace);font-size:.92rem;margin-bottom:20px;box-sizing:border-box"
+      placeholder="e.g. app.py, Dockerfile">
+    <div style="display:flex;justify-content:flex-end;gap:12px">
+      <button class="btn btn-outline btn-sm"
+        style="background:#FFFFFF;color:#121212;border:2px solid #121212;box-shadow:3px 3px 0px #121212;border-radius:8px;padding:8px 18px;font-weight:800;text-transform:uppercase;cursor:pointer"
+        onclick="closeCustomPromptModal()">CANCEL</button>
+      <button class="btn btn-blue btn-sm" id="customPromptConfirmBtn"
+        style="background:#1040C0;color:#FFFFFF;border:2px solid #121212;box-shadow:3px 3px 0px #121212;border-radius:8px;padding:8px 20px;font-weight:800;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="fa-solid fa-check"></i> CONFIRM</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Confirmation Modal for Deletion -->
+<div id="customConfirmModal"
+  style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);z-index:9999999;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease">
+  <div
+    style="background:#1e293b;border:1px solid #334155;border-radius:16px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 60px rgba(0,0,0,0.5);color:#f8fafc">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <div
+        style="width:42px;height:42px;border-radius:50%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:1.2rem;flex-shrink:0">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <h3 style="font-size:1.1rem;margin:0;color:#f8fafc;font-weight:800;text-transform:uppercase" id="customConfirmTitle">CONFIRM ACTION</h3>
+        <div style="font-size:.85rem;color:#94a3b8;margin-top:2px" id="customConfirmMessage">Are you sure you want to
+          delete this file?</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+      <button class="btn btn-outline btn-sm"
+        style="background:#FFFFFF;color:#121212;border:2px solid #121212;box-shadow:3px 3px 0px #121212;border-radius:8px;padding:8px 18px;font-weight:800;text-transform:uppercase;cursor:pointer"
+        onclick="closeCustomConfirmModal()">CANCEL</button>
+      <button class="btn btn-sm" id="customConfirmBtn"
+        style="background:#ef4444;color:#FFFFFF;border:2px solid #121212;box-shadow:3px 3px 0px #121212;border-radius:8px;padding:8px 18px;font-weight:800;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="fa-solid fa-trash"></i> DELETE FILE</button>
+    </div>
+  </div>
+</div>
+
+<div id="customToastContainer" style="position:fixed;top:24px;right:24px;z-index:9999999;display:flex;flex-direction:column;gap:10px;pointer-events:none"></div>
+
+<script>
+const STUDENT_ID = "{{ student.student_id if student else session.get('student_id', 'guest') }}";
+window.STUDENT_ID = STUDENT_ID;
+const STORAGE_KEY_LAB6 = 'vlab_code_lab6_' + (STUDENT_ID || 'guest');
+let defaultFiles = {
+  "app.py": ""
+};
+
+let files = Object.assign({}, defaultFiles);
+try {
+  let saved = localStorage.getItem(STORAGE_KEY_LAB6);
+  if (!saved && STUDENT_ID && STUDENT_ID !== 'guest') {
+    saved = localStorage.getItem('vlab_code_lab6_guest');
+  }
+  if (saved) {
+    files = JSON.parse(saved);
+  }
+} catch(e) {
+  console.error("Error loading saved code from localStorage:", e);
+}
+if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
+  files = { "app.py": "" };
+}
+
+function saveFilesToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAB6, JSON.stringify(files));
+    if (STUDENT_ID && STUDENT_ID !== 'guest') {
+      localStorage.setItem('vlab_code_lab6_guest', JSON.stringify(files));
+    }
+  } catch(e) {
+    console.error("Error saving files to localStorage:", e);
+  }
+}
+
+const ACTIVE_FILE_KEY_LAB6 = 'vlab_active_file_lab6_' + (STUDENT_ID || 'guest');
+let savedActive = null;
+try {
+  savedActive = localStorage.getItem(ACTIVE_FILE_KEY_LAB6);
+} catch(e) {}
+let activeFile = (savedActive && files[savedActive] !== undefined) ? savedActive : "app.py";
+let replicaCount = 1;
+let tested = {
+  app: false,
+  dockerfile: false,
+  compose: false,
+  deploy: false,
+  scale_up: false,
+  scale_down: false
+};
+
+function checkCodeProgress() {
+  const ed = document.getElementById("codeEditor");
+  const appCode = (activeFile === 'app.py' && ed ? ed.value : (files['app.py'] || '')) || '';
+  const dockerCode = (activeFile === 'Dockerfile' && ed ? ed.value : (files['Dockerfile'] || '')) || '';
+  const composeCode = (activeFile === 'docker-compose.yml' && ed ? ed.value : (files['docker-compose.yml'] || '')) || '';
+
+  const cleanApp = appCode.toLowerCase();
+  tested.app = Boolean(cleanApp.includes('flask') && (cleanApp.includes('hostname') || cleanApp.includes('socket')) && cleanApp.includes('/add'));
+
+  const cleanDocker = dockerCode.toLowerCase();
+  tested.dockerfile = Boolean(/\bfrom\s+python/i.test(cleanDocker) && cleanDocker.includes('app.py'));
+
+  const cleanCompose = composeCode.toLowerCase();
+  tested.compose = Boolean(cleanCompose.includes('services') && cleanCompose.includes('sum-microservice') && cleanCompose.includes('ports'));
+}
+
+function getFileInfo(filename) {
+  const name = (filename || '').toLowerCase();
+  if (name.endsWith('.py')) {
+    return { icon: 'fa-brands fa-python', color: '#38bdf8' };
+  }
+  if (name.includes('docker') || name.startsWith('dockerfile')) {
+    return { icon: 'fa-brands fa-docker', color: '#2496ed' };
+  }
+  if (name.endsWith('.yml') || name.endsWith('.yaml')) {
+    return { icon: 'fa-solid fa-cubes', color: '#a855f7' };
+  }
+  if (name.endsWith('.html') || name.endsWith('.htm')) {
+    return { icon: 'fa-brands fa-html5', color: '#f97316' };
+  }
+  if (name.endsWith('.json')) {
+    return { icon: 'fa-solid fa-code', color: '#f59e0b' };
+  }
+  if (name.endsWith('.txt') || name.endsWith('.md')) {
+    return { icon: 'fa-regular fa-file-lines', color: '#94a3b8' };
+  }
+  return { icon: 'fa-solid fa-file-code', color: '#38bdf8' };
+}
+
+function renderFileTree() {
+  const container = document.getElementById("fileTreeContainer");
+  if (!container) return;
+  container.innerHTML = "";
+  const names = Object.keys(files);
+  if (names.length === 0) {
+    container.innerHTML = '<div style="padding:12px;font-size:.78rem;color:var(--muted);font-style:italic">No files in workspace.<br>Click + above to create app.py.</div>';
+    return;
+  }
+  names.forEach(filename => {
+    const info = getFileInfo(filename);
+    const item = document.createElement("div");
+    item.className = "vscode-file-item" + (filename === activeFile ? " active" : "");
+    item.onclick = () => switchFile(filename);
+    item.innerHTML = `<i class="${info.icon}" style="color:${info.color} !important;font-size:0.95rem;margin-right:8px;flex-shrink:0"></i> <span style="color:${filename === activeFile ? '#ffffff' : '#cbd5e1'};font-weight:${filename === activeFile ? '700' : '500'}">${filename}</span>`;
+    container.appendChild(item);
+  });
+}
+
+function renderTabs() {
+  const container = document.getElementById("vscodeTabsContainer");
+  if (!container) return;
+  container.innerHTML = "";
+  Object.keys(files).forEach(filename => {
+    const info = getFileInfo(filename);
+    const tab = document.createElement("div");
+    tab.className = "vscode-tab" + (filename === activeFile ? " active" : "");
+    tab.onclick = () => switchFile(filename);
+    tab.innerHTML = `<i class="${info.icon}" style="color:${info.color} !important;font-size:0.9rem;margin-right:8px;flex-shrink:0"></i><span style="color:${filename === activeFile ? '#ffffff' : '#94a3b8'};font-weight:${filename === activeFile ? '700' : '500'}">${filename}</span><span class="tab-close" onclick="event.stopPropagation(); deleteSpecificFile('${filename}');" title="Close / Delete">&times;</span>`;
+    container.appendChild(tab);
+  });
+}
+
+function switchFile(filename) {
+  if (!filename) return;
+  const editor = document.getElementById("codeEditor");
+  if (activeFile && activeFile !== filename && files[activeFile] !== undefined) {
+    if (editor) files[activeFile] = editor.value;
+  }
+  activeFile = filename;
+  try {
+    localStorage.setItem(ACTIVE_FILE_KEY_LAB6, filename);
+  } catch(e) {}
+  if (editor) {
+    editor.value = files[activeFile] !== undefined ? files[activeFile] : "";
+    if (activeFile && (activeFile.endsWith('.yml') || activeFile.endsWith('.yaml') || activeFile.includes('compose'))) {
+      editor.placeholder = "Write your Docker Compose / YAML code here ...";
+    } else if (activeFile && (activeFile.endsWith('.py') || activeFile.toLowerCase().includes('dockerfile'))) {
+      editor.placeholder = "Write your Python / Dockerfile code here ...";
+    } else {
+      editor.placeholder = "Write your Docker Compose / YAML code here ...";
+    }
+  }
+  const statusEl = document.getElementById("editorFileStatus");
+  if (statusEl) {
+    const info = getFileInfo(activeFile);
+    statusEl.innerHTML = `<i class="${info.icon}" style="color:${info.color} !important;margin-right:6px"></i> Editing: <b>${activeFile}</b>`;
+  }
+  renderFileTree();
+  renderTabs();
+  const code = editor ? editor.value : "";
+  const lines = code ? code.split("\n").length : 1;
+  const lineNumEl = document.getElementById("lineNumbers");
+  if (lineNumEl) lineNumEl.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+  updateProgressUI();
+}
+
+function onCodeInput() {
+  const code = document.getElementById("codeEditor").value;
+  files[activeFile] = code;
+  const statusEl = document.getElementById("editorFileStatus");
+  if (statusEl && activeFile) {
+    const info = getFileInfo(activeFile);
+    statusEl.innerHTML = `<i class="${info.icon}" style="color:${info.color} !important;margin-right:6px"></i> Editing: <b>${activeFile}</b> <span style="color:#f59e0b;font-size:.72rem;margin-left:6px;font-weight:700">&#9679; Unsaved</span>`;
+  }
+  const lines = code.split("\n").length;
+  document.getElementById("lineNumbers").innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+  updateProgressUI();
+}
+
+function syncEditorScroll() {
+  const textarea = document.getElementById("codeEditor");
+  document.getElementById("codeHighlight").scrollTop = textarea.scrollTop;
+}
+
+function toggleInstructionsDrawer() {
+  const drawer = document.getElementById("instructionsDrawer");
+  if (drawer) drawer.classList.toggle("open");
+}
+
+function openInstructionsDrawer() {
+  const drawer = document.getElementById("instructionsDrawer");
+  if (drawer) drawer.classList.add("open");
+}
+
+function closeInstructionsDrawer() {
+  const drawer = document.getElementById("instructionsDrawer");
+  if (drawer) drawer.classList.remove("open");
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    closeInstructionsDrawer();
+  }
+});
+
+const lab6TourSteps = [
+  {
+    num: 1,
+    title: "STEP 1: CONFIGURE DOCKER-COMPOSE.YML",
+    desc: "Inspect app.py, Dockerfile, and define services, ports, and replica declarations in docker-compose.yml using the integrated VS Code editor."
+  },
+  {
+    num: 2,
+    title: "STEP 2: SCALE MICROSERVICE REPLICAS",
+    desc: "Execute 'docker compose up -d --scale sum-microservice=3' in the terminal to spawn multiple worker container instances behind the load balancer."
+  },
+  {
+    num: 3,
+    title: "STEP 3: VERIFY LOAD BALANCING & SUBMIT",
+    desc: "Trigger high-concurrency requests and inspect how requests are round-robin balanced across distinct replica hostnames, then click 'SUBMIT & VERIFY LAB 6'."
+  }
+];
+let currentLab6TourStep = 1;
+
+function startGuidedTour() {
+  currentLab6TourStep = 1;
+  renderLab6TourModal();
+  document.getElementById('tourOverlay').style.display = 'flex';
+}
+
+function renderLab6TourModal() {
+  const step = lab6TourSteps[currentLab6TourStep - 1];
+  document.getElementById('tourStepBadge').textContent = `STEP ${step.num} OF 3`;
+  document.getElementById('tourTitle').textContent = step.title;
+  document.getElementById('tourDesc').textContent = step.desc;
+  document.getElementById('tourPrevBtn').disabled = currentLab6TourStep === 1;
+  document.getElementById('tourNextBtn').textContent = currentLab6TourStep === 3 ? 'FINISH TOUR' : 'NEXT STEP \u2192';
+}
+
+function nextTourStep() {
+  if (currentLab6TourStep < 3) {
+    currentLab6TourStep++;
+    renderLab6TourModal();
+  } else {
+    closeTourModal();
+  }
+}
+
+function prevTourStep() {
+  if (currentLab6TourStep > 1) {
+    currentLab6TourStep--;
+    renderLab6TourModal();
+  }
+}
+
+function closeTourModal() {
+  document.getElementById('tourOverlay').style.display = 'none';
+}
+
+let customPromptCallback = null;
+function openCustomPrompt(title, msg, placeholder, defVal, callback) {
+  document.getElementById('customPromptTitle').innerHTML = title;
+  document.getElementById('customPromptMessage').textContent = msg;
+  const inp = document.getElementById('customPromptInput');
+  inp.placeholder = placeholder || '';
+  inp.value = defVal || '';
+  customPromptCallback = callback;
+  document.getElementById('customPromptModal').style.display = 'flex';
+  setTimeout(() => inp.focus(), 100);
+}
+
+function closeCustomPromptModal() {
+  document.getElementById('customPromptModal').style.display = 'none';
+  customPromptCallback = null;
+}
+
+document.getElementById('customPromptConfirmBtn').onclick = function () {
+  const val = document.getElementById('customPromptInput').value.trim();
+  if (customPromptCallback) customPromptCallback(val);
+  closeCustomPromptModal();
+};
+
+const customPromptInp = document.getElementById('customPromptInput');
+if (customPromptInp) {
+  customPromptInp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('customPromptConfirmBtn').click();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeCustomPromptModal();
+    }
+  });
+}
+
+let customConfirmCallback = null;
+function openCustomConfirmModal(title, msg, btnText, btnColor, callback) {
+  document.getElementById('customConfirmTitle').textContent = title;
+  document.getElementById('customConfirmMessage').textContent = msg;
+  const btn = document.getElementById('customConfirmBtn');
+  btn.innerHTML = `<i class="fa-solid fa-trash"></i> ${btnText || 'Confirm'}`;
+  btn.style.background = btnColor || '#ef4444';
+  customConfirmCallback = callback;
+  document.getElementById('customConfirmModal').style.display = 'flex';
+}
+
+function closeCustomConfirmModal() {
+  document.getElementById('customConfirmModal').style.display = 'none';
+  customConfirmCallback = null;
+}
+
+document.getElementById('customConfirmBtn').onclick = function () {
+  if (customConfirmCallback) customConfirmCallback();
+  closeCustomConfirmModal();
+};
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('customToastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  const bgColors = {
+    success: 'background:rgba(16,185,129,0.95);border:1px solid #059669;color:#ffffff',
+    error: 'background:rgba(239,68,68,0.95);border:1px solid #dc2626;color:#ffffff',
+    warning: 'background:rgba(245,158,11,0.95);border:1px solid #d97706;color:#ffffff',
+    info: 'background:rgba(2,132,199,0.95);border:1px solid #0284c7;color:#ffffff'
+  };
+  const icons = {
+    success: '<i class="fa-solid fa-circle-check"></i>',
+    error: '<i class="fa-solid fa-circle-xmark"></i>',
+    warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+    info: '<i class="fa-solid fa-info-circle"></i>'
+  };
+  toast.style.cssText = `${bgColors[type] || bgColors.info};padding:12px 18px;border-radius:10px;font-size:.88rem;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 10px 25px rgba(0,0,0,0.3);backdrop-filter:blur(8px);pointer-events:auto;animation:toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)`;
+  toast.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+function createNewFilePrompt() {
+  openCustomPrompt('<i class="fa-solid fa-file-circle-plus" style="color:#38bdf8"></i> CREATE NEW FILE', 'Enter file name to add to workspace (e.g. app.py, Dockerfile):', 'e.g. app.py, Dockerfile', '', function (val) {
+    if (!val) return;
+    if (files[val] !== undefined) {
+      showToast('File ' + val + ' already exists!', 'error');
+      switchFile(val);
+      return;
+    }
+    files[val] = '';
+    saveFilesToLocalStorage();
+    switchFile(val);
+    renderFileTree();
+    renderTabs();
+    showToast("Created '" + val + "' successfully!", 'success');
+  });
+}
+
+function renameCurrentFilePrompt() {
+  if (!activeFile) return;
+  openCustomPrompt('<i class="fa-solid fa-pen" style="color:#f59e0b"></i> RENAME FILE', 'Rename ' + activeFile + ' to:', activeFile, activeFile, function (val) {
+    if (!val || val === activeFile) return;
+    if (files[val] !== undefined) {
+      showToast('File ' + val + ' already exists!', 'error');
+      return;
+    }
+    files[val] = files[activeFile];
+    delete files[activeFile];
+    saveFilesToLocalStorage();
+    switchFile(val);
+    renderFileTree();
+    renderTabs();
+    showToast("Renamed to '" + val + "' successfully!", 'success');
+  });
+}
+
+function deleteSpecificFile(fname) {
+  openCustomConfirmModal('DELETE FILE', 'Are you sure you want to delete ' + fname + '?', 'DELETE FILE', '#ef4444', function () {
+    delete files[fname];
+    saveFilesToLocalStorage();
+    const rem = Object.keys(files);
+    if (activeFile === fname) {
+      activeFile = rem.length > 0 ? rem[0] : '';
+      if (activeFile) {
+        switchFile(activeFile);
+      } else {
+        const ed = document.getElementById("codeEditor");
+        if (ed) ed.value = "";
+        const ln = document.getElementById("lineNumbers");
+        if (ln) ln.innerHTML = "1";
+        const st = document.getElementById("editorFileStatus");
+        if (st) st.innerHTML = "No file open";
+      }
+    }
+    renderFileTree();
+    renderTabs();
+    showToast("Deleted '" + fname + "' successfully!", 'success');
+  });
+}
+
+function deleteCurrentFilePrompt() {
+  if (!activeFile) return;
+  deleteSpecificFile(activeFile);
+}
+
+function saveCurrentFile() {
+  if (!activeFile) return;
+  const ed = document.getElementById("codeEditor");
+  if (ed) {
+    files[activeFile] = ed.value;
+    saveFilesToLocalStorage();
+    const statusEl = document.getElementById("editorFileStatus");
+    if (statusEl) {
+      const info = getFileInfo(activeFile);
+      statusEl.innerHTML = `<i class="${info.icon}" style="color:${info.color} !important;margin-right:6px"></i> Editing: <b>${activeFile}</b> <span style="color:#10b981;font-size:.72rem;margin-left:6px;font-weight:700">&#10003; Saved</span>`;
+    }
+    showToast("Saved '" + activeFile + "' successfully!", 'success');
+  }
+}
+
+function handleTerminalKeydown(e) {
+  if (e.key === "Enter") {
+    const input = document.getElementById("terminalInput");
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    input.value = "";
+    appendTermLine(cmd, "cmd");
+    execTerminalCommand(cmd);
+  }
+}
+
+function appendTermLine(txt, type="info") {
+  const body = document.getElementById("terminalOutput");
+  const div = document.createElement("div");
+  div.className = `term-line ${type}`;
+  if (type === "cmd") {
+    div.innerHTML = `<span class="prompt">compose-scale$&nbsp;</span><span class="cmd-text" style="color:#ffffff !important">${txt.replace(/</g, '&lt;')}</span>`;
+  } else {
+    div.innerText = txt;
+    if (type === "error" || type === "err") {
+      div.style.color = "#ef4444";
+      div.style.fontWeight = "600";
+    } else {
+      div.style.color = "#ffffff";
+    }
+  }
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearTerminalConsole() {
+  document.getElementById("terminalOutput").innerHTML = "";
+}
+
+function focusTerminalInput() {
+  document.getElementById("terminalInput").focus();
+}
+
+function switchActivityTab(tab) {
+  document.querySelectorAll('.vscode-activity-icon').forEach(el => el.classList.remove('active'));
+  const activeEl = document.getElementById('act-' + tab);
+  if (activeEl) activeEl.classList.add('active');
+  const sb = document.getElementById('vscodeSidebar');
+  if (tab === 'explorer') {
+    if (sb) sb.style.display = 'flex';
+  } else {
+    if (sb) sb.style.display = 'none';
+    alert(tab.toUpperCase() + ' panel active (VS Code view mode)');
+  }
+}
+
+function switchTerminalTab(tab) {
+  document.querySelectorAll('.vscode-terminal-tab').forEach(el => el.classList.remove('active'));
+  const activeTab = document.getElementById('termTab-' + tab);
+  if (activeTab) activeTab.classList.add('active');
+  if (tab === 'problems') {
+    alert('Problems: 0 errors detected in workspace.');
+  } else if (tab === 'output') {
+    alert('Output: Docker Compose replicas scaled and healthy.');
+  }
+}
+
+// Global Ctrl+S shortcut
+window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    saveCurrentFile();
+  }
+});
+
+function execTerminalCommand(cmd) {
+  const cmdLower = cmd.toLowerCase();
+
+  fetch("/api/run-command", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({command: cmd, files: files})
+  })
+  .then(res => res.json())
+  .then(data => {
+    function isCommandSuccess(data) {
+      if (!data || !data.ok) return false;
+      const out = (data.output || '').toLowerCase();
+      const errorSignatures = [
+        'error response from daemon',
+        'cannot connect to the docker daemon',
+        'failed to solve',
+        'failed to build',
+        'no such image',
+        'no such container',
+        'unable to find image',
+        'is not recognized as an internal or external command',
+        'command not found',
+        'executable file not found',
+        'unknown shorthand flag',
+        'unknown flag',
+        'port is already allocated',
+        'address already in use',
+        'fatal:',
+        'invalid argument',
+        'error:'
+      ];
+      for (const sig of errorSignatures) {
+        if (out.includes(sig)) return false;
+      }
+      return true;
+    }
+
+    const success = isCommandSuccess(data);
+    appendTermLine(data.output || (success ? "Command executed successfully." : "Command execution failed."), success ? "output" : "error");
+
+    if (success) {
+      if (cmdLower.includes("docker compose up") || cmdLower.includes("docker-compose up")) {
+        tested.deploy = true;
+        if (cmdLower.includes("--scale") || cmdLower.includes("scale")) {
+          if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
+            scaleReplicasTo(3);
+            tested.scale_up = true;
+          } else if (cmdLower.includes("=1") || cmdLower.includes(" 1")) {
+            scaleReplicasTo(1);
+            tested.scale_down = true;
+          }
+        } else {
+          scaleReplicasTo(1);
+        }
+      }
+      if (cmdLower.includes("docker compose scale") || cmdLower.includes("docker-compose scale")) {
+        if (cmdLower.includes("=3") || cmdLower.includes(" 3")) {
+          scaleReplicasTo(3);
+          tested.scale_up = true;
+        } else if (cmdLower.includes("=1") || cmdLower.includes(" 1")) {
+          scaleReplicasTo(1);
+          tested.scale_down = true;
+        }
+      }
+      updateProgressUI();
+    }
+  })
+  .catch(err => {
+    appendTermLine("Execution error: " + err, "error");
+  });
+}
+
+function scaleReplicasTo(count) {
+  replicaCount = count;
+  if (count >= 3) tested.scale_up = true;
+  if (count === 1 && tested.scale_up) tested.scale_down = true;
+  tested.deploy = true;
+
+  document.getElementById("l6ReplicaBadge").innerHTML = `<i class="fa-solid fa-cubes"></i> Replicas: ${count} Active`;
+  document.getElementById("l6ReplicaCount").innerText = `${count} / 5 Max`;
+  document.getElementById("scalingStateBadge").innerText = count > 1 ? `Scaled Up (${count} Replicas)` : `Baseline (1 Replica)`;
+  document.getElementById("scalingStateBadge").className = count > 1 ? "badge badge-purple" : "badge badge-blue";
+
+  updateReplicaGrid();
+  appendTermLine(`[DOCKER COMPOSE] Service 'sum-microservice' scaled to ${count} replica container instances.`, "success");
+  updateProgressUI();
+}
+
+function updateReplicaGrid() {
+  const grid = document.getElementById("replicaContainerGrid");
+  grid.innerHTML = "";
+  for (let i = 1; i <= replicaCount; i++) {
+    const card = document.createElement("div");
+    card.style.cssText = "border:1.5px solid #a855f7;border-radius:6px;padding:8px 10px;background:#161b22;text-align:center";
+    const hostHash = "sum-replica-" + (100 + i);
+    card.innerHTML = `
+      <div style="font-size:1.1rem;color:#c084fc;margin-bottom:4px"><i class="fa-solid fa-cube"></i></div>
+      <div style="font-weight:700;font-size:.78rem;color:#e2e8f0">replica_${i}</div>
+      <div style="font-size:.68rem;color:#94a3b8">${hostHash}</div>
+      <div style="font-size:.65rem;color:#4ade80;margin-top:4px"><i class="fa-solid fa-circle"></i> Running</div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function simulateLoadTraffic() {
+  const logBox = document.getElementById("trafficLogBox");
+  let logs = `[LOAD TESTER] Dispatching 10 HTTP GET requests to port 5000...\n`;
+  for (let r = 1; r <= 10; r++) {
+    const repId = (r % replicaCount) + 1;
+    const host = `sum-replica-${100 + repId}`;
+    logs += `Request #${r}: GET /add?a=${r}&b=${r*2} -> 200 OK (Handled by ${host})\n`;
+  }
+  logs += `[SUCCESS] 100% requests handled seamlessly across ${replicaCount} active replica(s).`;
+  logBox.innerText = logs;
+  logBox.scrollTop = logBox.scrollHeight;
+  appendTermLine(`[LOAD TEST] Dispatched 10 traffic requests across ${replicaCount} replica(s). Load balancing verified.`, "success");
+}
+
+function refreshComposePreview() {
+  const isOnline = Boolean(tested.deploy || tested.scale_up || tested.scale_down);
+  const offlineCard = document.getElementById("lab6OfflineCard");
+  const activeContent = document.getElementById("lab6ActiveComposeContent");
+  const badge = document.getElementById("previewBadge");
+  if (isOnline) {
+    if (offlineCard) offlineCard.style.display = "none";
+    if (activeContent) activeContent.style.display = "block";
+    if (badge) {
+      badge.className = "preview-status-badge online";
+      badge.textContent = `LIVE (PORT 5000 - ${replicaCount}x)`;
+    }
+  } else {
+    if (offlineCard) offlineCard.style.display = "block";
+    if (activeContent) activeContent.style.display = "none";
+    if (badge) {
+      badge.className = "preview-status-badge offline";
+      badge.textContent = "OFFLINE";
+    }
+  }
+}
+
+function updateProgressUI() {
+  checkCodeProgress();
+  let doneCount = 0;
+  const keys = Object.keys(tested);
+  keys.forEach(k => {
+    if (tested[k]) doneCount++;
+    const card = document.getElementById(`checkCard-${k}`);
+    const badge = document.getElementById(`badge-${k}`);
+    if (card && badge) {
+      if (tested[k]) {
+        card.classList.add("completed");
+        badge.className = "badge badge-green";
+        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed';
+      } else {
+        card.classList.remove("completed");
+        badge.className = "badge badge-amber";
+        badge.innerHTML = '<i class="fa-solid fa-clock"></i> Required';
+      }
+    }
+  });
+
+  const pct = Math.round((doneCount / keys.length) * 100);
+  document.getElementById("mainProg").style.width = pct + "%";
+  document.getElementById("progLabel").innerText = `${doneCount} / ${keys.length} Tasks Completed`;
+  document.getElementById("progPct").innerText = pct + "%";
+  refreshComposePreview();
+}
+
+function submitLab6Completion() {
+  fetch("/api/lab6/verify", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({tested: tested})
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      alert("🏆 CONGRATULATIONS! Lab 6 Verified Successfully!\n\nYou have completed all 6 Virtual Labs and earned your Master Docker Engineer certificate!");
+      window.location.href = "{{ url_for('student_dashboard') }}";
+    } else {
+      alert(data.message || "Verification incomplete.");
+      openInstructionsDrawer();
+    }
+  })
+  .catch(() => {
+    alert("Verification Error: Could not connect to verification server.");
+    openInstructionsDrawer();
+  });
+}
+
+function showTicketModal(labNum) {
+  document.getElementById('ticketModal').classList.add('open');
+}
+
+function closeTicketModal() {
+  document.getElementById('ticketModal').classList.remove('open');
+}
+
+async function submitTicket(e, labNum) {
+  e.preventDefault();
+  const title = document.getElementById('ticketTitle').value.trim();
+  const description = document.getElementById('ticketDesc').value.trim();
+  if (!title || !description) {
+    alert('Please provide a title and description for your issue.');
+    return;
+  }
+  try {
+    const res = await fetch('/api/support/ticket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lab_number: labNum || 6, title, description })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      alert(d.message || 'Ticket successfully submitted to faculty.');
+      document.getElementById('ticketTitle').value = '';
+      document.getElementById('ticketDesc').value = '';
+      closeTicketModal();
+    } else {
+      alert('Error submitting ticket: ' + (d.message || d.error || 'Failed'));
+    }
+  } catch (err) {
+    alert('Network error submitting ticket.');
+  }
+}
+
+function showLabVideoModal(labNum) {
+  fetch('/api/lab/video/' + labNum)
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok && d.video && d.video.video_url) {
+        document.getElementById('videoIframe').src = d.video.video_url;
+        document.getElementById('videoModal').classList.add('open');
+      } else {
+        alert('No lecture video has been uploaded for Lab ' + labNum + ' by the faculty yet.');
+      }
+    })
+    .catch(() => {
+      alert('No lecture video has been uploaded for Lab ' + labNum + ' by the faculty yet.');
+    });
+}
+
+function closeVideoModal() {
+  document.getElementById('videoModal').classList.remove('open');
+  document.getElementById('videoIframe').src = '';
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderFileTree();
+  renderTabs();
+  switchFile(activeFile || "docker-compose.yml");
+  updateReplicaGrid();
+  updateProgressUI();
+});
+
+// Live OS Docker Telemetry Interval Loop
+setInterval(() => {
+  fetch('/api/system-telemetry')
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const statusBadge = document.getElementById('lab6EngineStatus');
+        if (statusBadge && d.docker_status_text) {
+          statusBadge.className = 'telemetry-pill-connected';
+          statusBadge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:.45rem"></i> ' + d.docker_status_text;
+        }
+      }
+    }).catch(() => {});
+}, 1500);
+</script>
+
+{% endblock %}

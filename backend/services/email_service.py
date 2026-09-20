@@ -9,6 +9,7 @@ Handles:
 """
 
 import os
+import re
 import smtplib
 import ssl
 import json
@@ -171,7 +172,6 @@ class EmailService:
             print(f"   Subject:  {subject}")
             print(f"   Status:   Queued / Simulated Live Delivery")
             # Extract links if any
-            import re
             links = re.findall(r'href=[\'"]([^\'"]+)[\'"]', html_content)
             if links:
                 print(f"   Key Action Link: {links[0]}")

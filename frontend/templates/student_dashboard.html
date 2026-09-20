@@ -21,6 +21,12 @@
 
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <div class="badge badge-red"><i class="fa-solid fa-id-badge"></i> {{ student.student_id if student else 'STUDENT' }}</div>
+        {% if student and student.enrollment_no %}
+        <div class="badge badge-yellow"><i class="fa-solid fa-graduation-cap"></i> ENR: {{ student.enrollment_no }}</div>
+        {% endif %}
+        {% if student and student.roll_no %}
+        <div class="badge badge-white"><i class="fa-solid fa-hashtag"></i> ROLL: {{ student.roll_no }}</div>
+        {% endif %}
         <div class="badge badge-blue"><i class="fa-solid fa-envelope"></i> {{ (student.email if student else None) or 'Student Active' }}</div>
         <div class="badge badge-yellow"><i class="fa-solid fa-cubes"></i> 6 LAB MODULES</div>
       </div>

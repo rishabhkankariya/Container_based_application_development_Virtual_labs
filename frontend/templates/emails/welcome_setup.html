@@ -1,0 +1,73 @@
+{% extends "emails/layout.html" %}
+
+{% block content %}
+{% if is_reset %}
+<h2>Default Password Updated, {{ student_name }}! 🔑</h2>
+<p>
+  A new default password has been generated for your Virtual Laboratory account by your faculty instructor.
+</p>
+{% else %}
+<h2>Welcome to V-Lab, {{ student_name }}! 👋</h2>
+<p>
+  Your official student account for the <strong>Container-Based Application Development Virtual Laboratory</strong> has been registered by your faculty.
+</p>
+{% endif %}
+
+<div class="info-card">
+  <div class="info-row">
+    <span class="info-label">Student Name:</span>
+    <span class="info-value" style="font-family:inherit;">{{ student_name }}</span>
+  </div>
+  {% if enrollment_no %}
+  <div class="info-row">
+    <span class="info-label">Enrollment No:</span>
+    <span class="info-value" style="color:#0056b3;">{{ enrollment_no }}</span>
+  </div>
+  {% endif %}
+  {% if roll_no %}
+  <div class="info-row">
+    <span class="info-label">Roll Number:</span>
+    <span class="info-value">{{ roll_no }}</span>
+  </div>
+  {% endif %}
+  <div class="info-row">
+    <span class="info-label">Student ID:</span>
+    <span class="info-value">{{ student_id }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Registered Email:</span>
+    <span class="info-value" style="font-family:inherit;">{{ email }}</span>
+  </div>
+</div>
+
+{% if default_password %}
+<div style="background:#fff8e1;border:2px solid #121212;padding:14px 18px;margin:20px 0;box-shadow:3px 3px 0px #121212;">
+  <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:6px;">
+    {% if is_reset %}NEW DEFAULT PASSWORD{% else %}TEMPORARY DEFAULT PASSWORD{% endif %}
+  </div>
+  <div style="font-family:monospace;font-size:18px;font-weight:bold;color:#d02020;background:#ffffff;border:1px solid #ddd;padding:6px 12px;display:inline-block;letter-spacing:1px;">
+    {{ default_password }}
+  </div>
+  <div style="margin-top:8px;font-size:13px;color:#333;">
+    Sign in directly at <a href="{{ base_url }}/login" style="color:#0056b3;font-weight:bold;">{{ base_url }}/login</a> using this password.
+  </div>
+</div>
+{% endif %}
+
+<p>
+  To customize your password directly or activate your credentials:
+</p>
+
+<div style="text-align:center;margin:18px 0;">
+  <a href="{{ setup_url }}" class="btn-primary">{% if is_reset %}Set Custom Password{% else %}Activate Account &amp; Set Password{% endif %}</a>
+</div>
+
+<p style="font-size:13px;color:#666;">
+  Or copy and paste this link into your browser:<br>
+  <a href="{{ setup_url }}" style="color:#0056b3;word-break:break-all;">{{ setup_url }}</a>
+</p>
+
+<div class="security-note">
+  🔒 <strong>Security Note:</strong> This activation link is single-use and will expire in 48 hours. If you did not expect this account, please contact your department administrator.
+</div>
+{% endblock %}

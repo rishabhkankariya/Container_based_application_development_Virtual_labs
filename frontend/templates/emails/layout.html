@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ subject }}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      color: #212529;
+      -webkit-font-smoothing: antialiased;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #ffffff;
+      border: 3px solid #121212;
+      box-shadow: 6px 6px 0px #121212;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .email-header {
+      background: #0056b3;
+      padding: 24px 30px;
+      border-bottom: 3px solid #121212;
+      color: #ffffff;
+    }
+    .email-header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .email-header .tagline {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .email-body {
+      padding: 30px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    .info-card {
+      background: #f8f9fa;
+      border: 2px solid #121212;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .info-row:last-child {
+      margin-bottom: 0;
+    }
+    .info-label {
+      font-weight: 700;
+      color: #495057;
+    }
+    .info-value {
+      color: #212529;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: bold;
+    }
+    .btn-primary {
+      display: inline-block;
+      background: #d9381e;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 2px solid #121212;
+      box-shadow: 3px 3px 0px #121212;
+      border-radius: 4px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .email-footer {
+      background: #f1f3f5;
+      padding: 20px 30px;
+      border-top: 2px solid #e9ecef;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .security-note {
+      font-size: 12px;
+      color: #868e96;
+      border-top: 1px solid #dee2e6;
+      margin-top: 20px;
+      padding-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1>🐳 Container V-Lab</h1>
+      <div class="tagline">Virtual Laboratory &amp; Microservices Learning Platform</div>
+    </div>
+
+    <div class="email-body">
+      {% block content %}{% endblock %}
+    </div>
+
+    <div class="email-footer">
+      <div>This is an automated notification from your college Container V-Lab platform.</div>
+      <div>If you need assistance, please contact your laboratory faculty or course coordinator.</div>
+    </div>
+  </div>
+</body>
+</html>

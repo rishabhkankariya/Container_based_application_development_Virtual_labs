@@ -1,0 +1,30 @@
+{% extends "emails/layout.html" %}
+
+{% block content %}
+<h2>Lab Verification Notice ⚠️</h2>
+<p>Hello <strong>{{ student_name }}</strong>,</p>
+<p>
+  Your recent verification attempt for <strong>Lab {{ lab_number }}: {{ lab_title }}</strong> did not pass the automated tests.
+</p>
+
+<div class="info-card" style="background:#fff5f5;border-color:#feb2b2;">
+  <div class="info-row">
+    <span class="info-label">Status:</span>
+    <span class="info-value" style="color:#e53e3e;">✗ VERIFICATION FAILED</span>
+  </div>
+  <div style="margin-top:10px;font-size:14px;color:#4a5568;">
+    <strong>Issue Summary:</strong><br>
+    <div style="background:#fff;border:1px solid #e2e8f0;padding:8px 12px;border-radius:4px;font-family:monospace;font-size:13px;margin-top:6px;">
+      {{ reason or "Automated tests detected missing files, configuration errors, or containers not running." }}
+    </div>
+  </div>
+</div>
+
+<p>
+  Don't worry! You can return to your VS Code editor and terminal console in the V-Lab, fix the issue, and re-verify your submission.
+</p>
+
+<div style="text-align:center;">
+  <a href="{{ lab_url }}" class="btn-primary">Return to Lab {{ lab_number }}</a>
+</div>
+{% endblock %}

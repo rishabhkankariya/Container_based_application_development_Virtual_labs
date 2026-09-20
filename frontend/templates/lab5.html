@@ -86,6 +86,8 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
           <div class="no-copy-code">from flask import Flask, request, jsonify<br><br>app = Flask(__name__)<br><br>@app.route('/add', methods=['GET'])<br>def add():<br>&nbsp;&nbsp;a = float(request.args.get('a', 0))<br>&nbsp;&nbsp;b = float(request.args.get('b', 0))<br>&nbsp;&nbsp;return jsonify({"number1": a, "number2": b, "sum": a + b, "container": "sum-microservice"})<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(1)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step1" class="step-test-result"></div>
       </div>
 
       <!-- Step 2: CREATE CLIENT.PY -->
@@ -99,48 +101,107 @@
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> REFERENCE</div>
           <div class="no-copy-code">from flask import Flask, request, jsonify<br>import requests<br><br>app = Flask(__name__)<br>MICROSERVICE_URL = "http://sum-microservice:5000/add"<br><br>@app.route('/calc', methods=['GET'])<br>def calc():<br>&nbsp;&nbsp;a = request.args.get('a', 10)<br>&nbsp;&nbsp;b = request.args.get('b', 20)<br>&nbsp;&nbsp;res = requests.get(f"{MICROSERVICE_URL}?a={a}&b={b}")<br>&nbsp;&nbsp;return jsonify({"client_status": "success", "network_result": res.json()})<br><br>if __name__ == '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=8080)</div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(2)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step2" class="step-test-result"></div>
       </div>
 
-      <!-- Step 3: DOCKERFILES -->
+      <!-- Step 3: DOCKERFILE MICROSERVICE -->
       <div id="checkCard-df_micro" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 3. CREATE DOCKERFILES</b>
+          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#2496ed"></i> 3. CREATE DOCKERFILE.MICROSERVICE</b>
           <span id="badge-df_micro" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
-        <div class="drawer-step-sub">CREATE Dockerfile.microservice AND Dockerfile.client:</div>
+        <div class="drawer-step-sub">CREATE Dockerfile.microservice IN EXPLORER:</div>
         <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
           <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> Dockerfile.microservice REFERENCE</div>
           <div class="no-copy-code">FROM python:3.9-slim<br>WORKDIR /app<br>COPY requirements.txt .<br>RUN pip install -r requirements.txt<br>COPY app.py .<br>EXPOSE 5000<br>CMD ["python", "app.py"]</div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(3)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step3" class="step-test-result"></div>
       </div>
 
-      <!-- Step 4: CREATE NETWORK -->
+      <!-- Step 4: DOCKERFILE CLIENT -->
+      <div id="checkCard-df_client" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-brands fa-docker" style="color:#a855f7"></i> 4. CREATE DOCKERFILE.CLIENT</b>
+          <span id="badge-df_client" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">CREATE Dockerfile.client IN EXPLORER:</div>
+        <div class="no-copy-box" oncopy="return false" oncut="return false" oncontextmenu="return false">
+          <div style="font-size:.7rem;color:#f59e0b;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-lock"></i> Dockerfile.client REFERENCE</div>
+          <div class="no-copy-code">FROM python:3.9-slim<br>WORKDIR /app<br>COPY requirements.txt .<br>RUN pip install -r requirements.txt<br>COPY client.py .<br>EXPOSE 8080<br>CMD ["python", "client.py"]</div>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(3)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step3-client" class="step-test-result"></div>
+      </div>
+
+      <!-- Step 5: CREATE NETWORK -->
       <div id="checkCard-network" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b class="drawer-step-title"><i class="fa-solid fa-network-wired" style="color:var(--blue)"></i> 4. CREATE DOCKER NETWORK</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-network-wired" style="color:var(--blue)"></i> 5. CREATE DOCKER NETWORK</b>
           <span id="badge-network" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL BELOW:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker network create app-net</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+          <code style="font-family:var(--mono);font-size:.78rem;color:#38bdf8">docker network create app-net</code>
+          <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker network create app-net', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#38bdf8;border-color:#38bdf8"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(4)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step4" class="step-test-result"></div>
       </div>
 
-      <!-- Step 5 & 6: RUN CONTAINERS -->
+      <!-- Step 6: BUILD & RUN MICROSERVICE -->
       <div id="checkCard-run_micro" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--green)"></i> 5. BUILD &amp; RUN MICROSERVICE ON NETWORK</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--green)"></i> 6. BUILD &amp; RUN MICROSERVICE ON NETWORK</b>
           <span id="badge-run_micro" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMANDS IN TERMINAL:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#34d399">docker build -f Dockerfile.microservice -t sum-microservice .<br>docker run -d --name sum-microservice --network app-net -p 5000:5000 sum-microservice</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+            <code style="font-family:var(--mono);font-size:.78rem;color:#34d399">docker build -f Dockerfile.microservice -t sum-microservice .</code>
+            <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker build -f Dockerfile.microservice -t sum-microservice .', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#34d399;border-color:#34d399"><i class="fa-solid fa-copy"></i> Copy</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+            <code style="font-family:var(--mono);font-size:.78rem;color:#34d399">docker run -d --name sum-microservice --network app-net -p 5000:5000 sum-microservice</code>
+            <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker run -d --name sum-microservice --network app-net -p 5000:5000 sum-microservice', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#34d399;border-color:#34d399"><i class="fa-solid fa-copy"></i> Copy</button>
+          </div>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(5)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step5" class="step-test-result"></div>
       </div>
 
+      <!-- Step 7: BUILD & RUN CLIENT -->
       <div id="checkCard-run_client" class="drawer-step-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--purple)"></i> 6. BUILD &amp; RUN CLIENT ON NETWORK</b>
+          <b class="drawer-step-title"><i class="fa-solid fa-play" style="color:var(--purple)"></i> 7. BUILD &amp; RUN CLIENT ON NETWORK</b>
           <span id="badge-run_client" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMANDS IN TERMINAL:</div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:.78rem;color:#c084fc">docker build -f Dockerfile.client -t sum-client .<br>docker run -d --name sum-client --network app-net -p 8080:8080 sum-client</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+            <code style="font-family:var(--mono);font-size:.78rem;color:#c084fc">docker build -f Dockerfile.client -t sum-client .</code>
+            <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker build -f Dockerfile.client -t sum-client .', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#c084fc;border-color:#c084fc"><i class="fa-solid fa-copy"></i> Copy</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px">
+            <code style="font-family:var(--mono);font-size:.78rem;color:#c084fc">docker run -d --name sum-client --network app-net -p 8080:8080 sum-client</code>
+            <button type="button" class="btn btn-sm btn-outline btn-copy-cmd" onclick="copyCommandText('docker run -d --name sum-client --network app-net -p 8080:8080 sum-client', this)" title="Copy Command" style="padding:2px 8px;font-size:.7rem;color:#c084fc;border-color:#c084fc"><i class="fa-solid fa-copy"></i> Copy</button>
+          </div>
+        </div>
+        <button type="button" class="btn-test-step" onclick="testStep(6)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step6" class="step-test-result"></div>
+      </div>
+
+      <!-- Step 8: VERIFY NETWORK CALL -->
+      <div id="checkCard-test_net" class="drawer-step-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b class="drawer-step-title"><i class="fa-solid fa-bolt" style="color:var(--primary-yellow)"></i> 8. TEST INTER-CONTAINER CALL</b>
+          <span id="badge-test_net" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
+        </div>
+        <div class="drawer-step-sub">TEST CLIENT QUERYING MICROSERVICE:</div>
+        <p style="font-size:.74rem;color:#64748b;margin:4px 0 8px">Click the button below or run <code>curl http://localhost:8080/calc?a=15&amp;b=25</code> in terminal:</p>
+        <button type="button" class="btn btn-sm btn-yellow" onclick="testStep(7)" style="width:100%"><i class="fa-solid fa-bolt"></i> Send Test HTTP Request (a=15, b=25)</button>
+        <div id="testResult-step7" class="step-test-result"></div>
       </div>
     </div>
 
@@ -182,9 +243,10 @@
       <div class="vscode-tabs" id="vscodeTabsContainer"></div>
 
       <div class="vscode-editor-toolbar">
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="editor-pill-btn btn-new" id="btnNewFile" onclick="createNewFilePrompt()"><i class="fa-solid fa-plus"></i> NEW FILE</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i class="fa-solid fa-floppy-disk"></i> SAVE (CTRL+S)</button>
+          <button class="editor-pill-btn" style="background:#0284c7;color:#ffffff;border-color:#38bdf8" id="btnTestCode" onclick="validateStudentCode()"><i class="fa-solid fa-vial-circle-check"></i> Test / Validate Code</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i class="fa-solid fa-pen"></i> RENAME</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i class="fa-solid fa-trash"></i> DELETE</button>
         </div>
@@ -221,8 +283,8 @@
           <div class="vscode-preview-body" id="previewContainer">
             <div class="offline-placeholder" id="lab5OfflineCard">
               <i class="fa-solid fa-server"></i>
-              <div class="offline-title">Web Server Container Not Running</div>
-              <div class="offline-desc">Run <code>docker build</code> and <code>docker run</code> in the terminal below to start port 8080.</div>
+              <div class="offline-title">Web Server Containers Not Running</div>
+              <div class="offline-desc">Follow the steps in the instructions drawer to write code, build images, and run sum-microservice and sum-client containers on network <code>app-net</code>.</div>
             </div>
 
             <div id="lab5ActiveNetworkContent" style="display:none;padding:16px;overflow-y:auto;flex:1;background:#0d1117;color:#c9d1d9;font-family:var(--mono);font-size:.82rem">
@@ -232,6 +294,7 @@
                   <div style="border:1.5px solid #a855f7;padding:8px 12px;border-radius:6px;text-align:center">
                     <div style="font-weight:700;color:#c084fc">sum-client</div>
                     <div style="font-size:.7rem;color:var(--muted)">Port 8080</div>
+                    <div id="l5ClientStatus" style="font-size:.68rem;color:#34d399;font-weight:700;margin-top:2px">sum-client:8080 (Waiting)</div>
                   </div>
                   <div style="color:#38bdf8;font-size:1.1rem;display:flex;flex-direction:column;align-items:center">
                     <span>&rarr; HTTP GET &rarr;</span>
@@ -240,6 +303,7 @@
                   <div style="border:1.5px solid #22c55e;padding:8px 12px;border-radius:6px;text-align:center">
                     <div style="font-weight:700;color:#4ade80">sum-microservice</div>
                     <div style="font-size:.7rem;color:var(--muted)">Port 5000</div>
+                    <div id="l5MicroStatus" style="font-size:.68rem;color:#34d399;font-weight:700;margin-top:2px">sum-microservice:5000 (Waiting)</div>
                   </div>
                 </div>
               </div>
@@ -893,8 +957,64 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+function copyCommandText(arg1, arg2) {
+  let text = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : '');
+  let btn = (arg1 && arg1.nodeType) ? arg1 : ((arg2 && arg2.nodeType) ? arg2 : null);
+
+  if (!text && btn) {
+    text = btn.getAttribute('data-cmd') || btn.dataset.cmd || '';
+    if (!text && btn.parentElement) {
+      const codeEl = btn.parentElement.querySelector('code');
+      if (codeEl) text = codeEl.innerText.trim();
+    }
+  }
+  if (!text) return;
+
+  const updateBtn = () => {
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.color = '';
+      }, 1800);
+    }
+    if (typeof showToast === 'function') {
+      showToast('Command copied to clipboard!', 'success');
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(updateBtn).catch(() => {
+      const inp = document.createElement('textarea');
+      inp.value = text;
+      document.body.appendChild(inp);
+      inp.select();
+      document.execCommand('copy');
+      document.body.removeChild(inp);
+      updateBtn();
+    });
+  } else {
+    const inp = document.createElement('textarea');
+    inp.value = text;
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    updateBtn();
+  }
+}
+
 function execTerminalCommand(cmd) {
-  const cmdLower = cmd.toLowerCase();
+  const cmdLower = cmd.toLowerCase().trim();
+
+  // If student typed curl directly to test network
+  if (cmdLower.startsWith("curl") && (cmdLower.includes("8080") || cmdLower.includes("calc") || cmdLower.includes("localhost") || cmdLower.includes("127.0.0.1"))) {
+    appendTermLine(cmd, "cmd");
+    testNetworkCall();
+    return;
+  }
 
   fetch("/api/run-command", {
     method: "POST",
@@ -904,31 +1024,19 @@ function execTerminalCommand(cmd) {
   .then(res => res.json())
   .then(data => {
     function isCommandSuccess(data) {
-      if (!data || !data.ok) return false;
+      if (!data) return false;
+      if (data.ok === true) return true;
       const out = (data.output || '').toLowerCase();
-      const errorSignatures = [
-        'error response from daemon',
-        'cannot connect to the docker daemon',
-        'failed to solve',
-        'failed to build',
-        'no such image',
-        'no such container',
-        'unable to find image',
-        'is not recognized as an internal or external command',
-        'command not found',
-        'executable file not found',
-        'unknown shorthand flag',
-        'unknown flag',
-        'port is already allocated',
-        'address already in use',
-        'fatal:',
-        'invalid argument',
-        'error:'
-      ];
-      for (const sig of errorSignatures) {
-        if (out.includes(sig)) return false;
+      // True errors only when ok is false
+      if (out.includes('error response from daemon') ||
+          out.includes('cannot connect to the docker daemon') ||
+          out.includes('failed to solve') ||
+          out.includes('no such image') ||
+          out.includes('is not recognized') ||
+          out.includes('command not found')) {
+        return false;
       }
-      return true;
+      return Boolean(data.ok);
     }
 
     const success = isCommandSuccess(data);
@@ -939,15 +1047,35 @@ function execTerminalCommand(cmd) {
         tested.network = true;
         appendTermLine("[SUCCESS] User-defined Docker bridge network 'app-net' created.", "success");
       }
+      if (cmdLower.includes("docker build") && cmdLower.includes("Dockerfile.microservice")) {
+        appendTermLine("[SUCCESS] Docker image 'sum-microservice:latest' built successfully.", "success");
+      }
+      if (cmdLower.includes("docker build") && cmdLower.includes("Dockerfile.client")) {
+        appendTermLine("[SUCCESS] Docker image 'sum-client:latest' built successfully.", "success");
+      }
       if (cmdLower.includes("docker run") && cmdLower.includes("sum-microservice")) {
-        tested.run_micro = true;
-        document.getElementById("l5MicroStatus").innerText = "sum-microservice:5000 (Online)";
-        appendTermLine("[SUCCESS] Container 'sum-microservice' attached to 'app-net'.", "success");
+        checkCodeProgress();
+        if (!tested.app || !tested.df_micro) {
+          tested.run_micro = false;
+          appendTermLine("[ERROR] Cannot run container: Microservice code in 'app.py' or 'Dockerfile.microservice' has not been written in Explorer! Please complete the code before running.", "error");
+        } else {
+          tested.run_micro = true;
+          const microEl = document.getElementById("l5MicroStatus");
+          if (microEl) microEl.innerText = "sum-microservice:5000 (Online)";
+          appendTermLine("[SUCCESS] Container 'sum-microservice' attached to 'app-net'.", "success");
+        }
       }
       if (cmdLower.includes("docker run") && cmdLower.includes("sum-client")) {
-        tested.run_client = true;
-        document.getElementById("l5ClientStatus").innerText = "sum-client:8080 (Online)";
-        appendTermLine("[SUCCESS] Container 'sum-client' attached to 'app-net'.", "success");
+        checkCodeProgress();
+        if (!tested.client || !tested.df_client) {
+          tested.run_client = false;
+          appendTermLine("[ERROR] Cannot run container: Client proxy code in 'client.py' or 'Dockerfile.client' has not been written in Explorer! Please complete the code before running.", "error");
+        } else {
+          tested.run_client = true;
+          const clientEl = document.getElementById("l5ClientStatus");
+          if (clientEl) clientEl.innerText = "sum-client:8080 (Online)";
+          appendTermLine("[SUCCESS] Container 'sum-client' attached to 'app-net'.", "success");
+        }
       }
       updateProgressUI();
     }
@@ -957,34 +1085,247 @@ function execTerminalCommand(cmd) {
   });
 }
 
-function testNetworkCall() {
-  tested.test_net = true;
-  const resBox = document.getElementById("networkResponseJson");
-  resBox.innerText = `Connecting to http://sum-client:8080/calc?a=15&b=25 over 'app-net'...\n\n{\n  "client_status": "success",\n  "network_result": {\n    "container": "sum-microservice",\n    "number1": 15.0,\n    "number2": 25.0,\n    "sum": 40.0\n  }\n}`;
-  appendTermLine("[NETWORK VERIFIED] Client application queried 'sum-microservice' over Docker network successfully! Result: 40.0", "success");
+function markStepBackend(stepId) {
+  fetch("/api/lab5/step", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({step_id: stepId})
+  }).catch(()=>{});
+}
+
+function checkStep1Code() {
+  const code = (files['app.py'] || '').trim().toLowerCase();
+  if (!code) return { ok: false, msg: "app.py: File not created yet. Click '+' in Explorer to create app.py." };
+  if (!code.includes('flask')) return { ok: false, msg: "app.py: Missing 'from flask import Flask, request, jsonify'." };
+  if (!code.includes('/add')) return { ok: false, msg: "app.py: Missing route definition '@app.route(\"/add\")'." };
+  if (!code.includes('sum') && !code.includes('+')) return { ok: false, msg: "app.py: Missing sum calculation logic (e.g. 'a + b')." };
+  return { ok: true, msg: "app.py: Valid Flask sum microservice logic verified." };
+}
+
+function checkStep2Code() {
+  const code = (files['client.py'] || '').trim().toLowerCase();
+  if (!code) return { ok: false, msg: "client.py: File not created yet. Click '+' in Explorer to create client.py." };
+  if (!code.includes('flask')) return { ok: false, msg: "client.py: Missing 'from flask import Flask'." };
+  if (!code.includes('requests')) return { ok: false, msg: "client.py: Missing 'import requests' to call microservice." };
+  if (!code.includes('sum-microservice')) return { ok: false, msg: "client.py: Must query 'http://sum-microservice:5000/add' over Docker network." };
+  if (!code.includes('/calc')) return { ok: false, msg: "client.py: Must expose endpoint '@app.route(\"/calc\")' on port 8080." };
+  return { ok: true, msg: "client.py: Valid client application logic verified." };
+}
+
+function checkStep3Code() {
+  const dfMicro = (files['Dockerfile.microservice'] || files['Dockerfile'] || '').trim().toLowerCase();
+  const dfClient = (files['Dockerfile.client'] || '').trim().toLowerCase();
+  let errs = [];
+  if (!dfMicro) errs.push("Dockerfile.microservice not found in Explorer.");
+  else if (!dfMicro.includes('from') || !dfMicro.includes('python')) errs.push("Dockerfile.microservice must specify Python base image (FROM python:3.9-slim).");
+
+  if (!dfClient) errs.push("Dockerfile.client not found in Explorer.");
+  else if (!dfClient.includes('from') || !dfClient.includes('python')) errs.push("Dockerfile.client must specify Python base image (FROM python:3.9-slim).");
+
+  if (errs.length > 0) return { ok: false, msg: errs.join(" | ") };
+  return { ok: true, msg: "Dockerfiles: Both microservice & client Dockerfiles configured correctly." };
+}
+
+function validateStudentCode() {
+  const ed = document.getElementById('codeEditor');
+  if (ed && activeFile) {
+    files[activeFile] = ed.value;
+    saveFilesToLocalStorage();
+  }
+  const s1 = checkStep1Code();
+  const s2 = checkStep2Code();
+  const s3 = checkStep3Code();
+
+  setTestResult(1, 'app', s1.ok, s1.msg);
+  setTestResult(2, 'client', s2.ok, s2.msg);
+  setTestResult(3, 'df_micro', s3.ok, s3.msg);
+  if (s3.ok) {
+    tested.df_client = true;
+    const cardClient = document.getElementById('checkCard-df_client');
+    const badgeClient = document.getElementById('badge-df_client');
+    if (cardClient && badgeClient) {
+      cardClient.classList.add('completed');
+      badgeClient.className = 'badge badge-green';
+      badgeClient.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed';
+    }
+  }
+
+  updateProgressUI();
+
+  if (s1.ok && s2.ok && s3.ok) {
+    showToast("✓ All workspace code files (app.py, client.py, Dockerfiles) validated successfully!", "success");
+  } else {
+    showToast("Code validation found issues. Open instructions drawer to check details.", "warning");
+  }
+}
+
+function testStep(stepNum) {
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result running";
+    resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running test case for Step ' + stepNum + '...';
+  }
+
+  setTimeout(() => {
+    const ed = document.getElementById('codeEditor');
+    if (ed && activeFile) {
+      files[activeFile] = ed.value;
+      saveFilesToLocalStorage();
+    }
+
+    if (stepNum === 1) {
+      const res = checkStep1Code();
+      setTestResult(1, 'app', res.ok, res.msg);
+    } else if (stepNum === 2) {
+      const res = checkStep2Code();
+      setTestResult(2, 'client', res.ok, res.msg);
+    } else if (stepNum === 3) {
+      const res = checkStep3Code();
+      setTestResult(3, 'df_micro', res.ok, res.msg);
+      if (res.ok) {
+        tested.df_client = true;
+        const b = document.getElementById('badge-df_client');
+        if (b) { b.className = 'badge badge-green'; b.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed'; }
+      }
+    } else if (stepNum === 4) {
+      if (tested.network) {
+        setTestResult(4, 'network', true, "Docker network 'app-net' created and verified.");
+      } else {
+        setTestResult(4, 'network', false, "Network 'app-net' not detected. Run 'docker network create app-net' in the terminal below.");
+      }
+    } else if (stepNum === 5) {
+      if (tested.run_micro) {
+        setTestResult(5, 'run_micro', true, "Container 'sum-microservice' is running on network 'app-net'.");
+      } else {
+        setTestResult(5, 'run_micro', false, "Microservice container not running. Execute 'docker build -f Dockerfile.microservice ...' and 'docker run ...' in terminal.");
+      }
+    } else if (stepNum === 6) {
+      if (tested.run_client) {
+        setTestResult(6, 'run_client', true, "Container 'sum-client' is running on network 'app-net'.");
+      } else {
+        setTestResult(6, 'run_client', false, "Client container not running. Execute 'docker build -f Dockerfile.client ...' and 'docker run ...' in terminal.");
+      }
+    } else if (stepNum === 7) {
+      testNetworkCall((ok, msg) => {
+        setTestResult(7, 'test_net', ok, ok ? ("✓ Inter-container test passed: " + msg) : ("❌ " + msg));
+      });
+    }
+  }, 350);
+}
+
+function setTestResult(stepNum, key, ok, message) {
+  tested[key] = ok;
+  const resEl = document.getElementById(`testResult-step${stepNum}`);
+  if (resEl) {
+    resEl.className = "step-test-result " + (ok ? "passed" : "failed");
+    resEl.innerHTML = (ok ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-xmark"></i> ') + message;
+  }
+  if (ok) markStepBackend(stepNum);
   updateProgressUI();
 }
 
+function testNetworkCall(callback) {
+  const resBox = document.getElementById("networkResponseJson");
+  if (resBox) {
+    resBox.style.color = "#38bdf8";
+    resBox.innerText = "Querying http://localhost:8080/calc?a=15&b=25 over 'app-net' ...";
+  }
+
+  fetch("/api/lab5/test-network?a=15&b=25")
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok && d.data) {
+        tested.test_net = true;
+        if (resBox) {
+          resBox.style.color = "#7ee787";
+          resBox.innerText = JSON.stringify(d.data, null, 2);
+        }
+        const sumVal = (d.data.network_result && d.data.network_result.sum !== undefined) ? d.data.network_result.sum : 40;
+        appendTermLine(`[NETWORK VERIFIED] Client application queried 'sum-microservice' over Docker network successfully! Result: ${sumVal}`, "success");
+        markStepBackend(7);
+        updateProgressUI();
+        if (callback) callback(true, "Client application successfully queried 'sum-microservice'. Result: " + sumVal);
+      } else {
+        tested.test_net = false;
+        const err = d.error || "Connection refused: Containers not running or port 8080 not listening.";
+        if (resBox) {
+          resBox.style.color = "#f87171";
+          resBox.innerText = "ERROR: " + err;
+        }
+        appendTermLine("[NETWORK ERROR] " + err, "error");
+        updateProgressUI();
+        if (callback) callback(false, err);
+      }
+    })
+    .catch(err => {
+      tested.test_net = false;
+      const errMsg = "Connection failed: Could not connect to container port 8080 (" + err + ").";
+      if (resBox) {
+        resBox.style.color = "#f87171";
+        resBox.innerText = "ERROR: " + errMsg;
+      }
+      appendTermLine("[NETWORK ERROR] " + errMsg, "error");
+      updateProgressUI();
+      if (callback) callback(false, errMsg);
+    });
+}
+
 function refreshNetworkPreview() {
-  const isOnline = Boolean(tested.run_client || tested.run_micro || tested.test_net);
+  checkCodeProgress();
+  const hasCode = Boolean(tested.app && tested.client && tested.df_micro && tested.df_client);
+  const isCandidate = Boolean(hasCode && tested.run_client && tested.run_micro);
   const offlineCard = document.getElementById("lab5OfflineCard");
   const activeContent = document.getElementById("lab5ActiveNetworkContent");
   const badge = document.getElementById("previewBadge");
-  if (isOnline) {
-    if (offlineCard) offlineCard.style.display = "none";
-    if (activeContent) activeContent.style.display = "block";
-    if (badge) {
-      badge.className = "preview-status-badge online";
-      badge.textContent = "LIVE (PORT 8080)";
-    }
-  } else {
+  const clientEl = document.getElementById("l5ClientStatus");
+  const microEl = document.getElementById("l5MicroStatus");
+
+  if (!isCandidate) {
     if (offlineCard) offlineCard.style.display = "block";
     if (activeContent) activeContent.style.display = "none";
     if (badge) {
       badge.className = "preview-status-badge offline";
       badge.textContent = "OFFLINE";
     }
+    if (clientEl) clientEl.innerText = "sum-client:8080 (Offline)";
+    if (microEl) microEl.innerText = "sum-microservice:5000 (Offline)";
+    return;
   }
+
+  // Ping backend test-network to verify real live container response
+  fetch("/api/lab5/test-network")
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        if (offlineCard) offlineCard.style.display = "none";
+        if (activeContent) activeContent.style.display = "block";
+        if (badge) {
+          badge.className = "preview-status-badge online";
+          badge.textContent = "LIVE (PORT 8080)";
+        }
+        if (clientEl) clientEl.innerText = "sum-client:8080 (Online)";
+        if (microEl) microEl.innerText = "sum-microservice:5000 (Online)";
+      } else {
+        if (offlineCard) offlineCard.style.display = "block";
+        if (activeContent) activeContent.style.display = "none";
+        if (badge) {
+          badge.className = "preview-status-badge offline";
+          badge.textContent = "OFFLINE";
+        }
+        if (clientEl) clientEl.innerText = "sum-client:8080 (Offline)";
+        if (microEl) microEl.innerText = "sum-microservice:5000 (Offline)";
+      }
+    })
+    .catch(() => {
+      if (offlineCard) offlineCard.style.display = "block";
+      if (activeContent) activeContent.style.display = "none";
+      if (badge) {
+        badge.className = "preview-status-badge offline";
+        badge.textContent = "OFFLINE";
+      }
+      if (clientEl) clientEl.innerText = "sum-client:8080 (Offline)";
+      if (microEl) microEl.innerText = "sum-microservice:5000 (Offline)";
+    });
 }
 
 function updateProgressUI() {

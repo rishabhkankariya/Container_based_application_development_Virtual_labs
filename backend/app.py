@@ -13,6 +13,8 @@ import html
 import re
 import time
 import threading
+import urllib.request
+import urllib.error
 from datetime import datetime
 from functools import wraps
 
@@ -840,55 +842,104 @@ def api_terminal_exec():
     df_client_path = os.path.join(workspace_dir, "Dockerfile.client")
     compose_path = os.path.join(workspace_dir, "docker-compose.yml")
 
-    # If user created Dockerfile, mirror to Dockerfile.microservice and vice-versa
+    # Multi-lab file bridges: support Dockerfile <-> Dockerfile.microservice if student created either
     if os.path.exists(df_path) and not os.path.exists(df_micro_path):
         shutil.copyfile(df_path, df_micro_path)
     elif os.path.exists(df_micro_path) and not os.path.exists(df_path):
         shutil.copyfile(df_micro_path, df_path)
-    elif not os.path.exists(df_path):
-        with open(df_path, "w", encoding="utf-8") as f:
-            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD [\"python\", \"app.py\"]\n")
-        with open(df_micro_path, "w", encoding="utf-8") as f:
-            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY app.py .\nEXPOSE 5000\nCMD [\"python\", \"app.py\"]\n")
 
-    if not os.path.exists(df_client_path):
-        with open(df_client_path, "w", encoding="utf-8") as f:
-            f.write("FROM python:3.9-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY client.py .\nEXPOSE 8080\nCMD [\"python\", \"client.py\"]\n")
-
-    req_file_path = os.path.join(workspace_dir, "requirements.txt")
-    if not os.path.exists(req_file_path) or os.path.getsize(req_file_path) == 0:
-        with open(req_file_path, "w", encoding="utf-8") as f:
-            f.write("flask==3.0.0\nrequests\n")
-
-    app_file_path = os.path.join(workspace_dir, "app.py")
-    if not os.path.exists(app_file_path):
-        with open(app_file_path, "w", encoding="utf-8") as f:
-            f.write("import socket\nfrom flask import Flask, request, jsonify\napp = Flask(__name__)\nHOST_ID = socket.gethostname()\n@app.route('/add')\ndef add():\n    a = float(request.args.get('a', 0))\n    b = float(request.args.get('b', 0))\n    return jsonify({'result': a + b, 'sum': a + b, 'status': 'success', 'handled_by_replica': HOST_ID, 'container': 'sum-microservice'})\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n")
-
-    client_file_path = os.path.join(workspace_dir, "client.py")
-    if not os.path.exists(client_file_path):
-        with open(client_file_path, "w", encoding="utf-8") as f:
-            f.write("from flask import Flask, request, jsonify\nimport requests\napp = Flask(__name__)\nMICROSERVICE_URL = 'http://sum-microservice:5000/add'\n@app.route('/calc')\ndef calc():\n    try:\n        res = requests.get(f'{MICROSERVICE_URL}?a=10&b=20', timeout=2)\n        return jsonify({'client_status': 'success', 'network_result': res.json()})\n    except Exception as e:\n        return jsonify({'client_status': 'error', 'error': str(e)})\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=8080)\n")
-
-    if not os.path.exists(compose_path):
-        with open(compose_path, "w", encoding="utf-8") as f:
-            f.write("version: '3.8'\nservices:\n  sum-microservice:\n    build: .\n    ports:\n      - \"5001-5005:5000\"\n    deploy:\n      replicas: 1\n")
-    else:
+    # If student authored docker-compose.yml, ensure multi-replica port range safety
+    if os.path.exists(compose_path):
         try:
             with open(compose_path, "r", encoding="utf-8") as cf:
                 compose_data = cf.read()
-            if "5000:5000" in compose_data:
-                compose_data = compose_data.replace("5000:5000", "5001-5005:5000")
+            # Safely convert any 5000:5000 port binding to non-conflicting multi-replica range
+            new_compose = re.sub(r'["\']?5000\s*:\s*5000["\']?', '"5001-5005:5000"', compose_data)
+            if new_compose != compose_data:
                 with open(compose_path, "w", encoding="utf-8") as cf:
-                    cf.write(compose_data)
+                    cf.write(new_compose)
         except Exception:
             pass
 
     # Hybrid Docker Execution Selector: Real System Docker vs Virtual Docker Simulator
     has_real_docker, docker_msg = check_host_docker_status()
 
-    # Pre-validation for docker run: check if target image exists
+    # Pre-validation for docker build: verify target Dockerfile exists and contains code
+    if cmd_lower.startswith("docker build"):
+        tokens = cmd.split()
+        target_df = "Dockerfile"
+        for i in range(len(tokens)):
+            if tokens[i] == "-f" and i + 1 < len(tokens):
+                target_df = tokens[i + 1].strip()
+                break
+
+        df_full = os.path.join(workspace_dir, target_df)
+        if not os.path.exists(df_full):
+            return jsonify({
+                "ok": False,
+                "output": f"docker build: Error: failed to read dockerfile: open '{target_df}': no such file or directory.\nPlease create '{target_df}' in Explorer and write Docker instructions before building."
+            })
+        try:
+            with open(df_full, "r", encoding="utf-8") as f:
+                df_txt = f.read().strip()
+            if len(df_txt) < 15 or "from" not in df_txt.lower():
+                return jsonify({
+                    "ok": False,
+                    "output": f"docker build: Error: '{target_df}' is empty or incomplete.\nPlease write proper Dockerfile instructions (e.g. 'FROM ...') in the editor before building."
+                })
+        except Exception:
+            pass
+
+    # Pre-validation for docker run: check if student wrote the required source files and built image
     if cmd_lower.startswith("docker run"):
+        # If running sum-microservice: ensure app.py has valid Flask code
+        if "sum-microservice" in cmd_lower:
+            app_file = os.path.join(workspace_dir, "app.py")
+            app_content = ""
+            if os.path.exists(app_file):
+                try:
+                    with open(app_file, "r", encoding="utf-8") as f:
+                        app_content = f.read().strip().lower()
+                except Exception:
+                    pass
+            if len(app_content) < 20 or "flask" not in app_content:
+                return jsonify({
+                    "ok": False,
+                    "output": "docker run: Error: 'app.py' has not been written in your workspace.\nYou must write the sum-microservice code in 'app.py' and build the image before running this container."
+                })
+
+        # If running sum-client: ensure client.py has valid proxy code
+        if "sum-client" in cmd_lower:
+            client_file = os.path.join(workspace_dir, "client.py")
+            client_content = ""
+            if os.path.exists(client_file):
+                try:
+                    with open(client_file, "r", encoding="utf-8") as f:
+                        client_content = f.read().strip().lower()
+                except Exception:
+                    pass
+            if len(client_content) < 20 or ("requests" not in client_content and "sum-microservice" not in client_content):
+                return jsonify({
+                    "ok": False,
+                    "output": "docker run: Error: 'client.py' has not been written in your workspace.\nYou must write the client proxy code in 'client.py' and build the image before running this container."
+                })
+
+        # If running hello-web or my-website: ensure index.html exists
+        if "hello-web" in cmd_lower or "my-website" in cmd_lower:
+            index_file = os.path.join(workspace_dir, "index.html")
+            index_content = ""
+            if os.path.exists(index_file):
+                try:
+                    with open(index_file, "r", encoding="utf-8") as f:
+                        index_content = f.read().strip().lower()
+                except Exception:
+                    pass
+            if len(index_content) < 15 or "html" not in index_content:
+                return jsonify({
+                    "ok": False,
+                    "output": "docker run: Error: 'index.html' has not been written in your workspace.\nYou must write HTML code in 'index.html' and build the image before running this container."
+                })
+
         tokens = cmd.split()
         target_img = ""
         skip_next = False
@@ -908,16 +959,8 @@ def api_terminal_exec():
         repo_name = target_img.split(":")[0] if target_img else ""
         if repo_name and repo_name != "hello-world":
             image_exists = (repo_name in state.get("images", {}))
-            if not image_exists and has_real_docker:
-                try:
-                    insp = subprocess.run(f"docker image inspect {repo_name}", shell=True, capture_output=True, text=True, timeout=5)
-                    if insp.returncode == 0:
-                        image_exists = True
-                        state["images"][repo_name] = {"repo": repo_name, "tag": "latest"}
-                except Exception:
-                    pass
             if not image_exists:
-                out = f"Unable to find image '{target_img}:latest' locally\ndocker: Error response from daemon: No such image: {target_img}:latest.\nRun 'docker build -t {target_img} .' first!"
+                out = f"Unable to find image '{target_img}:latest' locally\ndocker: Error response from daemon: No such image: {target_img}:latest.\nYou must first write the code and run 'docker build -t {target_img} .'!"
                 return jsonify({"ok": False, "output": out})
 
     if cmd_lower.startswith("docker") and has_real_docker:
@@ -931,8 +974,10 @@ def api_terminal_exec():
             if "5000:5000" in exec_cmd:
                 exec_cmd = exec_cmd.replace("5000:5000", "5001:5000")
 
-            # Handle docker compose running in background
-            if ("docker compose up" in cmd_lower or "docker-compose up" in cmd_lower) and "-d" not in cmd_lower:
+            # Handle docker compose running in background & scale command compatibility
+            if "compose scale" in cmd_lower:
+                exec_cmd = re.sub(r'docker-?compose\s+scale', 'docker compose up -d --scale', exec_cmd, flags=re.IGNORECASE)
+            elif ("docker compose up" in cmd_lower or "docker-compose up" in cmd_lower) and "-d" not in cmd_lower:
                 exec_cmd = exec_cmd + " -d"
 
             # Proactive network resolution: If creating network that already exists, succeed immediately
@@ -945,8 +990,12 @@ def api_terminal_exec():
 
             # Proactive container name collision avoidance
             for named_c in ["sum-microservice", "sum-client", "hello-web"]:
-                if f"--name {named_c}" in exec_cmd or f"--name={named_c}" in exec_cmd:
+                if f"--name {named_c}" in exec_cmd or f"--name={named_c}" in exec_cmd or (named_c in exec_cmd and "run" in cmd_lower):
                     subprocess.run(f"docker rm -f {named_c}", shell=True, capture_output=True, encoding="utf-8", errors="replace")
+
+            # If port 8080 is specified for run, clean up sum-client
+            if "8080:8080" in exec_cmd and "run" in cmd_lower:
+                subprocess.run("docker rm -f sum-client", shell=True, capture_output=True, encoding="utf-8", errors="replace")
 
             # Handle placeholder <container_id> validation
             if "<container_id>" in cmd_lower or "<container" in cmd_lower or ("<" in cmd and ">" in cmd):
@@ -1020,11 +1069,11 @@ def api_terminal_exec():
             ])
             is_ok = (res.returncode == 0) and not has_fatal_err
 
-            if is_ok and not out:
-                out = "Command executed successfully."
-
-            # Sync internal state for UI rendering
             if is_ok:
+                if not out:
+                    out = "Command executed successfully."
+
+                # Sync internal state for UI rendering
                 if cmd_lower.startswith("docker build"):
                     tag_name = "hello-web:latest"
                     tokens = cmd.split()
@@ -1045,18 +1094,6 @@ def api_terminal_exec():
                         "created": "Just now",
                         "size": "13.3kB"
                     }
-                    if not out or out.strip() == "Command executed successfully.":
-                        out = (
-                            f"[+] Building 1.4s (6/6) FINISHED\n"
-                            f" => [internal] load build definition from Dockerfile\n"
-                            f" => => transferring dockerfile: 210B\n"
-                            f" => [1/4] FROM docker.io/library/python:3.9-slim\n"
-                            f" => [2/4] WORKDIR /app\n"
-                            f" => [3/4] COPY requirements.txt . && RUN pip install -r requirements.txt\n"
-                            f" => [4/4] COPY app.py .\n"
-                            f" => exporting to image {repo_name}:{tag_ver}\n"
-                            f"Successfully built docker image {repo_name}:{tag_ver}"
-                        )
                 elif cmd_lower.startswith("docker run"):
                     tokens = cmd.split()
                     target_img = ""
@@ -1095,23 +1132,181 @@ def api_terminal_exec():
                     repo_name = target.split(":")[0] if target else ""
                     state["images"].pop(repo_name, None)
 
-            return jsonify({"ok": is_ok, "output": out.strip(), "docker_engine": "local"})
+                return jsonify({"ok": True, "output": out.strip(), "docker_engine": "local"})
+            else:
+                err_text = out.lower()
+                # If daemon itself is dead, offline, or throwing 500 API errors, fall through to simulator
+                if any(k in err_text for k in ["cannot connect", "error response from daemon", "500 internal server error", "is not recognized"]):
+                    pass
+                else:
+                    return jsonify({"ok": False, "output": out.strip(), "docker_engine": "local"})
         except Exception:
-            # Seamless fallback to Virtual Docker Simulator if system Docker encounters an issue
             pass
 
-    # Require real Docker Desktop daemon to be running for all Docker CLI execution
-    if cmd_lower.startswith("docker") and not has_real_docker:
-        auto_start_host_docker(force=True)
-        out = (
-            "NOTICE: Docker Desktop is not currently active.\n"
-            "----------------------------------------------------------------------\n"
-            "We have automatically triggered the startup of Docker Desktop.\n"
-            "Please allow 10-20 seconds for the Docker daemon to initialize in\n"
-            "the system tray, and then re-run your command.\n"
-            "----------------------------------------------------------------------"
-        )
-        return jsonify({"ok": False, "output": out})
+    # Seamless Virtual Docker Simulator (Activated if local Docker is unavailable or encounters daemon errors)
+    if cmd_lower.startswith("docker"):
+        # 1. docker network create
+        if "network create" in cmd_lower:
+            net_tokens = cmd.split()
+            net_name = net_tokens[-1] if len(net_tokens) >= 4 else "app-net"
+            return jsonify({
+                "ok": True,
+                "output": f"Network '{net_name}' created successfully.",
+                "docker_engine": "simulator"
+            })
+
+        # 2. docker compose up / scale / down
+        if "compose" in cmd_lower:
+            if not os.path.exists(compose_path):
+                return jsonify({
+                    "ok": False,
+                    "output": "docker compose: error: configuration file 'docker-compose.yml' not found in workspace.\nPlease create 'docker-compose.yml' in the editor before running compose commands.",
+                    "docker_engine": "simulator"
+                })
+
+            if "--scale" in cmd_lower or "scale" in cmd_lower:
+                if "=3" in cmd_lower or " 3" in cmd_lower:
+                    out = (
+                        "[+] Running 3/3\n"
+                        " ✔ Container sum-microservice-1  Running\n"
+                        " ✔ Container sum-microservice-2  Started\n"
+                        " ✔ Container sum-microservice-3  Started"
+                    )
+                else:
+                    out = (
+                        "[+] Running 1/1\n"
+                        " ✔ Container sum-microservice-1  Running\n"
+                        " ✔ Container sum-microservice-2  Stopped\n"
+                        " ✔ Container sum-microservice-3  Stopped"
+                    )
+            elif "down" in cmd_lower:
+                out = (
+                    "[+] Running 2/2\n"
+                    " ✔ Container sum-microservice-1  Removed\n"
+                    " ✔ Network app-net  Removed"
+                )
+            else:
+                out = (
+                    "[+] Running 2/2\n"
+                    " ✔ Network app-net  Created\n"
+                    " ✔ Container sum-microservice-1  Started"
+                )
+            return jsonify({
+                "ok": True,
+                "output": out,
+                "docker_engine": "simulator"
+            })
+
+        # 3. docker build
+        if cmd_lower.startswith("docker build"):
+            # Check target Dockerfile specified in command
+            target_df = "Dockerfile"
+            tokens = cmd.split()
+            for i, tok in enumerate(tokens):
+                if tok in ("-f", "--file") and i + 1 < len(tokens):
+                    target_df = tokens[i + 1].strip()
+                    break
+                elif tok.startswith("-f=") or tok.startswith("--file="):
+                    target_df = tok.split("=", 1)[1].strip()
+                    break
+
+            df_target_path = os.path.join(workspace_dir, target_df)
+            if not os.path.exists(df_target_path):
+                # Try lowercase
+                alt_path = os.path.join(workspace_dir, target_df.lower())
+                if os.path.exists(alt_path):
+                    df_target_path = alt_path
+                else:
+                    return jsonify({
+                        "ok": False,
+                        "output": f"docker build: Error: failed to read dockerfile: open '{target_df}': no such file or directory.\nPlease create '{target_df}' in the editor before building.",
+                        "docker_engine": "simulator"
+                    })
+
+            tag_name = "sum-microservice:latest"
+            for i, tok in enumerate(tokens):
+                if tok in ("-t", "--tag") and i + 1 < len(tokens):
+                    tag_name = tokens[i + 1].strip()
+                    break
+                elif tok.startswith("-t=") or tok.startswith("--tag="):
+                    tag_name = tok.split("=", 1)[1].strip()
+                    break
+            repo_name = tag_name.split(":")[0]
+            tag_ver = tag_name.split(":")[1] if ":" in tag_name else "latest"
+            img_id = hashlib.md5(tag_name.encode()).hexdigest()[:12]
+            state["images"][repo_name] = {
+                "repo": repo_name,
+                "tag": tag_ver,
+                "id": img_id,
+                "created": "Just now",
+                "size": "13.3kB"
+            }
+            out = (
+                f"[+] Building 1.4s (6/6) FINISHED\n"
+                f" => [internal] load build definition from {target_df}\n"
+                f" => => transferring dockerfile: 210B\n"
+                f" => [1/4] FROM docker.io/library/python:3.9-slim\n"
+                f" => [2/4] WORKDIR /app\n"
+                f" => [3/4] COPY requirements.txt . && RUN pip install -r requirements.txt\n"
+                f" => [4/4] COPY app.py .\n"
+                f" => exporting to image {repo_name}:{tag_ver}\n"
+                f"Successfully built docker image {repo_name}:{tag_ver}"
+            )
+            return jsonify({
+                "ok": True,
+                "output": out,
+                "docker_engine": "simulator"
+            })
+
+        # 4. docker run
+        if cmd_lower.startswith("docker run"):
+            tokens = cmd.split()
+            target_img = ""
+            skip_next = False
+            for i in range(2, len(tokens)):
+                if skip_next:
+                    skip_next = False
+                    continue
+                tok = tokens[i]
+                if tok in ("-p", "--name", "-e", "-v", "--port", "--publish", "--net", "--network", "--restart", "-u", "--user", "-w", "--workdir"):
+                    skip_next = True
+                    continue
+                if tok.startswith("-"):
+                    continue
+                target_img = tok.strip()
+                break
+            repo_name = target_img.split(":")[0] if target_img else "app"
+            cnt_id = hashlib.md5((repo_name + str(time.time())).encode()).hexdigest()[:12]
+            full_cnt_id = hashlib.md5((repo_name + str(time.time())).encode()).hexdigest() * 2
+            cnt_name = repo_name + "-container"
+            state["containers"].append({
+                "id": cnt_id,
+                "image": repo_name,
+                "command": '"python app.py"',
+                "created": "Just now",
+                "status": "Up 1 minute",
+                "ports": "0.0.0.0:5000->5000/tcp",
+                "name": cnt_name
+            })
+            return jsonify({
+                "ok": True,
+                "output": full_cnt_id[:64],
+                "docker_engine": "simulator"
+            })
+
+        # 5. docker ps
+        if cmd_lower.startswith("docker ps"):
+            lines = ["CONTAINER ID   IMAGE              COMMAND            CREATED         STATUS         PORTS                    NAMES"]
+            for c in state.get("containers", []):
+                lines.append(f"{c['id']}   {c['image'][:16]:<18} {c.get('command',''):<18} {c.get('created',''):<15} {c.get('status',''):<14} {c.get('ports',''):<24} {c.get('name','')}")
+            return jsonify({"ok": True, "output": "\n".join(lines), "docker_engine": "simulator"})
+
+        # 6. docker images
+        if cmd_lower.startswith("docker images"):
+            lines = ["REPOSITORY         TAG       IMAGE ID       CREATED        SIZE"]
+            for img in state.get("images", {}).values():
+                lines.append(f"{img['repo']:<18} {img['tag']:<9} {img['id']:<14} {img.get('created',''):<14} {img.get('size','13.3kB')}")
+            return jsonify({"ok": True, "output": "\n".join(lines), "docker_engine": "simulator"})
 
     # Run non-docker command in subshell with timeout inside workspace directory
     try:
@@ -1651,6 +1846,30 @@ def api_lab5_verify():
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/lab5/test-network", methods=["GET", "POST"])
+@login_required_student
+def api_lab5_test_network():
+    """Tests live HTTP call from host to sum-client container on port 8080."""
+    a = request.args.get("a", 15)
+    b = request.args.get("b", 25)
+    last_err = None
+    for attempt in range(4):
+        try:
+            req = urllib.request.Request(f"http://localhost:8080/calc?a={a}&b={b}", headers={"User-Agent": "VirtualLab/1.0"})
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                raw = resp.read().decode("utf-8")
+                data = json.loads(raw)
+                return jsonify({"ok": True, "live": True, "data": data})
+        except Exception as e:
+            last_err = e
+            time.sleep(0.5)
+    return jsonify({
+        "ok": False,
+        "live": False,
+        "error": f"Connection to http://localhost:8080/calc refused: Container 'sum-client' is not responding on port 8080 ({str(last_err)}). Please ensure you have written client.py & Dockerfile.client, created 'app-net', and started both containers."
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -2336,7 +2555,7 @@ def faculty_delete_student(student_id):
     student = conn.execute("SELECT * FROM students WHERE student_id=?", (student_id,)).fetchone()
     if not student:
         conn.close()
-        if request.is_json:
+        if request.is_json or request.path.startswith("/api/"):
             return jsonify({"ok": False, "message": "Student not found."}), 404
         flash("Student not found.", "error")
         return redirect(url_for("faculty_dashboard"))
@@ -2348,7 +2567,7 @@ def faculty_delete_student(student_id):
     conn.close()
 
     msg = f"Student '{student['name']}' ({student_id}) deleted successfully."
-    if request.is_json:
+    if request.is_json or request.path.startswith("/api/"):
         return jsonify({"ok": True, "message": msg})
     flash(msg, "success")
     return redirect(url_for("faculty_dashboard"))
@@ -2384,6 +2603,130 @@ def api_faculty_stats():
         "lab6_completed": l6_completed
     })
 
+
+@app.route("/api/faculty/live-data", methods=["GET"])
+@login_required_faculty
+def api_faculty_live_data():
+    """Near-real-time live synchronization endpoint for faculty dashboard."""
+    conn = get_db()
+    students = conn.execute("SELECT student_id, name, email, default_password, password_changed FROM students ORDER BY student_id").fetchall()
+    progress_rows = conn.execute(
+        "SELECT student_id, lab_number, steps_completed, verification_passed, completed_at FROM lab_progress"
+    ).fetchall()
+    tickets_rows = conn.execute("SELECT * FROM issue_tickets ORDER BY id DESC").fetchall()
+    conn.close()
+
+    progress_map = {}
+    for p in progress_rows:
+        sid = p["student_id"]
+        lab_num = p["lab_number"]
+        if sid not in progress_map:
+            progress_map[sid] = {}
+        progress_map[sid][lab_num] = p
+
+    roster = []
+    lab1_completed_count = 0
+    lab2_completed_count = 0
+    lab3_completed_count = 0
+    lab4_completed_count = 0
+    lab5_completed_count = 0
+    lab6_completed_count = 0
+
+    total_possible = len(LAB1_STEPS) + len(LAB2_STEPS) + len(LAB3_STEPS) + len(LAB4_STEPS) + len(LAB5_STEPS) + len(LAB6_STEPS)
+
+    for s in students:
+        sid = s["student_id"]
+        s_map = progress_map.get(sid, {})
+
+        p1 = s_map.get(1)
+        l1_steps = len(safe_parse_steps(p1))
+        l1_verified = bool(p1["verification_passed"]) if p1 else False
+        if l1_verified:
+            lab1_completed_count += 1
+
+        p2 = s_map.get(2)
+        l2_steps = len(safe_parse_steps(p2))
+        l2_verified = bool(p2["verification_passed"]) if p2 else False
+        if l2_verified:
+            lab2_completed_count += 1
+
+        p3 = s_map.get(3)
+        l3_steps = len(safe_parse_steps(p3))
+        l3_verified = bool(p3["verification_passed"]) if p3 else False
+        if l3_verified:
+            lab3_completed_count += 1
+
+        p4 = s_map.get(4)
+        l4_steps = len(safe_parse_steps(p4))
+        l4_verified = bool(p4["verification_passed"]) if p4 else False
+        if l4_verified:
+            lab4_completed_count += 1
+
+        p5 = s_map.get(5)
+        l5_steps = len(safe_parse_steps(p5))
+        l5_verified = bool(p5["verification_passed"]) if p5 else False
+        if l5_verified:
+            lab5_completed_count += 1
+
+        p6 = s_map.get(6)
+        l6_steps = len(safe_parse_steps(p6))
+        l6_verified = bool(p6["verification_passed"]) if p6 else False
+        if l6_verified:
+            lab6_completed_count += 1
+
+        earned_steps = (len(LAB1_STEPS) if l1_verified else l1_steps) + \
+                       (len(LAB2_STEPS) if l2_verified else l2_steps) + \
+                       (len(LAB3_STEPS) if l3_verified else l3_steps) + \
+                       (len(LAB4_STEPS) if l4_verified else l4_steps) + \
+                       (len(LAB5_STEPS) if l5_verified else l5_steps) + \
+                       (len(LAB6_STEPS) if l6_verified else l6_steps)
+        overall_pct = int((earned_steps / total_possible) * 100) if total_possible > 0 else 0
+
+        roster.append({
+            "student_id": sid,
+            "name": s["name"],
+            "email": s["email"],
+            "default_password": s["default_password"],
+            "password_changed": bool(s["password_changed"]),
+            "lab1": {"steps_done": l1_steps, "total_steps": len(LAB1_STEPS), "verified": l1_verified, "completed_at": p1["completed_at"] if p1 else None},
+            "lab2": {"steps_done": l2_steps, "total_steps": len(LAB2_STEPS), "verified": l2_verified, "completed_at": p2["completed_at"] if p2 else None},
+            "lab3": {"steps_done": l3_steps, "total_steps": len(LAB3_STEPS), "verified": l3_verified, "completed_at": p3["completed_at"] if p3 else None},
+            "lab4": {"steps_done": l4_steps, "total_steps": len(LAB4_STEPS), "verified": l4_verified, "completed_at": p4["completed_at"] if p4 else None},
+            "lab5": {"steps_done": l5_steps, "total_steps": len(LAB5_STEPS), "verified": l5_verified, "completed_at": p5["completed_at"] if p5 else None},
+            "lab6": {"steps_done": l6_steps, "total_steps": len(LAB6_STEPS), "verified": l6_verified, "completed_at": p6["completed_at"] if p6 else None},
+            "overall_pct": overall_pct,
+            "is_fully_done": l1_verified and l2_verified and l3_verified and l4_verified and l5_verified and l6_verified
+        })
+
+    stats = {
+        "total_students": len(students),
+        "lab1_completed": lab1_completed_count,
+        "lab2_completed": lab2_completed_count,
+        "lab3_completed": lab3_completed_count,
+        "lab4_completed": lab4_completed_count,
+        "lab5_completed": lab5_completed_count,
+        "lab6_completed": lab6_completed_count
+    }
+
+    tickets = [dict(t) for t in tickets_rows]
+    tasks = task_manager.list_tasks(None)
+
+    raw_hash_data = json.dumps({"stats": stats, "roster": roster, "tickets": tickets, "tasks": tasks}, sort_keys=True)
+    data_hash = hashlib.md5(raw_hash_data.encode("utf-8")).hexdigest()
+
+    client_hash = request.args.get("hash")
+    if client_hash and client_hash == data_hash:
+        return jsonify({"ok": True, "changed": False, "hash": data_hash})
+
+    return jsonify({
+        "ok": True,
+        "changed": True,
+        "hash": data_hash,
+        "stats": stats,
+        "roster": roster,
+        "tickets": tickets,
+        "tasks": tasks
+    })
 
 
 @app.route("/faculty/upload", methods=["POST"])

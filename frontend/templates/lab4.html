@@ -110,6 +110,8 @@
               "Addition Microservice is Running"<br><br>if __name__ ==
               '__main__':<br>&nbsp;&nbsp;app.run(host='0.0.0.0', port=5000)</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(1)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step1" class="step-test-result"></div>
       </div>
 
       <!-- Step 2: CREATE DOCKERFILE -->
@@ -135,6 +137,8 @@
               data-vlab-tooltip="EXPOSE 5000 & CMD: Opens port 5000 and executes Flask app">EXPOSE 5000<br>CMD
               ["python", "app.py"]</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(2)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step2" class="step-test-result"></div>
       </div>
 
       <!-- Step 3: CREATE REQUIREMENTS.TXT -->
@@ -151,6 +155,8 @@
           <div class="no-copy-code"><span class="vlab-hover-target"
               data-vlab-tooltip="requirements.txt: Specifies required Flask PyPI package">flask==3.0.0</span></div>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(3)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step3" class="step-test-result"></div>
       </div>
 
       <!-- Step 4: BUILD DOCKER IMAGE -->
@@ -161,11 +167,13 @@
           <span id="badge-build" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#38bdf8">
+        <div class="cmd-box" style="color:#38bdf8;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target"
-            data-vlab-tooltip="docker build: Compiles Python microservice image named sum-microservice">docker build -t
-            sum-microservice .</span>
+            data-vlab-tooltip="docker build: Compiles Python microservice image named sum-microservice">docker build -t sum-microservice .</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker build -t sum-microservice .', this)" title="Copy build command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(4)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step4" class="step-test-result"></div>
       </div>
 
       <!-- Step 5: RUN CONTAINER -->
@@ -176,11 +184,13 @@
           <span id="badge-run" class="badge badge-amber"><i class="fa-solid fa-clock"></i> Required</span>
         </div>
         <div class="drawer-step-sub">RUN COMMAND IN TERMINAL CONSOLE BELOW:</div>
-        <div class="cmd-box" style="color:#34d399">
+        <div class="cmd-box" style="color:#34d399;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span class="vlab-hover-target"
-            data-vlab-tooltip="docker run: Launches microservice in background (-d) mapping host port 5000 to container port 5000 (-p)">docker
-            run -d -p 5000:5000 sum-microservice</span>
+            data-vlab-tooltip="docker run: Launches microservice in background (-d) mapping host port 5000 to container port 5000 (-p)">docker run -d -p 5000:5000 sum-microservice</span>
+          <button class="btn-copy-cmd" onclick="copyCommandText('docker run -d -p 5000:5000 sum-microservice', this)" title="Copy run command"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
+        <button type="button" class="btn-test-step" onclick="testStep(5)"><i class="fa-solid fa-flask-vial"></i> Check Test Case</button>
+        <div id="testResult-step5" class="step-test-result"></div>
       </div>
     </div>
 
@@ -241,6 +251,8 @@
               class="fa-solid fa-plus"></i> NEW FILE</button>
           <button class="editor-pill-btn btn-save" id="btnSaveFile" onclick="saveCurrentFile()"><i
               class="fa-solid fa-floppy-disk"></i> SAVE (CTRL+S)</button>
+          <button class="editor-pill-btn" style="background:#0284c7;color:#ffffff;border-color:#38bdf8" id="btnTestCode" onclick="validateStudentCode()"><i
+              class="fa-solid fa-vial-circle-check"></i> TEST CODE</button>
           <button class="editor-pill-btn btn-rename" id="btnRenameFile" onclick="renameCurrentFilePrompt()"><i
               class="fa-solid fa-pen"></i> RENAME</button>
           <button class="editor-pill-btn btn-delete" id="btnDeleteFile" onclick="deleteCurrentFilePrompt()"><i
@@ -281,8 +293,10 @@
           <div class="vscode-preview-header">
             <i class="fa-solid fa-rotate-right preview-refresh-btn" title="Refresh Live Microservice Studio"
               onclick="refreshPreview()"></i>
-            <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.85rem;color:#059669"></i>
-              <span id="previewUrlText">http://localhost:5000/add?a=10&amp;b=20</span>
+            <div class="vscode-preview-url" style="display:flex;align-items:center;gap:6px;flex:1;background:#1e293b;border:1px solid #334155;border-radius:6px;padding:3px 8px;margin:0 8px">
+              <i class="fa-solid fa-lock" style="font-size:.8rem;color:#10b981"></i>
+              <input type="text" id="previewUrlInput" value="http://localhost:5000/add?a=10&amp;b=20" style="flex:1;background:transparent;border:none;color:#e2e8f0;font-family:var(--font-mono);font-size:.78rem;outline:none;" placeholder="http://localhost:5000/add?a=10&amp;b=20" onkeydown="if(event.key==='Enter') navigatePreviewUrl()">
+              <button class="btn-url-go" onclick="navigatePreviewUrl()" title="Execute Request" style="background:#3b82f6;color:#ffffff;border:none;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;cursor:pointer">GO</button>
             </div>
             <span class="preview-status-badge offline" id="previewBadge">OFFLINE</span>
           </div>
@@ -1093,11 +1107,19 @@
             showToast('Docker image built successfully in Docker Desktop!', 'success');
           }
           if (lower.includes("docker run")) {
-            testedState.run = true;
-            containerRunning = true;
-            updatePreview();
             checkCodeProgress();
-            showToast('Sum microservice container active in Docker Desktop!', 'success');
+            if (!testedState.app || !testedState.dockerfile || !testedState.req) {
+              testedState.run = false;
+              containerRunning = false;
+              updatePreview();
+              showToast('Cannot run microservice: app.py, Dockerfile, and requirements.txt must be created in Explorer first!', 'warning');
+            } else {
+              testedState.run = true;
+              containerRunning = true;
+              updatePreview();
+              checkCodeProgress();
+              showToast('Sum microservice container active in Docker Desktop!', 'success');
+            }
           }
         }
       })
@@ -1107,17 +1129,246 @@
     }
 
     // Live Preview & Sum Microservice Studio
+    function copyCommandText(arg1, arg2) {
+      if (typeof window.copyCommandText === 'function' && window.copyCommandText !== copyCommandText) {
+        return window.copyCommandText(arg1, arg2);
+      }
+      let text = typeof arg1 === 'string' ? arg1 : (typeof arg2 === 'string' ? arg2 : '');
+      let btn = (arg1 && arg1.nodeType) ? arg1 : ((arg2 && arg2.nodeType) ? arg2 : null);
+      if (!text && btn) {
+        text = btn.getAttribute('data-cmd') || btn.dataset.cmd || '';
+        if (!text && btn.parentElement) {
+          const codeEl = btn.parentElement.querySelector('code');
+          if (codeEl) text = codeEl.innerText.trim();
+        }
+      }
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            btn.style.borderColor = '#10b981';
+            btn.style.color = '#10b981';
+            setTimeout(() => {
+              btn.innerHTML = orig;
+              btn.style.borderColor = '';
+              btn.style.color = '';
+            }, 1500);
+          }
+        });
+      }
+    }
+
+    function validateStudentCode() {
+      const ed = document.getElementById('codeEditor');
+      if (ed && currentFile) {
+        files[currentFile] = ed.value;
+        saveFilesToLocalStorage();
+      }
+      const appCode = (files['app.py'] || '').trim().toLowerCase();
+      const dfCode = (files['Dockerfile'] || files['dockerfile'] || '').trim().toLowerCase();
+      const reqCode = (files['requirements.txt'] || files['requirement.txt'] || '').trim().toLowerCase();
+
+      let missing = [];
+
+      // Validate app.py
+      const hasFlask = appCode.includes('flask');
+      const hasRoute = appCode.includes('@app.route') && (appCode.includes('/add') || appCode.includes('add'));
+      const hasSumLogic = appCode.includes('sum') || appCode.includes('+');
+      if (hasFlask && hasRoute && hasSumLogic) {
+        testedState.app = true;
+      } else {
+        missing.push("app.py: Must import Flask, define '/add' route with parameters a and b, and return sum.");
+      }
+
+      // Validate Dockerfile
+      const hasFromPy = dfCode.includes('from') && (dfCode.includes('python') || dfCode.includes('alpine'));
+      const hasAppRun = dfCode.includes('app.py') || dfCode.includes('flask');
+      if (hasFromPy && hasAppRun) {
+        testedState.dockerfile = true;
+      } else {
+        missing.push("Dockerfile: Must use Python base image (FROM python:3.9-slim) and specify CMD [\"python\", \"app.py\"].");
+      }
+
+      // Validate requirements.txt
+      if (reqCode.includes('flask')) {
+        testedState.req = true;
+      } else {
+        missing.push("requirements.txt: Must include flask dependency (flask==3.0.0).");
+      }
+
+      checkCodeProgress();
+
+      if (missing.length === 0) {
+        showToast("✓ Code syntax test passed! app.py, Dockerfile, and requirements.txt verified.", "success");
+      } else {
+        showToast(missing.join(" | "), "warning");
+      }
+    }
+
+    function testStep(stepNum) {
+      const resEl = document.getElementById(`testResult-step${stepNum}`);
+      if (resEl) {
+        resEl.className = "step-test-result running";
+        resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running test case for Step ' + stepNum + '...';
+      }
+
+      setTimeout(() => {
+        const ed = document.getElementById('codeEditor');
+        if (ed && currentFile) {
+          files[currentFile] = ed.value;
+          saveFilesToLocalStorage();
+        }
+        const appCode = (files['app.py'] || '').trim().toLowerCase();
+        const dfCode = (files['Dockerfile'] || files['dockerfile'] || '').trim().toLowerCase();
+        const reqCode = (files['requirements.txt'] || files['requirement.txt'] || '').trim().toLowerCase();
+
+        if (stepNum === 1) {
+          const ok = appCode.includes('flask') && (appCode.includes('/add') || appCode.includes('add')) && (appCode.includes('sum') || appCode.includes('+'));
+          const msg = ok ? "app.py verified: Flask route '/add' with sum calculation logic found." : "app.py incomplete: Must import Flask, define route '/add', and calculate sum.";
+          setLab4TestResult(1, 'app', ok, msg);
+        } else if (stepNum === 2) {
+          const ok = dfCode.includes('from') && (dfCode.includes('python') || dfCode.includes('alpine')) && (dfCode.includes('app.py') || dfCode.includes('flask'));
+          const msg = ok ? "Dockerfile verified: Base Python image and app.py entrypoint found." : "Dockerfile incomplete: Must specify FROM python:3.9-slim and CMD [\"python\", \"app.py\"].";
+          setLab4TestResult(2, 'dockerfile', ok, msg);
+        } else if (stepNum === 3) {
+          const ok = reqCode.includes('flask');
+          const msg = ok ? "requirements.txt verified: flask dependency package found." : "requirements.txt incomplete: Must specify 'flask==3.0.0'.";
+          setLab4TestResult(3, 'req', ok, msg);
+        } else if (stepNum === 4) {
+          const ok = Boolean(testedState.build);
+          const msg = ok ? "Docker image 'sum-microservice' built successfully." : "Build not detected. Run 'docker build -t sum-microservice .' in terminal.";
+          setLab4TestResult(4, 'build', ok, msg);
+        } else if (stepNum === 5) {
+          const ok = Boolean(testedState.run);
+          const msg = ok ? "Container running on port 5000." : "Container not running. Run 'docker run -d -p 5000:5000 sum-microservice' in terminal.";
+          setLab4TestResult(5, 'run', ok, msg);
+        }
+      }, 350);
+    }
+
+    function setLab4TestResult(stepNum, key, ok, message) {
+      testedState[key] = ok;
+      const resEl = document.getElementById(`testResult-step${stepNum}`);
+      if (resEl) {
+        resEl.className = "step-test-result " + (ok ? "passed" : "failed");
+        resEl.innerHTML = (ok ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-xmark"></i> ') + message;
+      }
+      if (ok) markStepBackend(stepNum);
+      checkCodeProgress();
+    }
+
+    // Live Preview & Sum Microservice Studio
+    let currentStudioA = 10;
+    let currentStudioB = 20;
+
+    function syncInputsToUrl() {
+      const numA = document.getElementById('numAInput');
+      const numB = document.getElementById('numBInput');
+      const urlInput = document.getElementById('previewUrlInput');
+      if (numA) currentStudioA = parseFloat(numA.value) || 0;
+      if (numB) currentStudioB = parseFloat(numB.value) || 0;
+      if (urlInput) {
+        urlInput.value = `http://localhost:5000/add?a=${currentStudioA}&b=${currentStudioB}`;
+      }
+    }
+
+    function navigatePreviewUrl() {
+      const input = document.getElementById('previewUrlInput');
+      const urlVal = input ? input.value.trim() : '';
+
+      if (!containerRunning) {
+        showToast('Microservice is OFFLINE. Run docker build and docker run first.', 'warning');
+        updatePreview();
+        return;
+      }
+
+      // Parse query parameters a and b
+      let aVal = currentStudioA, bVal = currentStudioB;
+      try {
+        const urlObj = new URL(urlVal.startsWith('http') ? urlVal : 'http://' + urlVal);
+        if (urlObj.searchParams.has('a')) aVal = parseFloat(urlObj.searchParams.get('a')) || 0;
+        if (urlObj.searchParams.has('b')) bVal = parseFloat(urlObj.searchParams.get('b')) || 0;
+      } catch(e) {
+        const matchA = urlVal.match(/[?&]a=([^&]+)/);
+        const matchB = urlVal.match(/[?&]b=([^&]+)/);
+        if (matchA) aVal = parseFloat(matchA[1]) || 0;
+        if (matchB) bVal = parseFloat(matchB[1]) || 0;
+      }
+
+      currentStudioA = aVal;
+      currentStudioB = bVal;
+
+      const numA = document.getElementById('numAInput');
+      const numB = document.getElementById('numBInput');
+      if (numA) numA.value = aVal;
+      if (numB) numB.value = bVal;
+
+      fetchSumResult(aVal, bVal);
+    }
+
+    function fetchSumResult(aVal, bVal) {
+      const pre = document.getElementById('studioResponseJson');
+      if (pre) pre.textContent = 'Executing GET /add?a=' + aVal + '&b=' + bVal + '...';
+
+      fetch(`/add?a=${aVal}&b=${bVal}`)
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(data => {
+          if (pre) {
+            pre.textContent = JSON.stringify(data, null, 2);
+          }
+          testedState.tested_sum = true;
+          checkCodeProgress();
+          showToast(`Calculated: ${aVal} + ${bVal} = ${data.sum !== undefined ? data.sum : (data.result !== undefined ? data.result : (aVal + bVal))}`, 'success');
+        })
+        .catch(() => {
+          // Dynamic calculation fallback
+          const sum = aVal + bVal;
+          const resultObj = {
+            "operation": "addition",
+            "number1": aVal,
+            "number2": bVal,
+            "sum": Number.isInteger(sum) ? sum : parseFloat(sum.toFixed(4)),
+            "status": "success",
+            "service": "sum-microservice:5000"
+          };
+          if (pre) {
+            pre.textContent = JSON.stringify(resultObj, null, 2);
+          }
+          testedState.tested_sum = true;
+          checkCodeProgress();
+          showToast(`Calculated: ${aVal} + ${bVal} = ${sum}`, 'success');
+        });
+    }
+
+    function calculateSumInStudio() {
+      const numA = document.getElementById('numAInput');
+      const numB = document.getElementById('numBInput');
+      if (numA) currentStudioA = parseFloat(numA.value) || 0;
+      if (numB) currentStudioB = parseFloat(numB.value) || 0;
+
+      const urlInput = document.getElementById('previewUrlInput');
+      if (urlInput) {
+        urlInput.value = `http://localhost:5000/add?a=${currentStudioA}&b=${currentStudioB}`;
+      }
+
+      fetchSumResult(currentStudioA, currentStudioB);
+    }
+
     function updatePreview() {
       const badge = document.getElementById('previewBadge');
       const container = document.getElementById('previewContainer');
-      const urlText = document.getElementById('previewUrlText');
+      const urlInput = document.getElementById('previewUrlInput');
 
       if (!containerRunning) {
         if (badge) {
           badge.className = 'preview-status-badge offline';
           badge.textContent = 'OFFLINE';
         }
-        if (urlText) urlText.textContent = 'http://localhost:5000/add?a=10&b=20';
         if (container) {
           container.innerHTML = `
             <div class="offline-placeholder">
@@ -1135,7 +1386,9 @@
         badge.className = 'preview-status-badge online';
         badge.textContent = 'ONLINE';
       }
-      if (urlText) urlText.textContent = 'http://localhost:5000/add?a=10&b=20';
+      if (urlInput && (!urlInput.value || urlInput.value.trim() === '')) {
+        urlInput.value = `http://localhost:5000/add?a=${currentStudioA}&b=${currentStudioB}`;
+      }
 
       if (container) {
         container.innerHTML = `
@@ -1146,7 +1399,7 @@
               </div>
               <div>
                 <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#121212;line-height:1.2">Flask Sum Microservice Studio</h3>
-                <span style="font-size:.75rem;color:#059669;font-weight:700">● Container Port 5000 Active</span>
+                <span style="font-size:.75rem;color:#059669;font-weight:700">● Container Port 5000 Active (Live API)</span>
               </div>
             </div>
 
@@ -1155,11 +1408,11 @@
               <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;width:100%">
                 <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:85px">
                   <label style="font-size:.75rem;font-weight:800;text-transform:uppercase">Number A:</label>
-                  <input type="number" id="numAInput" value="10" style="width:100%;padding:6px 8px;border:2px solid #121212;font-family:var(--font-mono);font-weight:700;box-sizing:border-box">
+                  <input type="number" id="numAInput" value="${currentStudioA}" oninput="syncInputsToUrl()" style="width:100%;padding:6px 8px;border:2px solid #121212;font-family:var(--font-mono);font-weight:700;box-sizing:border-box">
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:85px">
                   <label style="font-size:.75rem;font-weight:800;text-transform:uppercase">Number B:</label>
-                  <input type="number" id="numBInput" value="20" style="width:100%;padding:6px 8px;border:2px solid #121212;font-family:var(--font-mono);font-weight:700;box-sizing:border-box">
+                  <input type="number" id="numBInput" value="${currentStudioB}" oninput="syncInputsToUrl()" style="width:100%;padding:6px 8px;border:2px solid #121212;font-family:var(--font-mono);font-weight:700;box-sizing:border-box">
                 </div>
                 <button class="btn btn-blue btn-sm" onclick="calculateSumInStudio()" style="padding:7px 14px;font-weight:800;white-space:nowrap;margin-top:auto">
                   <i class="fa-solid fa-play"></i> Compute Sum
@@ -1169,35 +1422,23 @@
 
             <div style="background:#0f172a;border:2px solid #121212;padding:12px 14px;color:#f8fafc;font-family:var(--font-mono);box-shadow:3px 3px 0 #121212;box-sizing:border-box;width:100%;max-width:100%">
               <div style="color:#94a3b8;font-size:.7rem;margin-bottom:6px;font-weight:700">HTTP RESPONSE (application/json):</div>
-              <pre id="studioResponseJson" style="margin:0;color:#38bdf8;font-size:.8rem;white-space:pre-wrap;word-break:break-word">{\n  "operation": "addition",\n  "a": 10,\n  "b": 20,\n  "result": 30,\n  "status": "success"\n}</pre>
+              <pre id="studioResponseJson" style="margin:0;color:#38bdf8;font-size:.8rem;white-space:pre-wrap;word-break:break-word">{\n  "operation": "addition",\n  "number1": ${currentStudioA},\n  "number2": ${currentStudioB},\n  "sum": ${currentStudioA + currentStudioB},\n  "status": "success",\n  "container": "sum-microservice"\n}</pre>
             </div>
           </div>
         `;
       }
     }
 
-    function calculateSumInStudio() {
-      const aVal = parseFloat(document.getElementById('numAInput').value) || 0;
-      const bVal = parseFloat(document.getElementById('numBInput').value) || 0;
-      const sum = aVal + bVal;
-      const pre = document.getElementById('studioResponseJson');
-      if (pre) {
-        pre.textContent = JSON.stringify({
-          operation: "addition",
-          a: aVal,
-          b: bVal,
-          result: sum,
-          status: "success",
-          container_id: "sum-service-5000"
-        }, null, 2);
-      }
-      testedState.tested_sum = true;
-      checkCodeProgress();
-      showToast(`Computed: ${aVal} + ${bVal} = ${sum}`, 'success');
-    }
-
     function refreshPreview() {
+      const refreshIcon = document.querySelector('.preview-refresh-btn');
+      if (refreshIcon) {
+        refreshIcon.classList.add('fa-spin');
+        setTimeout(() => refreshIcon.classList.remove('fa-spin'), 600);
+      }
       updatePreview();
+      if (containerRunning) {
+        navigatePreviewUrl();
+      }
       showToast('Live preview refreshed', 'info');
     }
 

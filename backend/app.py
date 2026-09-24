@@ -32,7 +32,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import openpyxl
 import psutil
 
-from backend.db import get_db, init_db, save_workspace_file, get_workspace_files
+from backend.db import (
+    get_db, init_db, save_workspace_file, get_workspace_files,
+    delete_workspace_file, rename_workspace_file
+)
 from backend.ha_manager import ha_cluster_manager
 from backend.services.email_service import email_service
 from backend.services.notification_service import notification_service
@@ -733,6 +736,171 @@ def check_host_docker_status(retry_auto_start=False):
     _DOCKER_STATUS_CACHE = {"status": False, "msg": msg, "expires": now + 2}
     return False, msg
 
+# ---------------------------------------------------------------------------
+# Permanent Host Workspace Management APIs
+# ---------------------------------------------------------------------------
+
+@app.route("/api/workspace/files", methods=["GET", "POST"])
+def api_workspace_get_files():
+    """
+    Retrieves all files permanently stored on the host device for the student.
+    Synchronizes between host disk (workspaces/<student_id>/) and central DB.
+    """
+    student_id = session.get("student_id")
+    if not student_id:
+        req_json = request.get_json(silent=True) or {}
+        student_id = req_json.get("student_id") or request.args.get("student_id") or "guest"
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    # 1. Fetch files stored in database
+    db_files = get_workspace_files(str(student_id))
+
+    # 2. Fetch files stored permanently on host filesystem
+    disk_files = {}
+    if os.path.exists(workspace_dir):
+        for root, _, fnames in os.walk(workspace_dir):
+            for fname in fnames:
+                rel_path = os.path.relpath(os.path.join(root, fname), workspace_dir).replace("\\", "/")
+                if rel_path.startswith(".") or "/." in rel_path:
+                    continue
+                try:
+                    with open(os.path.join(root, fname), "r", encoding="utf-8", errors="replace") as f:
+                        disk_files[rel_path] = f.read()
+                except Exception:
+                    pass
+
+    # 3. Synchronize both layers: disk files take precedence, DB files fill missing
+    all_files = dict(db_files)
+    all_files.update(disk_files)
+
+    # Ensure any DB files not yet on disk are materialized permanently on host disk
+    for fname, content in db_files.items():
+        if fname not in disk_files and fname and not fname.startswith("/") and ".." not in fname:
+            target_file_path = os.path.join(workspace_dir, fname)
+            os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+            try:
+                with open(target_file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                disk_files[fname] = content
+            except Exception:
+                pass
+
+    # Ensure any disk files not yet in DB are persisted to DB
+    for fname, content in disk_files.items():
+        if fname not in db_files:
+            try:
+                save_workspace_file(str(student_id), fname, content)
+            except Exception:
+                pass
+
+    return jsonify({"ok": True, "student_id": str(student_id), "files": all_files})
+
+
+@app.route("/api/workspace/save", methods=["POST"])
+def api_workspace_save():
+    """
+    Permanently writes workspace file(s) to the host machine disk and database.
+    Accepts single file or batch dictionary of files.
+    """
+    data = request.get_json(force=True) or {}
+    student_id = data.get("student_id") or session.get("student_id", "guest")
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    files_to_save = {}
+    if "files" in data and isinstance(data["files"], dict):
+        files_to_save.update(data["files"])
+    if "filename" in data:
+        files_to_save[data["filename"]] = data.get("content", "")
+
+    saved = []
+    for fname, content in files_to_save.items():
+        if not fname or not isinstance(fname, str) or fname.startswith("/") or ".." in fname:
+            continue
+        clean_name = fname.strip()
+        raw_text = content or ""
+        clean_text = html.unescape(raw_text) if isinstance(raw_text, str) else ""
+
+        target_file_path = os.path.join(workspace_dir, clean_name)
+        os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+        try:
+            with open(target_file_path, "w", encoding="utf-8") as f:
+                f.write(clean_text)
+            save_workspace_file(str(student_id), clean_name, clean_text)
+            saved.append(clean_name)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Failed to persist {clean_name} to host: {str(e)}"}), 500
+
+    return jsonify({"ok": True, "saved": saved, "message": "Permanently stored on host device"})
+
+
+@app.route("/api/workspace/delete", methods=["POST"])
+def api_workspace_delete():
+    """
+    Permanently deletes a student workspace file from host disk and DB.
+    """
+    data = request.get_json(force=True) or {}
+    student_id = data.get("student_id") or session.get("student_id", "guest")
+    filename = (data.get("filename") or "").strip()
+
+    if not filename or filename.startswith("/") or ".." in filename:
+        return jsonify({"ok": False, "error": "Invalid filename."}), 400
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    fpath = os.path.join(workspace_dir, filename)
+
+    if os.path.exists(fpath):
+        try:
+            if os.path.isfile(fpath) or os.path.islink(fpath):
+                os.unlink(fpath)
+            elif os.path.isdir(fpath):
+                shutil.rmtree(fpath)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Failed to remove {filename} from host disk: {str(e)}"}), 500
+
+    try:
+        delete_workspace_file(str(student_id), filename)
+    except Exception as e:
+        print(f"Error removing {filename} from DB: {e}")
+
+    return jsonify({"ok": True, "deleted": filename, "message": "Deleted from host device storage"})
+
+
+@app.route("/api/workspace/rename", methods=["POST"])
+def api_workspace_rename():
+    """
+    Renames a student workspace file permanently on host disk and DB.
+    """
+    data = request.get_json(force=True) or {}
+    student_id = data.get("student_id") or session.get("student_id", "guest")
+    old_name = (data.get("old_filename") or "").strip()
+    new_name = (data.get("new_filename") or "").strip()
+
+    if not old_name or not new_name or ".." in old_name or ".." in new_name:
+        return jsonify({"ok": False, "error": "Invalid file names."}), 400
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    old_path = os.path.join(workspace_dir, old_name)
+    new_path = os.path.join(workspace_dir, new_name)
+
+    if os.path.exists(old_path):
+        try:
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+            shutil.move(old_path, new_path)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Failed to rename file on host disk: {str(e)}"}), 500
+
+    try:
+        rename_workspace_file(str(student_id), old_name, new_name)
+    except Exception as e:
+        print(f"Error renaming {old_name} in DB: {e}")
+
+    return jsonify({"ok": True, "renamed": {"old": old_name, "new": new_name}})
+
+
 @app.route("/api/terminal/exec", methods=["POST"])
 @app.route("/api/run-command", methods=["POST"])
 @login_required_student
@@ -766,34 +934,36 @@ def api_terminal_exec():
     if not cluster_res.get("standalone"):
         return jsonify(cluster_res)
 
-    # Prepare student workspace directory on disk (Standalone / Fallback Mode)
+    # Prepare student workspace directory on disk (Permanent Host Storage)
     workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
     os.makedirs(workspace_dir, exist_ok=True)
     state = get_student_docker_state(student_id)
 
-    # Clean workspace directory on disk so it strictly matches active browser workspace
-    if os.path.exists(workspace_dir):
-        for item in os.listdir(workspace_dir):
-            item_path = os.path.join(workspace_dir, item)
-            try:
-                if os.path.isfile(item_path) or os.path.islink(item_path):
-                    os.unlink(item_path)
-                elif os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-            except Exception:
-                pass
-
-    # Clean and write client workspace files passed from browser
-    client_files = data.get("files", {})
+    # Clean and write client workspace files passed from browser, persisting permanently to host disk and DB
     if isinstance(client_files, dict):
         for fname, content in client_files.items():
             if fname and isinstance(fname, str) and not fname.startswith("/") and ".." not in fname:
                 raw_text = content or ""
-                clean_text = re.sub(r'<[^>]+>', '', raw_text)
-                clean_text = html.unescape(clean_text)
+                clean_text = html.unescape(raw_text) if isinstance(raw_text, str) else ""
                 fpath = os.path.join(workspace_dir, fname)
-                with open(fpath, "w", encoding="utf-8") as f:
-                    f.write(clean_text)
+                try:
+                    with open(fpath, "w", encoding="utf-8") as f:
+                        f.write(clean_text)
+                    save_workspace_file(student_id, fname, clean_text)
+                except Exception as e:
+                    print(f"Error persisting workspace file {fname}: {e}")
+
+    # Ensure any files previously saved on host disk are preserved and loaded into execution environment
+    if os.path.exists(workspace_dir):
+        for item in os.listdir(workspace_dir):
+            item_path = os.path.join(workspace_dir, item)
+            if os.path.isfile(item_path) and item not in client_files:
+                try:
+                    with open(item_path, "r", encoding="utf-8", errors="replace") as f:
+                        client_files[item] = f.read()
+                except Exception:
+                    pass
+
 
     # Multi-lab file bridges: support Dockerfile, Dockerfile.microservice, Dockerfile.client, docker-compose.yml
     df_path = os.path.join(workspace_dir, "Dockerfile")

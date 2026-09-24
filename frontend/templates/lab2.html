@@ -274,7 +274,7 @@ if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
   files = { 'index.html': '' };
 }
 
-function saveFilesToLocalStorage() {
+function saveFilesToLocalStorage(immediate = false) {
   try {
     localStorage.setItem(STORAGE_KEY_LAB2, JSON.stringify(files));
     if (STUDENT_ID && STUDENT_ID !== 'guest') {
@@ -283,6 +283,29 @@ function saveFilesToLocalStorage() {
   } catch(e) {
     console.error("Error saving files to localStorage:", e);
   }
+  if (window.VLabWorkspace) {
+    window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, immediate);
+  }
+}
+
+// Initial permanent sync with host machine storage
+if (window.VLabWorkspace) {
+  window.VLabWorkspace.fetchHostFiles(STUDENT_ID).then(hostFiles => {
+    if (hostFiles && Object.keys(hostFiles).length > 0) {
+      Object.assign(files, hostFiles);
+      try { localStorage.setItem(STORAGE_KEY_LAB2, JSON.stringify(files)); } catch(e) {}
+      renderFileTree();
+      renderTabs();
+      if (currentFile && files[currentFile] !== undefined) {
+        switchFile(currentFile);
+      } else {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey) switchFile(firstKey);
+      }
+    } else if (files && Object.keys(files).length > 0) {
+      window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, true);
+    }
+  });
 }
 
 const ACTIVE_FILE_KEY_LAB2 = 'vlab_active_file_lab2_' + (STUDENT_ID || 'guest');
@@ -623,9 +646,13 @@ function renameCurrentFilePrompt() {
         showToast(`File '${newName}' already exists!`, 'warning');
         return;
       }
-      files[newName] = files[currentFile];
-      delete files[currentFile];
+      const oldName = currentFile;
+      files[newName] = files[oldName];
+      delete files[oldName];
       currentFile = newName;
+      if (window.VLabWorkspace) {
+        window.VLabWorkspace.renameFileOnHost(oldName, newName, STUDENT_ID);
+      }
       try {
         localStorage.setItem(ACTIVE_FILE_KEY_LAB2, newName);
       } catch(e) {}
@@ -651,7 +678,7 @@ function saveCurrentFile() {
     return;
   }
   files[currentFile] = document.getElementById('codeEditor').value;
-  saveFilesToLocalStorage();
+  saveFilesToLocalStorage(true);
   const statusEl = document.getElementById('editorFileStatus');
   if (statusEl) {
     statusEl.innerHTML = `Editing: <b>${currentFile}</b> <span style="color:#10b981;font-size:.72rem;margin-left:6px;font-weight:700">&#10003; Saved</span>`;
@@ -669,7 +696,10 @@ function deleteFile(filename, e) {
     (confirmed) => {
       if(!confirmed) return;
       delete files[filename];
-      saveFilesToLocalStorage();
+      if (window.VLabWorkspace) {
+        window.VLabWorkspace.deleteFileFromHost(filename, STUDENT_ID);
+      }
+      saveFilesToLocalStorage(true);
       if (currentFile === filename) {
         const keys = Object.keys(files);
         currentFile = keys.length ? keys[0] : null;

@@ -71,11 +71,18 @@ def get_db() -> DBConnectionWrapper:
     """
     database_url = os.environ.get("DATABASE_URL", "").strip()
 
-    if database_url and HAS_POSTGRES:
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
-        return DBConnectionWrapper(conn, is_postgres=True)
+    if database_url:
+        if not HAS_POSTGRES:
+            print("⚠️ [V-Lab DB Warning] DATABASE_URL is defined, but 'psycopg2' is not installed. Falling back to SQLite.")
+        else:
+            if database_url.startswith("postgres://"):
+                database_url = database_url.replace("postgres://", "postgresql://", 1)
+            try:
+                conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+                return DBConnectionWrapper(conn, is_postgres=True)
+            except Exception as e:
+                print(f"❌ [V-Lab DB Error] Unable to connect to remote PostgreSQL DB VM: {e}")
+                print("   Falling back to local SQLite at database/vlab.db for resilience.")
 
     os.makedirs(os.path.dirname(DEFAULT_SQLITE_PATH), exist_ok=True)
     conn = sqlite3.connect(DEFAULT_SQLITE_PATH, check_same_thread=False)
@@ -593,3 +600,30 @@ def get_workspace_files(student_id: str) -> Dict[str, str]:
         return {r["filename"]: r["content"] for r in rows}
     finally:
         conn.close()
+
+
+def delete_workspace_file(student_id: str, filename: str):
+    """Permanently deletes a student workspace file from database storage."""
+    conn = get_db()
+    try:
+        conn.execute(
+            "DELETE FROM student_workspaces WHERE student_id = ? AND filename = ?",
+            (student_id, filename)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def rename_workspace_file(student_id: str, old_filename: str, new_filename: str):
+    """Renames a student workspace file in database storage."""
+    conn = get_db()
+    try:
+        conn.execute(
+            "UPDATE student_workspaces SET filename = ?, updated_at = ? WHERE student_id = ? AND filename = ?",
+            (new_filename, datetime.datetime.utcnow().isoformat(), student_id, old_filename)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+

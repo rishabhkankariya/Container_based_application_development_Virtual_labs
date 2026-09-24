@@ -1,0 +1,30 @@
+{% extends "emails/layout.html" %}
+
+{% block content %}
+<h2>Faculty Replied to Your Help Ticket 💬</h2>
+<p>Hello <strong>{{ student_name }}</strong>,</p>
+<p>
+  A faculty instructor has replied to your support ticket regarding <strong>Lab {{ lab_number }}</strong>.
+</p>
+
+<div class="info-card">
+  <div class="info-row">
+    <span class="info-label">Ticket Title:</span>
+    <span class="info-value" style="font-family:inherit;">{{ ticket_title }}</span>
+  </div>
+  <div style="margin-top:12px;">
+    <strong>Faculty Response:</strong>
+    <div style="background:#fff;border-left:3px solid #0056b3;padding:10px 14px;margin-top:6px;font-size:14px;color:#333;line-height:1.5;">
+      {{ reply_text }}
+    </div>
+  </div>
+</div>
+
+<p>
+  You can view the full ticket thread and ask follow-up questions from your student dashboard.
+</p>
+
+<div style="text-align:center;">
+  <a href="{{ dashboard_url }}" class="btn-primary" style="background:#0056b3;">View Support Tickets</a>
+</div>
+{% endblock %}

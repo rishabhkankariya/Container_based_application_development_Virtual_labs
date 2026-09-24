@@ -442,7 +442,7 @@ if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
   files = { "app.py": "" };
 }
 
-function saveFilesToLocalStorage() {
+function saveFilesToLocalStorage(immediate = false) {
   try {
     localStorage.setItem(STORAGE_KEY_LAB6, JSON.stringify(files));
     if (STUDENT_ID && STUDENT_ID !== 'guest') {
@@ -451,6 +451,29 @@ function saveFilesToLocalStorage() {
   } catch(e) {
     console.error("Error saving files to localStorage:", e);
   }
+  if (window.VLabWorkspace) {
+    window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, immediate);
+  }
+}
+
+// Initial permanent sync with host machine storage
+if (window.VLabWorkspace) {
+  window.VLabWorkspace.fetchHostFiles(STUDENT_ID).then(hostFiles => {
+    if (hostFiles && Object.keys(hostFiles).length > 0) {
+      Object.assign(files, hostFiles);
+      try { localStorage.setItem(STORAGE_KEY_LAB6, JSON.stringify(files)); } catch(e) {}
+      if (typeof renderFileTree === 'function') renderFileTree();
+      if (typeof renderTabs === 'function') renderTabs();
+      if (activeFile && files[activeFile] !== undefined) {
+        if (typeof switchFile === 'function') switchFile(activeFile);
+      } else {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey && typeof switchFile === 'function') switchFile(firstKey);
+      }
+    } else if (files && Object.keys(files).length > 0) {
+      window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, true);
+    }
+  });
 }
 
 const ACTIVE_FILE_KEY_LAB6 = 'vlab_active_file_lab6_' + (STUDENT_ID || 'guest');
@@ -771,15 +794,19 @@ function createNewFilePrompt() {
 
 function renameCurrentFilePrompt() {
   if (!activeFile) return;
-  openCustomPrompt('<i class="fa-solid fa-pen" style="color:#f59e0b"></i> RENAME FILE', 'Rename ' + activeFile + ' to:', activeFile, activeFile, function (val) {
-    if (!val || val === activeFile) return;
+  const oldName = activeFile;
+  openCustomPrompt('<i class="fa-solid fa-pen" style="color:#f59e0b"></i> RENAME FILE', 'Rename ' + oldName + ' to:', oldName, oldName, function (val) {
+    if (!val || val === oldName) return;
     if (files[val] !== undefined) {
       showToast('File ' + val + ' already exists!', 'error');
       return;
     }
-    files[val] = files[activeFile];
-    delete files[activeFile];
-    saveFilesToLocalStorage();
+    files[val] = files[oldName];
+    delete files[oldName];
+    if (window.VLabWorkspace) {
+      window.VLabWorkspace.renameFileOnHost(oldName, val, STUDENT_ID);
+    }
+    saveFilesToLocalStorage(true);
     switchFile(val);
     renderFileTree();
     renderTabs();
@@ -790,7 +817,10 @@ function renameCurrentFilePrompt() {
 function deleteSpecificFile(fname) {
   openCustomConfirmModal('DELETE FILE', 'Are you sure you want to delete ' + fname + '?', 'DELETE FILE', '#ef4444', function () {
     delete files[fname];
-    saveFilesToLocalStorage();
+    if (window.VLabWorkspace) {
+      window.VLabWorkspace.deleteFileFromHost(fname, STUDENT_ID);
+    }
+    saveFilesToLocalStorage(true);
     const rem = Object.keys(files);
     if (activeFile === fname) {
       activeFile = rem.length > 0 ? rem[0] : '';

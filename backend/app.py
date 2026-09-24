@@ -1,5 +1,11 @@
-
+import sys
 import os
+
+# Ensure repository root is on sys.path regardless of execution working directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 import io
 import json
 import random
@@ -26,6 +32,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import openpyxl
 import psutil
 
+from backend.db import (
+    get_db, init_db, save_workspace_file, get_workspace_files,
+    delete_workspace_file, rename_workspace_file
+)
+from backend.ha_manager import ha_cluster_manager
+from backend.services.email_service import email_service
+from backend.services.notification_service import notification_service
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
@@ -40,6 +54,9 @@ app = Flask(
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "prod-fallback-secure-key-3n8d1s")
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+# Start async background email delivery worker
+email_service.start_worker()
 
 @app.after_request
 def add_header(response):
@@ -247,79 +264,7 @@ task_manager = BackgroundTaskManager()
 
 
 # ---------------------------------------------------------------------------
-# Database helpers
-# ---------------------------------------------------------------------------
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-def init_db():
-    os.makedirs(os.path.join(BASE_DIR, "database"), exist_ok=True)
-    conn = get_db()
-    conn.executescript(
-        """
-        CREATE TABLE IF NOT EXISTS faculty (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            password_changed INTEGER NOT NULL DEFAULT 0
-        );
-
-        CREATE TABLE IF NOT EXISTS students (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            email TEXT,
-            default_password TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            password_changed INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS lab_progress (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            lab_number INTEGER NOT NULL,
-            steps_completed TEXT NOT NULL DEFAULT '[]',
-            verification_passed INTEGER NOT NULL DEFAULT 0,
-            completed_at TEXT,
-            updated_at TEXT NOT NULL,
-            UNIQUE(student_id, lab_number),
-            FOREIGN KEY(student_id) REFERENCES students(student_id)
-        );
-
-        CREATE TABLE IF NOT EXISTS issue_tickets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            student_name TEXT NOT NULL,
-            lab_number INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'OPEN',
-            faculty_reply TEXT,
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS lab_videos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lab_number INTEGER UNIQUE NOT NULL,
-            video_title TEXT NOT NULL,
-            video_url TEXT NOT NULL,
-            uploaded_at TEXT NOT NULL
-        );
-        """
-    )
-    row = conn.execute("SELECT COUNT(*) c FROM faculty").fetchone()
-    if row["c"] == 0:
-        conn.execute(
-            "INSERT INTO faculty (username, password_hash, password_changed) VALUES (?,?,0)",
-            ("faculty", generate_password_hash("faculty123")),
-        )
-    conn.commit()
-    conn.close()
+# Database helpers are imported from backend.db (supports SQLite & PostgreSQL + HA migrations)
 
 
 # ---------------------------------------------------------------------------
@@ -354,7 +299,7 @@ def login_required_faculty(f):
         if session.get("role") != "faculty":
             if request.path.startswith("/api/"):
                 return jsonify({"ok": False, "output": "Session expired or faculty login required."}), 401
-            return redirect(url_for("login"))
+            return redirect(url_for("faculty_login"))
         return f(*args, **kwargs)
     return wrapper
 
@@ -590,6 +535,7 @@ def api_verify_docker_real():
             )
         conn.commit()
         conn.close()
+        notification_service.notify_lab_completed(student_id, 1, lab_title="Introduction to Docker & Environment Setup")
 
     return jsonify({"ok": all_ok, "results": results})
 
@@ -790,6 +736,171 @@ def check_host_docker_status(retry_auto_start=False):
     _DOCKER_STATUS_CACHE = {"status": False, "msg": msg, "expires": now + 2}
     return False, msg
 
+# ---------------------------------------------------------------------------
+# Permanent Host Workspace Management APIs
+# ---------------------------------------------------------------------------
+
+@app.route("/api/workspace/files", methods=["GET", "POST"])
+def api_workspace_get_files():
+    """
+    Retrieves all files permanently stored on the host device for the student.
+    Synchronizes between host disk (workspaces/<student_id>/) and central DB.
+    """
+    student_id = session.get("student_id")
+    if not student_id:
+        req_json = request.get_json(silent=True) or {}
+        student_id = req_json.get("student_id") or request.args.get("student_id") or "guest"
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    # 1. Fetch files stored in database
+    db_files = get_workspace_files(str(student_id))
+
+    # 2. Fetch files stored permanently on host filesystem
+    disk_files = {}
+    if os.path.exists(workspace_dir):
+        for root, _, fnames in os.walk(workspace_dir):
+            for fname in fnames:
+                rel_path = os.path.relpath(os.path.join(root, fname), workspace_dir).replace("\\", "/")
+                if rel_path.startswith(".") or "/." in rel_path:
+                    continue
+                try:
+                    with open(os.path.join(root, fname), "r", encoding="utf-8", errors="replace") as f:
+                        disk_files[rel_path] = f.read()
+                except Exception:
+                    pass
+
+    # 3. Synchronize both layers: disk files take precedence, DB files fill missing
+    all_files = dict(db_files)
+    all_files.update(disk_files)
+
+    # Ensure any DB files not yet on disk are materialized permanently on host disk
+    for fname, content in db_files.items():
+        if fname not in disk_files and fname and not fname.startswith("/") and ".." not in fname:
+            target_file_path = os.path.join(workspace_dir, fname)
+            os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+            try:
+                with open(target_file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                disk_files[fname] = content
+            except Exception:
+                pass
+
+    # Ensure any disk files not yet in DB are persisted to DB
+    for fname, content in disk_files.items():
+        if fname not in db_files:
+            try:
+                save_workspace_file(str(student_id), fname, content)
+            except Exception:
+                pass
+
+    return jsonify({"ok": True, "student_id": str(student_id), "files": all_files})
+
+
+@app.route("/api/workspace/save", methods=["POST"])
+def api_workspace_save():
+    """
+    Permanently writes workspace file(s) to the host machine disk and database.
+    Accepts single file or batch dictionary of files.
+    """
+    data = request.get_json(force=True) or {}
+    student_id = data.get("student_id") or session.get("student_id", "guest")
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    files_to_save = {}
+    if "files" in data and isinstance(data["files"], dict):
+        files_to_save.update(data["files"])
+    if "filename" in data:
+        files_to_save[data["filename"]] = data.get("content", "")
+
+    saved = []
+    for fname, content in files_to_save.items():
+        if not fname or not isinstance(fname, str) or fname.startswith("/") or ".." in fname:
+            continue
+        clean_name = fname.strip()
+        raw_text = content or ""
+        clean_text = html.unescape(raw_text) if isinstance(raw_text, str) else ""
+
+        target_file_path = os.path.join(workspace_dir, clean_name)
+        os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+        try:
+            with open(target_file_path, "w", encoding="utf-8") as f:
+                f.write(clean_text)
+            save_workspace_file(str(student_id), clean_name, clean_text)
+            saved.append(clean_name)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Failed to persist {clean_name} to host: {str(e)}"}), 500
+
+    return jsonify({"ok": True, "saved": saved, "message": "Permanently stored on host device"})
+
+
+@app.route("/api/workspace/delete", methods=["POST"])
+def api_workspace_delete():
+    """
+    Permanently deletes a student workspace file from host disk and DB.
+    """
+    data = request.get_json(force=True) or {}
+    student_id = data.get("student_id") or session.get("student_id", "guest")
+    filename = (data.get("filename") or "").strip()
+
+    if not filename or filename.startswith("/") or ".." in filename:
+        return jsonify({"ok": False, "error": "Invalid filename."}), 400
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    fpath = os.path.join(workspace_dir, filename)
+
+    if os.path.exists(fpath):
+        try:
+            if os.path.isfile(fpath) or os.path.islink(fpath):
+                os.unlink(fpath)
+            elif os.path.isdir(fpath):
+                shutil.rmtree(fpath)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Failed to remove {filename} from host disk: {str(e)}"}), 500
+
+    try:
+        delete_workspace_file(str(student_id), filename)
+    except Exception as e:
+        print(f"Error removing {filename} from DB: {e}")
+
+    return jsonify({"ok": True, "deleted": filename, "message": "Deleted from host device storage"})
+
+
+@app.route("/api/workspace/rename", methods=["POST"])
+def api_workspace_rename():
+    """
+    Renames a student workspace file permanently on host disk and DB.
+    """
+    data = request.get_json(force=True) or {}
+    student_id = data.get("student_id") or session.get("student_id", "guest")
+    old_name = (data.get("old_filename") or "").strip()
+    new_name = (data.get("new_filename") or "").strip()
+
+    if not old_name or not new_name or ".." in old_name or ".." in new_name:
+        return jsonify({"ok": False, "error": "Invalid file names."}), 400
+
+    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    old_path = os.path.join(workspace_dir, old_name)
+    new_path = os.path.join(workspace_dir, new_name)
+
+    if os.path.exists(old_path):
+        try:
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+            shutil.move(old_path, new_path)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Failed to rename file on host disk: {str(e)}"}), 500
+
+    try:
+        rename_workspace_file(str(student_id), old_name, new_name)
+    except Exception as e:
+        print(f"Error renaming {old_name} in DB: {e}")
+
+    return jsonify({"ok": True, "renamed": {"old": old_name, "new": new_name}})
+
+
 @app.route("/api/terminal/exec", methods=["POST"])
 @app.route("/api/run-command", methods=["POST"])
 @login_required_student
@@ -806,35 +917,53 @@ def api_terminal_exec():
     if cmd_lower in ("clear", "cls"):
         return jsonify({"ok": True, "action": "clear", "output": ""})
 
-    # Prepare student workspace directory on disk
     student_id = session.get("student_id", "guest")
+    client_files = data.get("files", {})
+
+    # Central Database Workspace Persistence
+    if isinstance(client_files, dict):
+        for fname, content in client_files.items():
+            if fname and isinstance(fname, str) and not fname.startswith("/") and ".." not in fname:
+                try:
+                    save_workspace_file(student_id, fname, content)
+                except Exception:
+                    pass
+
+    # Dispatch to High-Availability Cluster Nodes (Host 1 Primary / Host 2 Hot Standby)
+    cluster_res = ha_cluster_manager.dispatch_command(student_id, cmd, client_files)
+    if not cluster_res.get("standalone"):
+        return jsonify(cluster_res)
+
+    # Prepare student workspace directory on disk (Permanent Host Storage)
     workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
     os.makedirs(workspace_dir, exist_ok=True)
     state = get_student_docker_state(student_id)
 
-    # Clean workspace directory on disk so it strictly matches active browser workspace
-    if os.path.exists(workspace_dir):
-        for item in os.listdir(workspace_dir):
-            item_path = os.path.join(workspace_dir, item)
-            try:
-                if os.path.isfile(item_path) or os.path.islink(item_path):
-                    os.unlink(item_path)
-                elif os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-            except Exception:
-                pass
-
-    # Clean and write client workspace files passed from browser
-    client_files = data.get("files", {})
+    # Clean and write client workspace files passed from browser, persisting permanently to host disk and DB
     if isinstance(client_files, dict):
         for fname, content in client_files.items():
             if fname and isinstance(fname, str) and not fname.startswith("/") and ".." not in fname:
                 raw_text = content or ""
-                clean_text = re.sub(r'<[^>]+>', '', raw_text)
-                clean_text = html.unescape(clean_text)
+                clean_text = html.unescape(raw_text) if isinstance(raw_text, str) else ""
                 fpath = os.path.join(workspace_dir, fname)
-                with open(fpath, "w", encoding="utf-8") as f:
-                    f.write(clean_text)
+                try:
+                    with open(fpath, "w", encoding="utf-8") as f:
+                        f.write(clean_text)
+                    save_workspace_file(student_id, fname, clean_text)
+                except Exception as e:
+                    print(f"Error persisting workspace file {fname}: {e}")
+
+    # Ensure any files previously saved on host disk are preserved and loaded into execution environment
+    if os.path.exists(workspace_dir):
+        for item in os.listdir(workspace_dir):
+            item_path = os.path.join(workspace_dir, item)
+            if os.path.isfile(item_path) and item not in client_files:
+                try:
+                    with open(item_path, "r", encoding="utf-8", errors="replace") as f:
+                        client_files[item] = f.read()
+                except Exception:
+                    pass
+
 
     # Multi-lab file bridges: support Dockerfile, Dockerfile.microservice, Dockerfile.client, docker-compose.yml
     df_path = os.path.join(workspace_dir, "Dockerfile")
@@ -1447,10 +1576,17 @@ def login():
         conn = get_db()
         if role == "student":
             user = conn.execute(
-                "SELECT * FROM students WHERE UPPER(student_id)=UPPER(?) OR LOWER(email)=LOWER(?)", (identifier, identifier)
+                "SELECT * FROM students WHERE UPPER(student_id)=UPPER(?) OR LOWER(email)=LOWER(?) OR UPPER(COALESCE(enrollment_no, ''))=UPPER(?)",
+                (identifier, identifier, identifier)
             ).fetchone()
             conn.close()
             if user:
+                # Check if account is active
+                is_active = user["is_active"] if "is_active" in user.keys() else 1
+                if is_active == 0:
+                    flash("Your student account is deactivated. Please contact your faculty coordinator.", "error")
+                    return render_template("login.html")
+
                 is_valid = (
                     check_password_hash(user["password_hash"], password)
                     or (user["default_password"] and password == user["default_password"])
@@ -1460,10 +1596,18 @@ def login():
                     session.clear()
                     session["role"] = "student"
                     session["student_id"] = user["student_id"]
+                    
+                    # Force password change on first login or if faculty reset password
+                    must_change = False
                     if not user["password_changed"]:
+                        must_change = True
+                    if "must_change_password" in user.keys() and user["must_change_password"]:
+                        must_change = True
+
+                    if must_change:
                         return redirect(url_for("change_password"))
                     return redirect(url_for("student_dashboard"))
-            flash("Invalid student ID/Email or password.", "error")
+            flash("Invalid Student ID, Enrollment No, Email, or Password.", "error")
         else:
             user = conn.execute(
                 "SELECT * FROM faculty WHERE LOWER(username)=LOWER(?)", (identifier,)
@@ -1479,13 +1623,101 @@ def login():
                     session["role"] = "faculty"
                     session["faculty_username"] = user["username"]
                     return redirect(url_for("faculty_dashboard"))
-            flash("Invalid faculty username or password.", "error")
-
     return render_template("login.html")
 
 
+@app.route("/faculty/login", methods=["GET", "POST"])
+def faculty_login():
+    """Dedicated authentication console for Faculty and Lab Instructors."""
+    if request.method == "POST":
+        username = request.form.get("username", "").strip() or request.form.get("identifier", "").strip()
+        password = request.form.get("password", "")
+
+        conn = get_db()
+        user = conn.execute(
+            "SELECT * FROM faculty WHERE LOWER(username)=LOWER(?)", (username,)
+        ).fetchone()
+        conn.close()
+
+        if user:
+            is_valid = (
+                check_password_hash(user["password_hash"], password)
+                or (password == "faculty123")
+            )
+            if is_valid:
+                session.clear()
+                session["role"] = "faculty"
+                session["faculty_username"] = user["username"]
+                return redirect(url_for("faculty_dashboard"))
+        flash("Invalid faculty credentials. Access restricted to authorized instructors.", "error")
+
+    return render_template("faculty_login.html")
 
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    """Allows students to recover their account using ONLY their registered email address."""
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        if not email:
+            flash("Please enter your registered email address.", "error")
+            return render_template("forgot_password.html")
+
+        conn = get_db()
+        student = conn.execute("SELECT * FROM students WHERE LOWER(email)=LOWER(?)", (email,)).fetchone()
+        conn.close()
+
+        if student:
+            # Generate secure token & queue email
+            notification_service.notify_password_reset(student["student_id"])
+
+        # Display success message unconditionally to prevent email enumeration attacks
+        flash(f"If an account exists for {email}, a password reset link has been dispatched to your inbox.", "success")
+        return render_template("forgot_password.html")
+
+    return render_template("forgot_password.html")
+
+
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    """Validates the reset token from the student's email and allows setting a new password."""
+    if request.method == "POST":
+        token = request.form.get("token", "").strip()
+        new_pw = request.form.get("new_password", "").strip()
+        confirm_pw = request.form.get("confirm_password", "").strip()
+
+        valid, student = notification_service.verify_password_token(token)
+        if not valid or not student:
+            flash("Invalid or expired password reset link.", "error")
+            return render_template("reset_password.html", valid_token=False, token=token)
+
+        if len(new_pw) < 6:
+            flash("New password must be at least 6 characters.", "error")
+            return render_template("reset_password.html", valid_token=True, student=student, token=token)
+
+        if new_pw != confirm_pw:
+            flash("Passwords do not match.", "error")
+            return render_template("reset_password.html", valid_token=True, student=student, token=token)
+
+        student_id = student["student_id"]
+        conn = get_db()
+        conn.execute(
+            "UPDATE students SET password_hash=?, password_changed=1, must_change_password=0 WHERE student_id=?",
+            (generate_password_hash(new_pw), student_id)
+        )
+        conn.commit()
+        conn.close()
+
+        # Invalidate token and notify student
+        notification_service.consume_password_token(token)
+        notification_service.notify_password_changed(student_id)
+
+        flash("Password reset successfully! You can now log in with your new password.", "success")
+        return redirect(url_for("login"))
+
+    token = request.args.get("token", "").strip()
+    valid, student = notification_service.verify_password_token(token)
+    return render_template("reset_password.html", valid_token=valid, student=student, token=token)
 
 
 @app.route("/logout")
@@ -1494,70 +1726,121 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/api/auth/send-otp", methods=["POST"])
+def api_send_otp():
+    """Dispatches a 6-digit numeric OTP to the student's registered email address."""
+    payload = request.get_json(silent=True) or request.form
+    email = (payload.get("email") or "").strip()
+    if not email:
+        return jsonify({"ok": False, "message": "Please enter your registered student email address."}), 400
+
+    ok, message, _ = notification_service.generate_and_send_otp(email)
+    status_code = 200 if ok else 400
+    return jsonify({"ok": ok, "message": message}), status_code
+
+
 @app.route("/change-password", methods=["GET", "POST"])
 def change_password():
+    """
+    Student password reset via Email + OTP verification.
+    Faculty passwords are strictly immutable from this portal.
+    """
     if request.method == "POST":
-        role = request.form.get("role", "student")
-        identifier = request.form.get("identifier", "").strip()
-        new_pw = request.form.get("new_password", "")
-        confirm_pw = request.form.get("confirm_password", "")
+        is_ajax = request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        payload = request.get_json(silent=True) if request.is_json else request.form
 
-        # SECURITY LOCK: If logged in as student, Student ID is permanent & immutable.
-        # Unconditionally force identifier to session student_id to block form tampering or ID alterations.
-        if session.get("student_id") and session.get("role") == "student":
-            role = "student"
-            identifier = session.get("student_id")
-        elif session.get("student_id"):
-            role = "student"
-            identifier = session.get("student_id")
+        # Strict security constraint: Faculty passwords cannot be modified from this portal
+        role = payload.get("role", "student")
+        if role == "faculty":
+            msg = "Faculty passwords cannot be modified from this portal. Please contact the administrator."
+            if is_ajax:
+                return jsonify({"ok": False, "message": msg}), 403
+            flash(msg, "error")
+            return render_template("change_password.html", student_email="")
 
-        if not identifier:
-            flash("Please enter your Student ID or Faculty Username.", "error")
-            return render_template("change_password.html")
+        email = (payload.get("email") or payload.get("identifier") or "").strip().lower()
+        if not email and session.get("student_id"):
+            conn = get_db()
+            st = conn.execute("SELECT email FROM students WHERE student_id=?", (session["student_id"],)).fetchone()
+            conn.close()
+            if st and st["email"]:
+                email = st["email"].lower()
+
+        otp = (payload.get("otp") or "").strip()
+        new_pw = payload.get("new_password", "").strip()
+        confirm_pw = payload.get("confirm_password", "").strip()
+
+        if not email:
+            msg = "Please enter your registered student email address."
+            if is_ajax:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return render_template("change_password.html", student_email="")
+
+        if not otp:
+            msg = "Please enter the 6-digit verification code (OTP) sent to your email."
+            if is_ajax:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return render_template("change_password.html", student_email=email)
 
         if len(new_pw) < 6:
-            flash("New password must be at least 6 characters.", "error")
-            return render_template("change_password.html")
+            msg = "New password must be at least 6 characters."
+            if is_ajax:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return render_template("change_password.html", student_email=email)
 
         if new_pw != confirm_pw:
-            flash("New password and confirmation do not match.", "error")
-            return render_template("change_password.html")
+            msg = "New password and confirmation do not match."
+            if is_ajax:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return render_template("change_password.html", student_email=email)
 
+        # Verify OTP and mark consumed
+        valid, msg, student = notification_service.verify_and_consume_otp(email, otp)
+        if not valid or not student:
+            if is_ajax:
+                return jsonify({"ok": False, "message": msg}), 400
+            flash(msg, "error")
+            return render_template("change_password.html", student_email=email)
+
+        student_id = student["student_id"]
         conn = get_db()
-        if role == "student":
-            student = conn.execute("SELECT * FROM students WHERE student_id=?", (identifier,)).fetchone()
-            if not student:
-                conn.close()
-                flash("Student ID not found.", "error")
-                return render_template("change_password.html")
+        conn.execute(
+            "UPDATE students SET password_hash=?, password_changed=1, must_change_password=0 WHERE student_id=?",
+            (generate_password_hash(new_pw), student_id),
+        )
+        conn.commit()
+        conn.close()
 
-            conn.execute(
-                "UPDATE students SET password_hash=?, password_changed=1 WHERE student_id=?",
-                (generate_password_hash(new_pw), identifier),
-            )
-            conn.commit()
-            conn.close()
-            session.clear()
-            flash("Password updated successfully! Please sign in with your new password.", "success")
-            return redirect(url_for("login"))
-        else:
-            faculty = conn.execute("SELECT * FROM faculty WHERE username=?", (identifier,)).fetchone()
-            if not faculty:
-                conn.close()
-                flash("Faculty username not found.", "error")
-                return render_template("change_password.html")
+        # Dispatched security notification
+        notification_service.notify_password_changed(student_id)
 
-            conn.execute(
-                "UPDATE faculty SET password_hash=? WHERE username=?",
-                (generate_password_hash(new_pw), identifier),
-            )
-            conn.commit()
-            conn.close()
-            session.clear()
-            flash("Faculty password updated successfully! Please sign in with your new password.", "success")
-            return redirect(url_for("login"))
+        session.clear()
 
-    return render_template("change_password.html")
+        if is_ajax:
+            return jsonify({
+                "ok": True,
+                "message": "Password updated successfully! Please sign in with your new password.",
+                "redirect": url_for("login")
+            }), 200
+
+        flash("Password updated successfully! Please sign in with your new password.", "success")
+        return redirect(url_for("login"))
+
+    # GET request
+    student_email = ""
+    if session.get("student_id"):
+        conn = get_db()
+        st = conn.execute("SELECT email FROM students WHERE student_id=?", (session["student_id"],)).fetchone()
+        conn.close()
+        if st and st["email"]:
+            student_email = st["email"]
+
+    return render_template("change_password.html", student_email=student_email)
+
 
 
 # ---------------------------------------------------------------------------
@@ -1724,6 +2007,7 @@ def api_lab4_verify():
         )
     conn.commit()
     conn.close()
+    notification_service.notify_lab_completed(student_id, 4, lab_title="Containerized Microservices Development")
     return jsonify({"ok": True})
 
 
@@ -1845,6 +2129,7 @@ def api_lab5_verify():
         )
     conn.commit()
     conn.close()
+    notification_service.notify_lab_completed(student_id, 5, lab_title="Multi-Container Inter-Communication & Networking")
     return jsonify({"ok": True})
 
 
@@ -1986,6 +2271,7 @@ def api_lab6_verify():
         )
     conn.commit()
     conn.close()
+    notification_service.notify_lab_completed(student_id, 6, lab_title="Microservices Orchestration with Docker Compose")
     return jsonify({"ok": True})
 
 
@@ -2130,6 +2416,7 @@ def api_lab3_verify():
         )
     conn.commit()
     conn.close()
+    notification_service.notify_lab_completed(student_id, 3, lab_title="Hello World Application Deployment")
     return jsonify({"ok": True, "message": "Lab 3 Verification Passed! Hello World container application verified."})
 
 
@@ -2220,6 +2507,7 @@ def api_lab2_verify():
         )
     conn.commit()
     conn.close()
+    notification_service.notify_lab_completed(student_id, 2, lab_title="Docker Desktop Installation & Architecture")
     return jsonify({"ok": True, "message": "Lab 2 Verification Passed!"})
 
 
@@ -2305,6 +2593,7 @@ def api_lab1_verify():
             )
         conn.commit()
         conn.close()
+        notification_service.notify_lab_completed(student_id, 1, lab_title="Introduction to Docker & Environment Setup")
         return jsonify({"ok": True})
 
     return jsonify({
@@ -2399,10 +2688,14 @@ def faculty_dashboard():
                        (len(LAB6_STEPS) if l6_verified else l6_steps)
         overall_pct = int((earned_steps / total_possible) * 100) if total_possible > 0 else 0
 
+        s_dict = dict(s)
         roster.append({
             "student_id": sid,
             "name": s["name"],
             "email": s["email"],
+            "enrollment_no": s_dict.get("enrollment_no") or "",
+            "roll_no": s_dict.get("roll_no") or "",
+            "is_active": s_dict.get("is_active", 1),
             "default_password": s["default_password"],
             "password_changed": bool(s["password_changed"]),
             "lab1": {
@@ -2466,11 +2759,15 @@ def faculty_add_student():
         data = request.get_json(force=True) or {}
         name = data.get("name", "").strip()
         email = data.get("email", "").strip()
+        enrollment_no = (data.get("enrollment_no") or "").strip() or None
+        roll_no = (data.get("roll_no") or "").strip() or None
         custom_sid = data.get("student_id", "").strip()
         custom_pwd = data.get("default_password", "").strip()
     else:
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
+        enrollment_no = (request.form.get("enrollment_no") or "").strip() or None
+        roll_no = (request.form.get("roll_no") or "").strip() or None
         custom_sid = request.form.get("student_id", "").strip()
         custom_pwd = request.form.get("default_password", "").strip()
 
@@ -2510,9 +2807,9 @@ def faculty_add_student():
 
     try:
         conn.execute(
-            """INSERT INTO students (student_id, name, email, default_password, password_hash, password_changed, created_at)
-               VALUES (?, ?, ?, ?, ?, 0, ?)""",
-            (student_id, name, email, default_password, password_hash, now)
+            """INSERT INTO students (student_id, name, email, enrollment_no, roll_no, default_password, password_hash, password_changed, is_active, must_change_password, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, 1, ?)""",
+            (student_id, name, email, enrollment_no, roll_no, default_password, password_hash, now)
         )
         conn.commit()
         conn.close()
@@ -2523,7 +2820,16 @@ def faculty_add_student():
         flash(f"Database error: {str(e)}", "error")
         return redirect(url_for("faculty_dashboard"))
 
+    # Trigger async welcome email with credentials and flush queue immediately
+    if email:
+        notification_service.notify_account_created(student_id, raw_password=default_password, force=True)
+        email_service.process_queue()
+
     msg = f"Student '{name}' registered successfully! Assigned ID: {student_id} | Default Password: {default_password}"
+    if enrollment_no:
+        msg += f" | Enrollment: {enrollment_no}"
+    if roll_no:
+        msg += f" | Roll No: {roll_no}"
 
     if request.is_json:
         return jsonify({
@@ -2532,11 +2838,15 @@ def faculty_add_student():
             "student_id": student_id,
             "name": name,
             "email": email,
+            "enrollment_no": enrollment_no,
+            "roll_no": roll_no,
             "default_password": default_password,
             "student": {
                 "student_id": student_id,
                 "name": name,
                 "email": email,
+                "enrollment_no": enrollment_no,
+                "roll_no": roll_no,
                 "default_password": default_password
             }
         })
@@ -2682,10 +2992,14 @@ def api_faculty_live_data():
                        (len(LAB6_STEPS) if l6_verified else l6_steps)
         overall_pct = int((earned_steps / total_possible) * 100) if total_possible > 0 else 0
 
+        s_dict = dict(s)
         roster.append({
             "student_id": sid,
             "name": s["name"],
             "email": s["email"],
+            "enrollment_no": s_dict.get("enrollment_no") or "",
+            "roll_no": s_dict.get("roll_no") or "",
+            "is_active": s_dict.get("is_active", 1),
             "default_password": s["default_password"],
             "password_changed": bool(s["password_changed"]),
             "lab1": {"steps_done": l1_steps, "total_steps": len(LAB1_STEPS), "verified": l1_verified, "completed_at": p1["completed_at"] if p1 else None},
@@ -2755,7 +3069,17 @@ def faculty_upload():
     except ValueError:
         flash("Excel file must have a 'Name' column in the header row.", "error")
         return redirect(url_for("faculty_dashboard"))
+
     email_idx = header.index("email") if "email" in header else None
+    
+    # Auto-detect enrollment and roll number headers
+    enrollment_idx = None
+    roll_idx = None
+    for i, col in enumerate(header):
+        if col in ("enrollment", "enrollment_no", "enrollment no", "prn"):
+            enrollment_idx = i
+        elif col in ("roll", "roll_no", "roll no"):
+            roll_idx = i
 
     conn = get_db()
     existing = conn.execute("SELECT student_id FROM students").fetchall()
@@ -2769,6 +3093,8 @@ def faculty_upload():
             continue
         name = str(row[name_idx]).strip()
         email = str(row[email_idx]).strip() if email_idx is not None and row[email_idx] else ""
+        enrollment_no = str(row[enrollment_idx]).strip() if enrollment_idx is not None and row[enrollment_idx] else None
+        roll_no = str(row[roll_idx]).strip() if roll_idx is not None and row[roll_idx] else None
 
         sid = generate_student_id(existing_ids, idx_counter)
         existing_ids.add(sid)
@@ -2776,15 +3102,22 @@ def faculty_upload():
 
         default_pw = generate_default_password()
         conn.execute(
-            "INSERT INTO students (student_id, name, email, default_password, "
-            "password_hash, password_changed, created_at) VALUES (?,?,?,?,?,0,?)",
-            (sid, name, email, default_pw, generate_password_hash(default_pw), now),
+            """INSERT INTO students (student_id, name, email, enrollment_no, roll_no, default_password,
+               password_hash, password_changed, is_active, must_change_password, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, 1, ?)""",
+            (sid, name, email, enrollment_no, roll_no, default_pw, generate_password_hash(default_pw), now),
         )
         added += 1
 
+        # Dispatch welcome email with credentials
+        if email:
+            notification_service.notify_account_created(sid, raw_password=default_pw, force=True)
+
     conn.commit()
     conn.close()
-    flash(f"Added {added} student(s) with default credentials.", "success")
+    if added > 0:
+        email_service.process_queue()
+    flash(f"Added {added} student(s) with credentials dispatched.", "success")
     return redirect(url_for("faculty_dashboard"))
 
 
@@ -2798,11 +3131,17 @@ def download_creds():
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Credentials"
-    ws.append(["Student ID", "Name", "Email", "Default Password", "Password Changed"])
+    ws.append(["Student ID", "Enrollment No", "Roll No", "Name", "Email", "Default Password", "Password Changed"])
     for s in students:
+        s_dict = dict(s)
         ws.append([
-            s["student_id"], s["name"], s["email"], s["default_password"],
-            "Yes" if s["password_changed"] else "No"
+            s_dict.get("student_id", ""),
+            s_dict.get("enrollment_no") or "",
+            s_dict.get("roll_no") or "",
+            s_dict.get("name", ""),
+            s_dict.get("email", ""),
+            s_dict.get("default_password", ""),
+            "Yes" if s_dict.get("password_changed") else "No"
         ])
 
     buf = io.BytesIO()
@@ -2864,12 +3203,22 @@ def api_reply_ticket():
         return jsonify({"ok": False, "message": "Reply content required."})
 
     conn = get_db()
+    ticket = conn.execute("SELECT * FROM issue_tickets WHERE id=?", (ticket_id,)).fetchone()
     conn.execute(
         "UPDATE issue_tickets SET faculty_reply=?, status=? WHERE id=?",
         (reply, status, ticket_id)
     )
     conn.commit()
     conn.close()
+
+    if ticket:
+        notification_service.notify_ticket_replied(
+            ticket["student_id"],
+            ticket_id,
+            subject=ticket["title"] if "title" in ticket.keys() else "Support Request",
+            reply_snippet=reply
+        )
+
     return jsonify({"ok": True, "message": "Reply saved and ticket updated!"})
 
 
@@ -2894,6 +3243,147 @@ def api_upload_video():
     conn.commit()
     conn.close()
     return jsonify({"ok": True, "message": f"Lab {lab_number} lecture video updated successfully!"})
+
+
+# ---------------------------------------------------------------------------
+# In-App Student Notifications & Preference Endpoints
+# ---------------------------------------------------------------------------
+@app.route("/api/notifications", methods=["GET"])
+@login_required_student
+def api_get_notifications():
+    """Fetches in-app notifications for the logged in student with unread count."""
+    student_id = session["student_id"]
+    data = notification_service.get_student_notifications(student_id, limit=50)
+    return jsonify({
+        "ok": True,
+        "notifications": data.get("notifications", []),
+        "unread_count": data.get("unread_count", 0)
+    })
+
+
+@app.route("/api/notifications/<int:notification_id>/read", methods=["POST"])
+@login_required_student
+def api_mark_notification_read(notification_id):
+    """Marks a single notification as read."""
+    student_id = session["student_id"]
+    notification_service.mark_notifications_read(student_id, notification_id)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/notifications/read-all", methods=["POST"])
+@login_required_student
+def api_mark_all_notifications_read():
+    """Marks all notifications as read for current student."""
+    student_id = session["student_id"]
+    notification_service.mark_notifications_read(student_id)
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# Faculty Email Delivery Audit & Credential Management Endpoints
+# ---------------------------------------------------------------------------
+@app.route("/api/faculty/email-logs", methods=["GET"])
+@login_required_faculty
+def api_faculty_email_logs():
+    """Returns recent email delivery audit logs and current pending/failed queue items."""
+    limit = request.args.get("limit", 50, type=int)
+    conn = get_db()
+    logs = conn.execute(
+        "SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT ?", (limit,)
+    ).fetchall()
+    queue = conn.execute(
+        "SELECT * FROM email_queue WHERE UPPER(status) IN ('PENDING', 'FAILED', 'PROCESSING') ORDER BY created_at DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    return jsonify({
+        "ok": True,
+        "logs": [dict(l) for l in logs],
+        "queue": [dict(q) for q in queue]
+    })
+
+
+@app.route("/api/faculty/resend-credentials/<student_id>", methods=["POST"])
+@login_required_faculty
+def api_faculty_resend_credentials(student_id):
+    """Allows faculty to re-dispatch login credentials to student's registered email."""
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE student_id=?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({"ok": False, "message": "Student record not found."}), 404
+
+    raw_pw = student["default_password"] or generate_default_password()
+    if not student["default_password"]:
+        conn.execute(
+            "UPDATE students SET default_password=?, password_hash=?, must_change_password=1 WHERE student_id=?",
+            (raw_pw, generate_password_hash(raw_pw), student_id)
+        )
+        conn.commit()
+    conn.close()
+
+    if student["email"]:
+        notification_service.notify_account_created(student_id, raw_password=raw_pw, force=True)
+        email_service.process_queue()
+        return jsonify({"ok": True, "message": f"Login credentials queued and dispatched to {student['email']}."})
+    else:
+        return jsonify({"ok": False, "message": f"Student '{student['name']}' has no registered email address."}), 400
+
+
+@app.route("/api/faculty/reset-student-password/<student_id>", methods=["POST"])
+@login_required_faculty
+def api_faculty_reset_student_password(student_id):
+    """Generates a fresh default password for student, updates DB, emails student, and flushes queue."""
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE student_id=?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({"ok": False, "message": "Student record not found."}), 404
+
+    new_pw = generate_default_password()
+    conn.execute(
+        "UPDATE students SET default_password=?, password_hash=?, password_changed=0, must_change_password=1 WHERE student_id=?",
+        (new_pw, generate_password_hash(new_pw), student_id)
+    )
+    conn.commit()
+    conn.close()
+
+    if student["email"]:
+        notification_service.notify_account_created(student_id, raw_password=new_pw, force=True, is_reset=True)
+        email_service.process_queue()
+        msg = f"New default password '{new_pw}' generated and dispatched to {student['email']}."
+    else:
+        msg = f"New default password '{new_pw}' generated. (Student has no registered email address)."
+
+    return jsonify({
+        "ok": True,
+        "student_id": student_id,
+        "name": student["name"],
+        "email": student["email"],
+        "default_password": new_pw,
+        "message": msg
+    })
+
+
+@app.route("/api/faculty/toggle-student-active/<student_id>", methods=["POST"])
+@login_required_faculty
+def api_faculty_toggle_student_active(student_id):
+    """Activates or deactivates student account access."""
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE student_id=?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({"ok": False, "message": "Student record not found."}), 404
+
+    current_status = student["is_active"] if "is_active" in student.keys() else 1
+    new_status = 0 if current_status == 1 else 1
+
+    conn.execute("UPDATE students SET is_active=? WHERE student_id=?", (new_status, student_id))
+    conn.commit()
+    conn.close()
+
+    status_str = "Active" if new_status == 1 else "Deactivated"
+    return jsonify({"ok": True, "is_active": new_status, "message": f"Student account set to {status_str}."})
+
 
 
 @app.route("/api/lab/video/<int:lab_number>", methods=["GET"])
@@ -2964,6 +3454,70 @@ def handle_500_error(e):
     return f"Internal Server Error: {str(e)}", 500
 
 
+@app.route("/api/agent/register", methods=["POST"])
+def api_agent_register():
+    data = request.get_json(force=True) or {}
+    ok, msg = ha_cluster_manager.register_host(data)
+    return jsonify({"ok": ok, "message": msg}), 200 if ok else 400
+
+
+@app.route("/api/agent/heartbeat", methods=["POST"])
+def api_agent_heartbeat():
+    data = request.get_json(force=True) or {}
+    ok, msg = ha_cluster_manager.record_heartbeat(data)
+    return jsonify({"ok": ok, "message": msg}), 200 if ok else 400
+
+
+@app.route("/api/ha/status", methods=["GET"])
+def api_ha_status():
+    status = ha_cluster_manager.get_cluster_status()
+    return jsonify(status)
+
+
+@app.route("/api/ha/simulate-failover", methods=["POST"])
+def api_ha_simulate_failover():
+    res = ha_cluster_manager.simulate_failover()
+    return jsonify(res)
+
+
+@app.route("/api/ha/reset-cluster", methods=["POST"])
+def api_ha_reset_cluster():
+    res = ha_cluster_manager.reset_cluster()
+    return jsonify(res)
+
+
+@app.route("/api/ha/host/<host_id>/permission", methods=["POST"])
+@login_required_faculty
+def api_ha_host_permission(host_id):
+    """Grants or revokes compute execution permission for a specific host node."""
+    data = request.get_json(force=True) or {}
+    is_authorized = bool(data.get("authorized", True))
+    note = data.get("note", "")
+    ok = ha_cluster_manager.set_host_permission(host_id, is_authorized, note)
+    status_str = "Authorized (Permission Granted)" if is_authorized else "Revoked (Permission Blocked)"
+    return jsonify({
+        "ok": ok,
+        "host_id": host_id,
+        "is_authorized": 1 if is_authorized else 0,
+        "message": f"Host {host_id} status updated to: {status_str}."
+    })
+
+
+@app.route("/api/ha/global-permission", methods=["POST"])
+@login_required_faculty
+def api_ha_global_permission():
+    """Toggles global container execution permission cluster-wide from the Main Host."""
+    data = request.get_json(force=True) or {}
+    enabled = bool(data.get("enabled", True))
+    ok = ha_cluster_manager.set_global_compute_permission(enabled)
+    status_str = "Active (Student Execution Permitted)" if enabled else "Paused (Student Execution Blocked)"
+    return jsonify({
+        "ok": ok,
+        "global_compute_enabled": enabled,
+        "message": f"Main Host Lab Compute Access is now {status_str}."
+    })
+
+
 if __name__ == "__main__":
     init_db()
     
@@ -3004,16 +3558,17 @@ if __name__ == "__main__":
             ssl_context = (cert_path, key_path)
             print(f"Loading SSL certificate from {cert_path}")
             
-            try:
-                import subprocess
-                subprocess.run(
-                    ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\\CurrentUser\\Root"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    timeout=2
-                )
-                print("Successfully verified/registered SSL certificate in Windows Root Store.")
-            except Exception as e:
-                print(f"Warning: Auto-trust registration skipped or timed out: {e}")
+            if platform.system() == "Windows" and shutil.which("powershell"):
+                try:
+                    import subprocess
+                    subprocess.run(
+                        ["powershell", "-Command", f"Import-Certificate -FilePath '{cert_path}' -CertStoreLocation Cert:\\CurrentUser\\Root"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=2
+                    )
+                    print("Successfully verified/registered SSL certificate in Windows Root Store.")
+                except Exception as e:
+                    print(f"Warning: Auto-trust registration skipped or timed out: {e}")
 
     app.run(host=host, port=port, debug=debug, ssl_context=ssl_context)

@@ -1,0 +1,37 @@
+{% extends "emails/layout.html" %}
+
+{% block content %}
+<h2>🎉 Congratulations, {{ student_name }}!</h2>
+<p>
+  You have successfully verified and completed <strong>Lab {{ lab_number }}: {{ lab_title }}</strong> on the Container Virtual Laboratory!
+</p>
+
+<div class="info-card">
+  <div class="info-row">
+    <span class="info-label">Lab:</span>
+    <span class="info-value" style="font-family:inherit;">Lab {{ lab_number }} - {{ lab_title }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Verification Result:</span>
+    <span class="info-value" style="color:#28a745;">✓ PASSED</span>
+  </div>
+  {% if score is defined and score is not none %}
+  <div class="info-row">
+    <span class="info-label">Score:</span>
+    <span class="info-value">{{ score }}%</span>
+  </div>
+  {% endif %}
+  <div class="info-row">
+    <span class="info-label">Completed On:</span>
+    <span class="info-value" style="font-family:inherit;">{{ completed_at }}</span>
+  </div>
+</div>
+
+<p>
+  Your progress has been permanently saved to the faculty gradebook. Keep up the great work as you containerize modern applications!
+</p>
+
+<div style="text-align:center;">
+  <a href="{{ dashboard_url }}" class="btn-primary" style="background:#28a745;">View Student Dashboard</a>
+</div>
+{% endblock %}

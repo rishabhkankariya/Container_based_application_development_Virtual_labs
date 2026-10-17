@@ -330,6 +330,13 @@ def init_db():
                 email_announcements INTEGER NOT NULL DEFAULT 1,
                 email_ticket_updates INTEGER NOT NULL DEFAULT 1
             );
+
+            CREATE TABLE IF NOT EXISTS processed_sync_events (
+                operation_id VARCHAR(128) PRIMARY KEY,
+                entity_type VARCHAR(50) NOT NULL,
+                entity_id VARCHAR(100) NOT NULL,
+                processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
     else:
@@ -532,6 +539,13 @@ def init_db():
                 email_submission_results INTEGER NOT NULL DEFAULT 1,
                 email_announcements INTEGER NOT NULL DEFAULT 1,
                 email_ticket_updates INTEGER NOT NULL DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS processed_sync_events (
+                operation_id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                processed_at TEXT NOT NULL
             );
             """
         )

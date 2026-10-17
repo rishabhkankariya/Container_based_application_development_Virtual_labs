@@ -135,7 +135,18 @@
     </nav>
 
     <!-- User Action Controls -->
-    <div style="display:flex;align-items:center;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <!-- Cluster Connectivity & Sync Status Badge -->
+      <div id="vlabConnectivityContainer" style="display:inline-flex;align-items:center;gap:6px">
+        <div id="vlabConnectivityBadge" class="connectivity-badge" title="Checking cluster connectivity..." style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:0.75rem;font-weight:700;border-radius:999px;border:2px solid #121212;background:#f5f5f5;box-shadow:2px 2px 0px #121212;cursor:default">
+          <span id="vlabConnectivityDot" style="width:8px;height:8px;border-radius:50%;background:#888;display:inline-block"></span>
+          <span id="vlabConnectivityText">Checking...</span>
+        </div>
+        <button id="vlabSyncNowBtn" onclick="triggerManualSync(event)" class="btn btn-sm btn-white" style="padding:4px 8px;font-size:0.75rem;border:2px solid #121212;box-shadow:2px 2px 0px #121212" title="Force Cloud Synchronization Now">
+          <i class="fa-solid fa-rotate" id="vlabSyncIcon"></i>
+        </button>
+      </div>
+
       {% if session.get('student_id') %}
       <!-- Student In-App Notification Bell -->
       <div style="position:relative">
@@ -731,6 +742,9 @@
     }
   })();
   </script>
+
+  <!-- Real-time Cluster Connectivity & Cloud Sync Engine -->
+  <script src="{{ url_for('static', filename='js/connectivity.js') }}"></script>
 </body>
 
 </html>

@@ -145,3 +145,11 @@ cython_debug/
 *.pem
 *.crt
 
+# Application secrets
+database/.*secret*
+.flask_secret
+.cluster_secret
+*.secret
+
+# Dynamic student workspaces created during local execution
+backend/workspaces/

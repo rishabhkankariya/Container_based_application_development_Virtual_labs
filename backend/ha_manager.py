@@ -21,6 +21,11 @@ from typing import Dict, Any, Optional, Tuple, List
 from backend.db import get_db, save_workspace_file, get_workspace_files
 
 
+import secrets
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 class HAClusterManager:
     """Manages physical compute hosts, heartbeats, failovers, and workload distribution."""
 
@@ -32,13 +37,31 @@ class HAClusterManager:
         self._start_monitor_thread()
 
     def _get_config(self, key: str, default: str) -> str:
-        """Reads a configuration setting from the database or returns default."""
+        """Reads a configuration setting from environment variables first, then database ha_config, else default."""
+        env_val = os.environ.get(key.upper())
+        if env_val:
+            return env_val
+
+        # Specific secure handling for cluster secret
+        if key == "cluster_auth_secret":
+            secret_file = os.path.join(BASE_DIR, "database", ".cluster_secret")
+            if os.path.exists(secret_file):
+                try:
+                    with open(secret_file, "r", encoding="utf-8") as f:
+                        s = f.read().strip()
+                        if s:
+                            return s
+                except Exception:
+                    pass
+
         try:
             conn = get_db()
             row = conn.execute("SELECT config_value FROM ha_config WHERE config_key = ?", (key,)).fetchone()
             conn.close()
             if row:
-                return str(row["config_value"] if isinstance(row, dict) or hasattr(row, "__getitem__") else row[0])
+                val = str(row["config_value"] if isinstance(row, dict) or hasattr(row, "__getitem__") else row[0])
+                if val:
+                    return val
         except Exception:
             pass
         return default

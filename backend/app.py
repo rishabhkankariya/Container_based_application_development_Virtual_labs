@@ -10,6 +10,7 @@ import io
 import json
 import random
 import string
+import secrets
 import sqlite3
 import platform
 import subprocess
@@ -21,8 +22,9 @@ import time
 import threading
 import urllib.request
 import urllib.error
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
+from typing import Optional, Dict, Any, List, Union, Tuple
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -47,18 +49,55 @@ from backend.services.sync_service import cloud_sync_service
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "database", "vlab.db")
 
+def _get_or_create_flask_secret() -> str:
+    """
+    Retrieves or generates a persistent, cryptographically secure Flask secret key.
+    - If FLASK_SECRET_KEY is provided in environment, it is strictly used.
+    - If in production mode and FLASK_SECRET_KEY is missing, fails startup immediately.
+    - Otherwise in development/LAN mode, securely generates and persists a 256-bit secret.
+    """
+    env_secret = os.environ.get("FLASK_SECRET_KEY")
+    if env_secret:
+        return env_secret
+    if os.environ.get("FLASK_ENV") == "production" or os.environ.get("ENV") == "production":
+        raise RuntimeError("CRITICAL SECURITY ERROR: FLASK_SECRET_KEY must be explicitly set when running in production!")
+    secret_file = os.path.join(BASE_DIR, "database", ".flask_secret")
+    os.makedirs(os.path.dirname(secret_file), exist_ok=True)
+    if os.path.exists(secret_file):
+        try:
+            with open(secret_file, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content:
+                    return content
+        except Exception:
+            pass
+    new_secret = secrets.token_hex(32)
+    try:
+        with open(secret_file, "w", encoding="utf-8") as f:
+            f.write(new_secret)
+        if hasattr(os, "chmod"):
+            try:
+                os.chmod(secret_file, 0o600)
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"[Security Warning] Failed to persist secret key to {secret_file}: {e}")
+    return new_secret
+
+
 app = Flask(
     __name__,
     template_folder=os.path.join(BASE_DIR, "frontend", "templates"),
     static_folder=os.path.join(BASE_DIR, "frontend", "static")
 )
-app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "prod-fallback-secure-key-3n8d1s")
+app.config["SECRET_KEY"] = _get_or_create_flask_secret()
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
-# Start asynchronous background workers (safe if start_worker is called repeatedly).
-email_service.start_worker()
-cloud_sync_service.start_worker()
+# Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader)
+if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    email_service.start_worker()
+    cloud_sync_service.start_worker()
 
 @app.after_request
 def add_header(response):
@@ -333,6 +372,106 @@ def safe_parse_steps(p):
         return json.loads(val)
     except Exception:
         return []
+
+
+# ---------------------------------------------------------------------------
+# Comprehensive Health & Cloud Connectivity Status API
+# ---------------------------------------------------------------------------
+@app.route("/api/health", methods=["GET"])
+def api_health():
+    """
+    Comprehensive system health & connectivity diagnostic endpoint.
+    Reports real database state, docker availability, HA cluster role, and pending sync count.
+    """
+    # 1. Database check
+    db_status = "ok"
+    try:
+        conn = get_db()
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    # 2. Pending sync outbox count
+    pending_sync_count = 0
+    try:
+        conn = get_db()
+        row = conn.execute("SELECT COUNT(*) as c FROM sync_outbox WHERE status = 'PENDING'").fetchone()
+        pending_sync_count = row["c"] if row else 0
+        conn.close()
+    except Exception:
+        pass
+
+    # 3. Docker engine availability
+    docker_ok = False
+    try:
+        res = subprocess.run(["docker", "info"], capture_output=True, timeout=2)
+        docker_ok = (res.returncode == 0)
+    except Exception:
+        docker_ok = False
+
+    # 4. Cloud connection status
+    has_cloud_url = bool(os.environ.get("DATABASE_URL", "").strip())
+    sync_status = cloud_sync_service.status if hasattr(cloud_sync_service, "status") else {}
+
+    is_healthy = (db_status == "ok")
+    return jsonify({
+        "status": "healthy" if is_healthy else "degraded",
+        "role": getattr(ha_cluster_manager, "current_role", "PRIMARY"),
+        "database": db_status,
+        "docker_available": docker_ok,
+        "pending_sync_count": pending_sync_count,
+        "cloud_configured": has_cloud_url,
+        "cloud_sync_status": "SYNCED" if pending_sync_count == 0 else "PENDING",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), (200 if is_healthy else 503)
+
+
+_LAST_MANUAL_SYNC_TIME = 0.0
+
+@app.route("/api/sync/now", methods=["POST"])
+def api_sync_now():
+    """Triggers an on-demand synchronization pass with the cloud PostgreSQL database."""
+    global _LAST_MANUAL_SYNC_TIME
+
+    # Security: Require authenticated student or faculty session
+    if not session.get("student_id") and not session.get("faculty_username"):
+        return jsonify({"ok": False, "error": "Authentication required to trigger synchronization."}), 401
+
+    # Rate limiting: 5-second cooldown between manual sync calls
+    now = time.time()
+    if now - _LAST_MANUAL_SYNC_TIME < 5.0:
+        return jsonify({
+            "ok": False,
+            "error": "Synchronization was requested too recently. Please wait a few seconds before retrying."
+        }), 429
+    _LAST_MANUAL_SYNC_TIME = now
+
+    pending_count = 0
+    try:
+        conn = get_db()
+        row = conn.execute("SELECT COUNT(*) as c FROM sync_outbox WHERE status = 'PENDING'").fetchone()
+        pending_count = row["c"] if row else 0
+        conn.close()
+    except Exception:
+        pass
+
+    try:
+        synced = cloud_sync_service.sync_once()
+        return jsonify({
+            "ok": True,
+            "synced": synced,
+            "pending": max(0, pending_count - synced),
+            "message": f"Successfully synchronized {synced} event(s) to cloud." if synced > 0 else "Outbox is up to date."
+        })
+    except Exception as exc:
+        return jsonify({
+            "ok": False,
+            "synced": 0,
+            "pending": pending_count,
+            "error": str(exc),
+            "message": f"Cloud sync unavailable: {str(exc)}"
+        }), 200
 
 
 # ---------------------------------------------------------------------------
@@ -743,18 +882,55 @@ def check_host_docker_status(retry_auto_start=False):
 # Permanent Host Workspace Management APIs
 # ---------------------------------------------------------------------------
 
+def _resolve_secure_workspace_path(student_id: str, relative_path: str) -> Optional[str]:
+    """
+    Validates and resolves a student workspace file path.
+    Enforces boundary strictly inside workspaces/<student_id>/ using realpath and commonpath.
+    Blocks directory traversal ('..'), absolute paths, symlinks pointing outside workspace, and drive escapes.
+    """
+    if not student_id or not relative_path or not isinstance(relative_path, str):
+        return None
+
+    safe_id = re.sub(r'[^a-zA-Z0-9_-]', '', str(student_id))
+    if not safe_id:
+        return None
+
+    workspace_dir = os.path.realpath(os.path.join(app.root_path, "workspaces", safe_id))
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    # Reject backslash/slash manipulation, colons, or traversal tokens
+    norm_path = relative_path.replace("\\", "/").strip().lstrip("/")
+    if not norm_path or ":" in norm_path or ".." in norm_path.split("/"):
+        return None
+
+    target = os.path.realpath(os.path.join(workspace_dir, norm_path))
+    try:
+        if os.path.commonpath([target, workspace_dir]) != workspace_dir:
+            return None
+    except Exception:
+        return None
+
+    return target
+
+
 @app.route("/api/workspace/files", methods=["GET", "POST"])
 def api_workspace_get_files():
     """
     Retrieves all files permanently stored on the host device for the student.
     Synchronizes between host disk (workspaces/<student_id>/) and central DB.
     """
-    student_id = session.get("student_id")
-    if not student_id:
+    session_student = session.get("student_id")
+    if session_student:
+        student_id = session_student
+    else:
         req_json = request.get_json(silent=True) or {}
         student_id = req_json.get("student_id") or request.args.get("student_id") or "guest"
 
-    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    student_id = re.sub(r'[^a-zA-Z0-9_-]', '', str(student_id))
+    if not student_id:
+        return jsonify({"ok": False, "error": "Invalid student ID."}), 400
+
+    workspace_dir = os.path.realpath(os.path.join(app.root_path, "workspaces", student_id))
     os.makedirs(workspace_dir, exist_ok=True)
 
     # 1. Fetch files stored in database
@@ -765,11 +941,17 @@ def api_workspace_get_files():
     if os.path.exists(workspace_dir):
         for root, _, fnames in os.walk(workspace_dir):
             for fname in fnames:
-                rel_path = os.path.relpath(os.path.join(root, fname), workspace_dir).replace("\\", "/")
+                full_fpath = os.path.realpath(os.path.join(root, fname))
+                try:
+                    if os.path.commonpath([full_fpath, workspace_dir]) != workspace_dir:
+                        continue
+                except Exception:
+                    continue
+                rel_path = os.path.relpath(full_fpath, workspace_dir).replace("\\", "/")
                 if rel_path.startswith(".") or "/." in rel_path:
                     continue
                 try:
-                    with open(os.path.join(root, fname), "r", encoding="utf-8", errors="replace") as f:
+                    with open(full_fpath, "r", encoding="utf-8", errors="replace") as f:
                         disk_files[rel_path] = f.read()
                 except Exception:
                     pass
@@ -780,11 +962,13 @@ def api_workspace_get_files():
 
     # Ensure any DB files not yet on disk are materialized permanently on host disk
     for fname, content in db_files.items():
-        if fname not in disk_files and fname and not fname.startswith("/") and ".." not in fname:
-            target_file_path = os.path.join(workspace_dir, fname)
-            os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+        if fname not in disk_files:
+            safe_target = _resolve_secure_workspace_path(student_id, fname)
+            if not safe_target:
+                continue
+            os.makedirs(os.path.dirname(safe_target), exist_ok=True)
             try:
-                with open(target_file_path, "w", encoding="utf-8") as f:
+                with open(safe_target, "w", encoding="utf-8") as f:
                     f.write(content)
                 disk_files[fname] = content
             except Exception:
@@ -808,9 +992,17 @@ def api_workspace_save():
     Accepts single file or batch dictionary of files.
     """
     data = request.get_json(force=True) or {}
-    student_id = data.get("student_id") or session.get("student_id", "guest")
+    session_student = session.get("student_id")
+    if session_student:
+        student_id = session_student
+    else:
+        student_id = data.get("student_id") or "guest"
 
-    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
+    student_id = re.sub(r'[^a-zA-Z0-9_-]', '', str(student_id))
+    if not student_id:
+        return jsonify({"ok": False, "error": "Invalid student ID."}), 400
+
+    workspace_dir = os.path.realpath(os.path.join(app.root_path, "workspaces", student_id))
     os.makedirs(workspace_dir, exist_ok=True)
 
     files_to_save = {}
@@ -821,13 +1013,16 @@ def api_workspace_save():
 
     saved = []
     for fname, content in files_to_save.items():
-        if not fname or not isinstance(fname, str) or fname.startswith("/") or ".." in fname:
+        if not fname or not isinstance(fname, str):
             continue
         clean_name = fname.strip()
+        target_file_path = _resolve_secure_workspace_path(student_id, clean_name)
+        if not target_file_path:
+            return jsonify({"ok": False, "error": f"Invalid or boundary-violating file path: {clean_name}"}), 400
+
         raw_text = content or ""
         clean_text = html.unescape(raw_text) if isinstance(raw_text, str) else ""
 
-        target_file_path = os.path.join(workspace_dir, clean_name)
         os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
         try:
             with open(target_file_path, "w", encoding="utf-8") as f:
@@ -846,21 +1041,27 @@ def api_workspace_delete():
     Permanently deletes a student workspace file from host disk and DB.
     """
     data = request.get_json(force=True) or {}
-    student_id = data.get("student_id") or session.get("student_id", "guest")
+    session_student = session.get("student_id")
+    if session_student:
+        student_id = session_student
+    else:
+        student_id = data.get("student_id") or "guest"
+
+    student_id = re.sub(r'[^a-zA-Z0-9_-]', '', str(student_id))
+    if not student_id:
+        return jsonify({"ok": False, "error": "Invalid student ID."}), 400
+
     filename = (data.get("filename") or "").strip()
+    target_path = _resolve_secure_workspace_path(student_id, filename)
+    if not target_path:
+        return jsonify({"ok": False, "error": "Invalid filename or path traversal detected."}), 400
 
-    if not filename or filename.startswith("/") or ".." in filename:
-        return jsonify({"ok": False, "error": "Invalid filename."}), 400
-
-    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
-    fpath = os.path.join(workspace_dir, filename)
-
-    if os.path.exists(fpath):
+    if os.path.exists(target_path):
         try:
-            if os.path.isfile(fpath) or os.path.islink(fpath):
-                os.unlink(fpath)
-            elif os.path.isdir(fpath):
-                shutil.rmtree(fpath)
+            if os.path.isfile(target_path) or os.path.islink(target_path):
+                os.unlink(target_path)
+            elif os.path.isdir(target_path):
+                shutil.rmtree(target_path)
         except Exception as e:
             return jsonify({"ok": False, "error": f"Failed to remove {filename} from host disk: {str(e)}"}), 500
 
@@ -878,16 +1079,23 @@ def api_workspace_rename():
     Renames a student workspace file permanently on host disk and DB.
     """
     data = request.get_json(force=True) or {}
-    student_id = data.get("student_id") or session.get("student_id", "guest")
+    session_student = session.get("student_id")
+    if session_student:
+        student_id = session_student
+    else:
+        student_id = data.get("student_id") or "guest"
+
+    student_id = re.sub(r'[^a-zA-Z0-9_-]', '', str(student_id))
+    if not student_id:
+        return jsonify({"ok": False, "error": "Invalid student ID."}), 400
+
     old_name = (data.get("old_filename") or "").strip()
     new_name = (data.get("new_filename") or "").strip()
 
-    if not old_name or not new_name or ".." in old_name or ".." in new_name:
-        return jsonify({"ok": False, "error": "Invalid file names."}), 400
-
-    workspace_dir = os.path.join(app.root_path, "workspaces", str(student_id))
-    old_path = os.path.join(workspace_dir, old_name)
-    new_path = os.path.join(workspace_dir, new_name)
+    old_path = _resolve_secure_workspace_path(student_id, old_name)
+    new_path = _resolve_secure_workspace_path(student_id, new_name)
+    if not old_path or not new_path:
+        return jsonify({"ok": False, "error": "Invalid file names or path traversal detected."}), 400
 
     if os.path.exists(old_path):
         try:
@@ -1105,6 +1313,18 @@ def api_terminal_exec():
             # Map student container host port 5000 to 5001 so platform remains accessible.
             if "5000:5000" in exec_cmd:
                 exec_cmd = exec_cmd.replace("5000:5000", "5001:5000")
+
+            # Enforce CPU, memory, and process resource limits on student containers
+            if "run" in cmd_lower and re.search(r'\bdocker\s+run\b', exec_cmd, re.IGNORECASE):
+                limit_flags = []
+                if "--memory" not in exec_cmd and " -m " not in exec_cmd:
+                    limit_flags.append("--memory=512m")
+                if "--cpus" not in exec_cmd:
+                    limit_flags.append("--cpus=1.0")
+                if "--pids-limit" not in exec_cmd:
+                    limit_flags.append("--pids-limit=100")
+                if limit_flags:
+                    exec_cmd = re.sub(r'^(docker\s+run\b)', r'\1 ' + ' '.join(limit_flags), exec_cmd, count=1, flags=re.IGNORECASE)
 
             # Handle docker compose running in background & scale command compatibility
             if "compose scale" in cmd_lower:
@@ -3197,8 +3417,11 @@ def api_submit_ticket():
 
 @app.route("/api/support/tickets/list", methods=["GET"])
 def api_list_tickets():
+    role = session.get("role")
+    if role not in ("student", "faculty"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
     conn = get_db()
-    if session.get("role") == "student":
+    if role == "student":
         tickets = conn.execute("SELECT * FROM issue_tickets WHERE student_id=? ORDER BY id DESC", (session["student_id"],)).fetchall()
     else:
         tickets = conn.execute("SELECT * FROM issue_tickets ORDER BY id DESC").fetchall()
@@ -3472,30 +3695,51 @@ def handle_500_error(e):
 @app.route("/api/agent/register", methods=["POST"])
 def api_agent_register():
     data = request.get_json(force=True) or {}
+    secret = (
+        request.headers.get("X-Cluster-Secret")
+        or request.headers.get("X-Agent-Secret")
+        or (request.headers.get("Authorization") or "").replace("Bearer ", "").strip()
+        or data.get("secret", "")
+    )
+    data["secret"] = secret
     ok, msg = ha_cluster_manager.register_host(data)
-    return jsonify({"ok": ok, "message": msg}), 200 if ok else 400
+    status_code = 200 if ok else (401 if "secret" in msg.lower() else 400)
+    return jsonify({"ok": ok, "message": msg}), status_code
 
 
 @app.route("/api/agent/heartbeat", methods=["POST"])
 def api_agent_heartbeat():
     data = request.get_json(force=True) or {}
+    secret = (
+        request.headers.get("X-Cluster-Secret")
+        or request.headers.get("X-Agent-Secret")
+        or (request.headers.get("Authorization") or "").replace("Bearer ", "").strip()
+        or data.get("secret", "")
+    )
+    data["secret"] = secret
     ok, msg = ha_cluster_manager.record_heartbeat(data)
-    return jsonify({"ok": ok, "message": msg}), 200 if ok else 400
+    status_code = 200 if ok else (401 if "secret" in msg.lower() else 400)
+    return jsonify({"ok": ok, "message": msg}), status_code
 
 
 @app.route("/api/ha/status", methods=["GET"])
 def api_ha_status():
+    role = session.get("role")
+    if role not in ("student", "faculty"):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
     status = ha_cluster_manager.get_cluster_status()
     return jsonify(status)
 
 
 @app.route("/api/ha/simulate-failover", methods=["POST"])
+@login_required_faculty
 def api_ha_simulate_failover():
     res = ha_cluster_manager.simulate_failover()
     return jsonify(res)
 
 
 @app.route("/api/ha/reset-cluster", methods=["POST"])
+@login_required_faculty
 def api_ha_reset_cluster():
     res = ha_cluster_manager.reset_cluster()
     return jsonify(res)

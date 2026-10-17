@@ -425,10 +425,23 @@ class VLabHostAgent:
                 "output": "docker: Error response from daemon: No such container. Please replace '<container_id>' with a valid ID from 'docker ps -a'."
             }
 
+        # Standard container resource bounds & cgroup isolation for student workloads
+        exec_cmd = cmd
+        if cmd_lower.startswith("docker run"):
+            limit_flags = []
+            if "--memory" not in exec_cmd and "-m " not in exec_cmd:
+                limit_flags.append("--memory=512m")
+            if "--cpus" not in exec_cmd:
+                limit_flags.append("--cpus=1.0")
+            if "--pids-limit" not in exec_cmd:
+                limit_flags.append("--pids-limit=100")
+            if limit_flags:
+                exec_cmd = re.sub(r'^(docker\s+run\b)', r'\1 ' + ' '.join(limit_flags), exec_cmd, count=1, flags=re.IGNORECASE)
+
         # Execute
         try:
             res = subprocess.run(
-                cmd,
+                exec_cmd,
                 cwd=ws_dir,
                 shell=True,
                 capture_output=True,

@@ -183,13 +183,17 @@ To present the system clearly to faculty evaluators while strictly distinguishin
    - Trigger sync (or wait for background polling) and observe outbox records transitioning from `status='PENDING'` to `status='SYNCED'`.
    - Verify cloud PostgreSQL table `lab_progress` has monotonic set-union merged steps (`[1]`) with zero duplicated entries.
 5. **Live Docker Kernel Limits Inspection**:
-   - Execute a persistent daemon container to inspect active runtime limits:
+   - **Step 5A — Baseline cgroup verification**: Start an explicit container to demonstrate Docker engine enforcement:
      ```powershell
-     docker run -d --name demo-limits nginx:alpine
-     docker inspect demo-limits --format 'Memory: {{.HostConfig.Memory}} bytes | NanoCpus: {{.HostConfig.NanoCpus}} | PidsLimit: {{.HostConfig.PidsLimit}}'
+     docker run -d --name demo-limits --memory=512m --cpus=1.0 --pids-limit=100 nginx:alpine
+     docker inspect demo-limits --format 'Memory={{.HostConfig.Memory}} NanoCpus={{.HostConfig.NanoCpus}} PidsLimit={{.HostConfig.PidsLimit}}'
      docker rm -f demo-limits
      ```
-   - Prove automatic platform injection: Run a command in the student IDE terminal without specifying limits (e.g. `docker run -d -p 8080:80 hello-web`), then run `docker inspect <container-id>` to show the backend/agent automatically injected `--memory=512m --cpus=1.0 --pids-limit=100`.
+   - **Step 5B — Prove automatic platform injection**: Run a student command in the IDE terminal without specifying limits (e.g., `docker run -d -p 8080:80 hello-web`), then inspect the container created through the platform:
+     ```powershell
+     docker inspect <actual-container-id> --format 'Memory={{.HostConfig.Memory}} NanoCpus={{.HostConfig.NanoCpus}} PidsLimit={{.HostConfig.PidsLimit}}'
+     ```
+     *Expected values*: `Memory=536870912 NanoCpus=1000000000 PidsLimit=100`. This proves the Flask controller and host agent automatically inject kernel limits on student workloads.
 6. **Host 2 Standby Architecture & Scope Transparency**:
    - Present the Faculty Cluster Status dashboard showing Host 2 in `HOT_STANDBY`.
    - Clearly articulate the architectural boundary: automated readiness tests (10/10 checks, 27 unit tests) and Docker cgroups are verified in the local environment, while multi-server physical network partitioning with hardware fencing remains a production deployment phase.

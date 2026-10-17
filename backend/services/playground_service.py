@@ -403,6 +403,63 @@ class PlaygroundService:
         if not ws_path or not os.path.exists(ws_path):
             return {"ok": False, "output": "Workspace directory not found."}
 
+        # Built-in instant cat handler (works across all platforms and environments)
+        cat_match = re.match(r'^\s*cat\s+([^\s|><]+)\s*$', cmd)
+        if cat_match:
+            target_fname = cat_match.group(1).strip().strip("'\"")
+            secure_fpath = self._resolve_secure_session_path(session_id, target_fname)
+            if secure_fpath and os.path.isfile(secure_fpath):
+                try:
+                    with open(secure_fpath, "r", encoding="utf-8", errors="replace") as f:
+                        content = f.read()
+                    return {
+                        "ok": True,
+                        "output": content,
+                        "returncode": 0,
+                        "env_type": sess["env_type"]
+                    }
+                except Exception as e:
+                    return {
+                        "ok": False,
+                        "output": f"cat: {target_fname}: {str(e)}",
+                        "returncode": 1,
+                        "env_type": sess["env_type"]
+                    }
+            elif secure_fpath:
+                return {
+                    "ok": False,
+                    "output": f"cat: {target_fname}: No such file or directory",
+                    "returncode": 1,
+                    "env_type": sess["env_type"]
+                }
+
+        # Built-in instant pwd handler
+        if stripped_lower == "pwd":
+            return {
+                "ok": True,
+                "output": f"/home/vlab/{os.path.basename(ws_path)}",
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        # Built-in instant whoami handler
+        if stripped_lower == "whoami":
+            return {
+                "ok": True,
+                "output": "vlab",
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        # Built-in instant uname handler
+        if stripped_lower in ("uname", "uname -a", "uname -r", "uname -s"):
+            return {
+                "ok": True,
+                "output": "Linux vlab-sandbox 6.6.0-vlab-container x86_64 GNU/Linux" if stripped_lower == "uname -a" else "Linux",
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
         # Update last activity
         conn = get_db()
         try:
@@ -439,30 +496,68 @@ class PlaygroundService:
         if sys.platform == "win32" and re.match(r'^\s*python3\b', exec_cmd):
             exec_cmd = re.sub(r'^\s*python3\b', 'python', exec_cmd, count=1)
 
-        # Prepare environment with Python directory in PATH
+        # Auto-correct git branches typo
+        if re.match(r'^\s*git\s+branches\b', exec_cmd, flags=re.IGNORECASE):
+            exec_cmd = re.sub(r'^\s*git\s+branches\b', 'git branch', exec_cmd, count=1, flags=re.IGNORECASE)
+
+        # Prepare environment with Python directory & Git coreutils in PATH
         env = os.environ.copy()
         py_dir = os.path.dirname(sys.executable)
         scripts_dir = os.path.join(py_dir, "Scripts")
-        env["PATH"] = f"{py_dir};{scripts_dir};" + env.get("PATH", "")
+        git_usr_bin = r"C:\Program Files\Git\usr\bin"
+        git_bin = r"C:\Program Files\Git\bin"
+        git_cmd = r"C:\Program Files\Git\cmd"
+        extra_paths = [py_dir, scripts_dir]
+        for p in (git_usr_bin, git_bin, git_cmd):
+            if os.path.isdir(p):
+                extra_paths.append(p)
+        env["PATH"] = ";".join(extra_paths) + ";" + env.get("PATH", "")
         env["PYTHONUNBUFFERED"] = "1"
 
         is_win = sys.platform == "win32"
         bash_bin = self._find_bash_binary() if is_win else None
 
-        if is_win and bash_bin:
-            cmd_args = [bash_bin, "-c", exec_cmd]
+        # Python Sandbox Direct Evaluation:
+        # If user is in the Python sandbox and types Python code directly (e.g. print("hello"), 2 + 2, import math, etc.)
+        # instead of a shell command (ls, pip, git, clear, etc.), evaluate it directly in Python!
+        is_python_env = sess.get("env_type") == "python"
+        is_shell_utility = re.match(r'^\s*(python|python3|pip|pip3|cat|ls|head|tail|grep|touch|rm|mkdir|git|clear|cls|exit|echo|pwd|whoami)\b', cmd, flags=re.IGNORECASE)
+
+        if is_python_env and not is_shell_utility:
+            py_exec_code = (
+                "import sys\n"
+                f"_user_code = {repr(cmd)}\n"
+                "try:\n"
+                "    _val = eval(_user_code)\n"
+                "    if _val is not None:\n"
+                "        print(_val)\n"
+                "except SyntaxError:\n"
+                "    try:\n"
+                "        exec(_user_code)\n"
+                "    except Exception as e:\n"
+                "        print(f'{type(e).__name__}: {e}', file=sys.stderr)\n"
+                "        sys.exit(1)\n"
+                "except Exception as e:\n"
+                "    print(f'{type(e).__name__}: {e}', file=sys.stderr)\n"
+                "    sys.exit(1)\n"
+            )
+            cmd_args = [sys.executable, "-c", py_exec_code]
             use_shell = False
-        elif is_win:
-            powershell_bin = shutil.which("powershell")
-            if powershell_bin:
-                cmd_args = [powershell_bin, "-NoProfile", "-Command", exec_cmd]
+        else:
+            if is_win and bash_bin:
+                cmd_args = [bash_bin, "-c", exec_cmd]
                 use_shell = False
+            elif is_win:
+                powershell_bin = shutil.which("powershell")
+                if powershell_bin:
+                    cmd_args = [powershell_bin, "-NoProfile", "-Command", exec_cmd]
+                    use_shell = False
+                else:
+                    cmd_args = exec_cmd
+                    use_shell = True
             else:
                 cmd_args = exec_cmd
                 use_shell = True
-        else:
-            cmd_args = exec_cmd
-            use_shell = True
 
         # Run in subprocess inside isolated session workspace
         try:

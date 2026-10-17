@@ -39,6 +39,7 @@ from backend.db import (
 from backend.ha_manager import ha_cluster_manager
 from backend.services.email_service import email_service
 from backend.services.notification_service import notification_service
+from backend.services.sync_service import cloud_sync_service
 
 # ---------------------------------------------------------------------------
 # Config
@@ -55,8 +56,9 @@ app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "prod-fallback-sec
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
-# Start async background email delivery worker
+# Start asynchronous background workers (safe if start_worker is called repeatedly).
 email_service.start_worker()
+cloud_sync_service.start_worker()
 
 @app.after_request
 def add_header(response):

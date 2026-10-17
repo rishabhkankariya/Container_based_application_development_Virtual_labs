@@ -34,7 +34,7 @@ import psutil
 
 from backend.db import (
     get_db, init_db, save_workspace_file, get_workspace_files,
-    delete_workspace_file, rename_workspace_file
+    delete_workspace_file, rename_workspace_file, enqueue_lab_progress_outbox
 )
 from backend.ha_manager import ha_cluster_manager
 from backend.services.email_service import email_service
@@ -533,6 +533,7 @@ def api_verify_docker_real():
                 "completed_at=?, updated_at=? WHERE student_id=? AND lab_number=1",
                 (json.dumps(all_steps), now, now, student_id),
             )
+        enqueue_lab_progress_outbox(conn, student_id, 1)
         conn.commit()
         conn.close()
         notification_service.notify_lab_completed(student_id, 1, lab_title="Introduction to Docker & Environment Setup")
@@ -1952,6 +1953,7 @@ def api_lab4_step():
             "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=4",
             (json.dumps(steps), now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 4)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -2005,6 +2007,7 @@ def api_lab4_verify():
             "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=4",
             (json.dumps(all_steps), now, now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 4)
     conn.commit()
     conn.close()
     notification_service.notify_lab_completed(student_id, 4, lab_title="Containerized Microservices Development")
@@ -2068,6 +2071,7 @@ def api_lab5_step():
             "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=5",
             (json.dumps(steps), now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 5)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -2127,6 +2131,7 @@ def api_lab5_verify():
             "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=5",
             (json.dumps(all_steps), now, now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 5)
     conn.commit()
     conn.close()
     notification_service.notify_lab_completed(student_id, 5, lab_title="Multi-Container Inter-Communication & Networking")
@@ -2214,6 +2219,7 @@ def api_lab6_step():
             "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=6",
             (json.dumps(steps), now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 6)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -2269,6 +2275,7 @@ def api_lab6_verify():
             "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=6",
             (json.dumps(all_steps), now, now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 6)
     conn.commit()
     conn.close()
     notification_service.notify_lab_completed(student_id, 6, lab_title="Microservices Orchestration with Docker Compose")
@@ -2370,6 +2377,7 @@ def api_lab3_step():
             "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=3",
             (json.dumps(steps), now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 3)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -2414,6 +2422,7 @@ def api_lab3_verify():
             "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=3",
             (json.dumps(all_steps), now, now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 3)
     conn.commit()
     conn.close()
     notification_service.notify_lab_completed(student_id, 3, lab_title="Hello World Application Deployment")
@@ -2474,6 +2483,7 @@ def api_lab2_step():
             "UPDATE lab_progress SET steps_completed=?, updated_at=? WHERE student_id=? AND lab_number=2",
             (json.dumps(steps), now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 2)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -2505,6 +2515,7 @@ def api_lab2_verify():
             "UPDATE lab_progress SET steps_completed=?, verification_passed=1, completed_at=?, updated_at=? WHERE student_id=? AND lab_number=2",
             (json.dumps(all_steps), now, now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 2)
     conn.commit()
     conn.close()
     notification_service.notify_lab_completed(student_id, 2, lab_title="Docker Desktop Installation & Architecture")
@@ -2557,6 +2568,7 @@ def api_lab1_step():
             "WHERE student_id=? AND lab_number=1",
             (json.dumps(steps_done), now, student_id),
         )
+    enqueue_lab_progress_outbox(conn, student_id, 1)
     conn.commit()
     conn.close()
     return jsonify({"ok": True, "steps_done": steps_done})
@@ -2591,6 +2603,7 @@ def api_lab1_verify():
                 "WHERE student_id=? AND lab_number=1",
                 (now, now, student_id),
             )
+        enqueue_lab_progress_outbox(conn, student_id, 1)
         conn.commit()
         conn.close()
         notification_service.notify_lab_completed(student_id, 1, lab_title="Introduction to Docker & Environment Setup")

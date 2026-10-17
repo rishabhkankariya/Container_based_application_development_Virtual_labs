@@ -183,12 +183,13 @@ To present the system clearly to faculty evaluators while strictly distinguishin
    - Trigger sync (or wait for background polling) and observe outbox records transitioning from `status='PENDING'` to `status='SYNCED'`.
    - Verify cloud PostgreSQL table `lab_progress` has monotonic set-union merged steps (`[1]`) with zero duplicated entries.
 5. **Live Docker Kernel Limits Inspection**:
-   - In terminal, execute a student container: `docker run -d --name demo-limits hello-world`.
-   - Run `docker inspect demo-limits --format '{{json .HostConfig}}'` to prove live kernel cgroup enforcement:
-     - `"Memory": 536870912` (512 MiB limit)
-     - `"NanoCpus": 1000000000` (1.0 CPU limit)
-     - `"PidsLimit": 100` (100 processes limit)
-     - Clean up: `docker rm -f demo-limits`.
+   - Execute a persistent daemon container to inspect active runtime limits:
+     ```powershell
+     docker run -d --name demo-limits nginx:alpine
+     docker inspect demo-limits --format 'Memory: {{.HostConfig.Memory}} bytes | NanoCpus: {{.HostConfig.NanoCpus}} | PidsLimit: {{.HostConfig.PidsLimit}}'
+     docker rm -f demo-limits
+     ```
+   - Prove automatic platform injection: Run a command in the student IDE terminal without specifying limits (e.g. `docker run -d -p 8080:80 hello-web`), then run `docker inspect <container-id>` to show the backend/agent automatically injected `--memory=512m --cpus=1.0 --pids-limit=100`.
 6. **Host 2 Standby Architecture & Scope Transparency**:
    - Present the Faculty Cluster Status dashboard showing Host 2 in `HOT_STANDBY`.
    - Clearly articulate the architectural boundary: automated readiness tests (10/10 checks, 27 unit tests) and Docker cgroups are verified in the local environment, while multi-server physical network partitioning with hardware fencing remains a production deployment phase.

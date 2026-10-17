@@ -241,9 +241,9 @@ class CloudSyncService:
 
     def sync_once(self) -> int:
         """Run one batch; returns the number of locally acknowledged events."""
+        self._last_error = None
         events = get_pending_sync_events(limit=BATCH_SIZE)
         if not events:
-            self._last_error = None
             self._last_synced_count = 0
             return 0
 
@@ -257,6 +257,7 @@ class CloudSyncService:
             raise ConnectionError(message)
 
         synced = 0
+        failures = 0
         try:
             ensure_cloud_schema(cloud)
             for event in events:
@@ -267,11 +268,14 @@ class CloudSyncService:
                     if mark_sync_event_synced(operation_id):
                         synced += 1
                 except Exception as exc:
-                    record_sync_event_failure(operation_id, f"{type(exc).__name__}: {exc}")
-                    self._last_error = f"{type(exc).__name__}: {exc}"
-            if self._last_error is None or synced:
-                self._last_success_at = time.time()
+                    failures += 1
+                    message = f"{type(exc).__name__}: {exc}"
+                    record_sync_event_failure(operation_id, message)
+                    self._last_error = message
             self._last_synced_count = synced
+            if failures:
+                raise RuntimeError(f"{failures} outbox event(s) failed to synchronize.")
+            self._last_success_at = time.time()
             return synced
         finally:
             cloud.close()

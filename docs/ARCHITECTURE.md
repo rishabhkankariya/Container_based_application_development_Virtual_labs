@@ -130,22 +130,24 @@ The cluster architecture consists of **Host 1 (Primary)** and **Host 2 (Hot Stan
 
 ---
 
-## 7. Client Connectivity State Machine
+## 7. Client Connectivity State Machine & Multi-Worker Architecture
 
-The student navigation bar provides continuous, transparent feedback regarding cluster connectivity:
+The student navigation bar provides continuous, transparent feedback regarding cluster connectivity across 4 distinct states:
 
 ```text
-   ┌─────────────────────────────────────────────────────────────────┐
-   │ 🟢 Online & Synced     │ API reachable, outbox empty            │
-   │ 🟡 Syncing (N pending) │ Changes queued, actively uploading     │
-   │ 🔴 Offline Mode        │ LAN/Host unreachable, local safe mode  │
-   │ ⚠️ Sync Error          │ Cloud conflict or max retries exceeded │
-   └─────────────────────────────────────────────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────────────────────────┐
+   │ 🟢 Online & Synced     │ Local host connected, cloud reachable, 0 pending      │
+   │ 🟡 Syncing (N pending) │ Changes queued in outbox, actively uploading to cloud  │
+   │ 🔵 Local LAN Mode      │ Connected to college Wi-Fi/LAN, cloud offline (SQLite) │
+   │ 🔴 Host Unreachable    │ Wi-Fi/LAN connection to physical lab server dropped    │
+   └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-* **Heartbeat Interval:** `/api/health` queried every 10–15 seconds.
-* **Retry Strategy:** Exponential backoff ($1s \rightarrow 2s \rightarrow 4s \rightarrow 8s \rightarrow \max 30s$) with $\pm 20\%$ jitter.
-* **Manual Override:** A persistent **"🔄 Sync Now"** button allows users to force a sync cycle on demand.
+* **Heartbeat Interval:** `/api/health` queried with exponential backoff (5s–30s) and jitter.
+* **Manual Override:** A persistent **"🔄 Sync Now"** button allows authenticated users to trigger synchronization on demand (protected by session auth and a 5-second cooldown rate limit).
+* **Multi-Worker Server Support:**
+  * **Cooperative File Lease (`ProcessWorkerLock`):** Built-in non-blocking file lease lock (`database/.sync_worker.lock`) guarantees that only a single worker process runs the polling loop under multi-worker WSGI servers (e.g. `gunicorn -w 4`), completely eliminating SQLite contention.
+  * **Dedicated Daemon Mode:** Operators can set `ENABLE_SYNC_WORKER=false` on web nodes and run `python -m backend.services.sync_service` as a dedicated background service.
 
 ---
 
@@ -155,10 +157,11 @@ The student navigation bar provides continuous, transparent feedback regarding c
 | :--- | :---: | :--- |
 | **Host 1 Controller (`app.py`, `start.bat`)** | ✅ **Implemented** | Stable local web server, student roster, lab worksheets. |
 | **Unified DB Adapter (`backend/db.py`)** | ✅ **Implemented** | SQLite default with parameter translation and migrations. |
-| **Local Physical Workspaces (`workspaces/`)** | ✅ **Implemented** | Disk persistence + DB backup sync. |
+| **Local Physical Workspaces (`workspaces/`)** | ✅ **Implemented** | Disk persistence + DB backup sync with realpath boundary protection. |
 | **Transactional Outbox (`sync_outbox`)** | ✅ **Implemented** | Atomic dual-write wired across all 13 lab progress endpoints. |
-| **Strict Cloud Connection (`get_cloud_db`)** | 🚀 **Phase 2 (In Progress)** | Dedicated non-fallback PostgreSQL connector. |
-| **Cloud Sync Worker (`sync_service.py`)** | 🚀 **Phase 2 (In Progress)** | Background daemon with monotonic set union & retry logic. |
-| **Health API & Navbar Badge (`/api/health`)** | ⏳ **Phase 3 (Next)** | Diagnostic telemetry and real-time connectivity status pill. |
-| **HA Split-Brain Fencing Leases** | ⏳ **Phase 4** | Formalized distributed lease locks for standby promotion. |
+| **Strict Cloud Connection (`get_cloud_db`)** | ✅ **Implemented** | Dedicated non-fallback PostgreSQL connector with 5s timeout. |
+| **Cloud Sync Worker (`sync_service.py`)** | ✅ **Implemented** | Multi-worker leader lease lock, monotonic set union & deduplication. |
+| **Health API & Navbar Badge (`/api/health`)** | ✅ **Implemented** | Real-time diagnostic telemetry, 4-state indicator & manual sync. |
+| **Security Hardening (`_get_or_create_flask_secret`)** | ✅ **Implemented** | Persistent random token, prod fail-closed guard, container limits. |
+| **HA Heartbeat Monitoring & Failover** | ✅ **Implemented** | 3-miss failure threshold, resource scheduling, and standby promotion. |
 | **Browser IndexedDB Offline Queue** | ⏳ **Phase 5** | Client-side service worker cache for offline editor drafts. |

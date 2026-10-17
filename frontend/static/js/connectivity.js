@@ -114,17 +114,21 @@
         currentInterval = minInterval; // reset backoff
         var pending = data.pending_sync_count || 0;
         var cloudConfigured = Boolean(data.cloud_configured);
+        var cloudReachable = Boolean(data.cloud_reachable);
         var cloudStatus = data.cloud_sync_status || "IDLE";
 
-        if (!cloudConfigured) {
-          // Connected to local Flask server over LAN, but cloud PostgreSQL is not configured/offline
+        if (!cloudConfigured || !cloudReachable || cloudStatus === "OFFLINE") {
+          // Connected to local Flask server over LAN, but cloud PostgreSQL is unreachable / offline
           updateBadgeUI(States.LAN_LOCAL, { pending: pending });
-        } else if (pending > 0 || cloudStatus === "SYNCING") {
+        } else if (pending > 0 || cloudStatus === "PENDING" || cloudStatus === "SYNCING") {
           updateBadgeUI(States.SYNCING, { pending: pending });
-        } else if (cloudStatus === "PARTIAL_ERROR") {
-          updateBadgeUI(States.ERROR, { error: "Some sync events failed retry." });
-        } else {
+        } else if (cloudStatus === "ERROR" || cloudStatus === "PARTIAL_ERROR") {
+          updateBadgeUI(States.ERROR, { error: data.cloud_last_error || "Some sync events failed retry." });
+        } else if (cloudReachable && pending === 0 && cloudStatus === "SYNCED") {
+          // ONLINE_SYNCED: strictly requires both cloud reachability and 0 pending outbox records
           updateBadgeUI(States.ONLINE_SYNCED);
+        } else {
+          updateBadgeUI(States.LAN_LOCAL, { pending: pending });
         }
       })
       .catch(function (err) {

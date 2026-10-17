@@ -94,8 +94,9 @@ app.config["SECRET_KEY"] = _get_or_create_flask_secret()
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
-# Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader)
-if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+# Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader or multi-worker deployments)
+enable_sync = os.environ.get("ENABLE_SYNC_WORKER", "true").lower() in ("true", "1", "yes")
+if enable_sync and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
     email_service.start_worker()
     cloud_sync_service.start_worker()
 
@@ -413,6 +414,30 @@ def api_health():
     # 4. Cloud connection status
     has_cloud_url = bool(os.environ.get("DATABASE_URL", "").strip())
     sync_status = cloud_sync_service.status if hasattr(cloud_sync_service, "status") else {}
+    last_err = sync_status.get("last_error")
+    last_success = sync_status.get("last_success_at")
+
+    cloud_reachable = False
+    if has_cloud_url:
+        if last_success and not last_err:
+            cloud_reachable = True
+        elif not last_err:
+            try:
+                cloud_conn = get_cloud_db()
+                if cloud_conn:
+                    cloud_reachable = True
+                    cloud_conn.close()
+            except Exception:
+                cloud_reachable = False
+
+    if not has_cloud_url or not cloud_reachable:
+        sync_state = "OFFLINE"
+    elif pending_sync_count > 0:
+        sync_state = "PENDING"
+    elif last_err:
+        sync_state = "ERROR"
+    else:
+        sync_state = "SYNCED"
 
     is_healthy = (db_status == "ok")
     return jsonify({
@@ -422,7 +447,9 @@ def api_health():
         "docker_available": docker_ok,
         "pending_sync_count": pending_sync_count,
         "cloud_configured": has_cloud_url,
-        "cloud_sync_status": "SYNCED" if pending_sync_count == 0 else "PENDING",
+        "cloud_reachable": cloud_reachable,
+        "cloud_sync_status": sync_state,
+        "cloud_last_error": last_err,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }), (200 if is_healthy else 503)
 

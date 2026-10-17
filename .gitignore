@@ -153,3 +153,7 @@ database/.*secret*
 
 # Dynamic student workspaces created during local execution
 backend/workspaces/
+
+# Sync worker leader election lease
+database/.sync_worker.lock
+*.lock

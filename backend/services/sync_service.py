@@ -194,6 +194,66 @@ def apply_lab_progress_event(cloud, event: Dict[str, Any]) -> None:
         raise
 
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+LOCK_FILE_PATH = os.path.join(BASE_DIR, "database", ".sync_worker.lock")
+
+
+class ProcessWorkerLock:
+    """
+    Cross-platform leader lease / lock for multi-worker environments (e.g. Gunicorn with multiple workers).
+    Guarantees only one worker process acquires the sync lease and polls the outbox, eliminating contention.
+    """
+    def __init__(self, lock_path: str = LOCK_FILE_PATH) -> None:
+        self.lock_path = lock_path
+        self._fd: Optional[Any] = None
+        self._locked = False
+
+    def acquire(self) -> bool:
+        if self._locked and self._fd:
+            return True
+        try:
+            os.makedirs(os.path.dirname(self.lock_path), exist_ok=True)
+            self._fd = open(self.lock_path, "a+")
+            if os.name == "nt":
+                import msvcrt
+                self._fd.seek(0)
+                msvcrt.locking(self._fd.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self._fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self._locked = True
+            return True
+        except (IOError, OSError):
+            if self._fd:
+                try:
+                    self._fd.close()
+                except Exception:
+                    pass
+                self._fd = None
+            self._locked = False
+            return False
+
+    def release(self) -> None:
+        if self._fd and self._locked:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    self._fd.seek(0)
+                    msvcrt.locking(self._fd.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self._fd.fileno(), fcntl.LOCK_UN)
+                self._fd.close()
+            except Exception:
+                pass
+            self._fd = None
+            self._locked = False
+
+    @property
+    def is_locked(self) -> bool:
+        return self._locked
+
+
 class CloudSyncService:
     """Lifecycle-managed polling worker with capped exponential backoff and jitter."""
 
@@ -201,6 +261,7 @@ class CloudSyncService:
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
+        self._process_lock = ProcessWorkerLock()
         self._running = False
         self._last_error: Optional[str] = None
         self._last_success_at: Optional[float] = None
@@ -223,6 +284,7 @@ class CloudSyncService:
     def stop_worker(self, timeout: float = 5.0) -> None:
         """Request a clean stop (primarily for tests and controlled shutdown)."""
         self._stop_event.set()
+        self._process_lock.release()
         thread = self._thread
         if thread and thread.is_alive():
             thread.join(timeout=timeout)
@@ -233,6 +295,7 @@ class CloudSyncService:
         return {
             "configured": bool(os.environ.get("DATABASE_URL", "").strip()),
             "worker_running": bool(thread and thread.is_alive()),
+            "leader_active": self._process_lock.is_locked,
             "last_error": self._last_error,
             "last_success_at": self._last_success_at,
             "last_attempt_at": self._last_attempt_at,
@@ -283,6 +346,12 @@ class CloudSyncService:
     def _worker_loop(self) -> None:
         backoff = BASE_INTERVAL_SECONDS
         while not self._stop_event.is_set():
+            # In multi-worker environments (e.g. Gunicorn -w 4), only the elected leader process polls
+            if not self._process_lock.acquire():
+                # Another worker process holds the lease; sleep and retry quietly
+                self._stop_event.wait(BASE_INTERVAL_SECONDS)
+                continue
+
             try:
                 self.sync_once()
                 backoff = BASE_INTERVAL_SECONDS
@@ -297,3 +366,27 @@ class CloudSyncService:
 
 
 cloud_sync_service = CloudSyncService()
+
+
+if __name__ == "__main__":
+    import sys
+    import signal
+    print("[V-Lab Sync Service] Starting standalone background sync worker...")
+    cloud_sync_service.start_worker()
+
+    def _sig_handler(sig, frame):
+        print("\n[V-Lab Sync Service] Shutting down cleanly...")
+        cloud_sync_service.stop_worker()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, _sig_handler)
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, _sig_handler)
+
+    print("[V-Lab Sync Service] Worker active. Press Ctrl+C to terminate.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        cloud_sync_service.stop_worker()
+        print("[V-Lab Sync Service] Terminated.")

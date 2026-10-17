@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Bauhaus Design System Master Stylesheet -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7.3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7.4">
 
   <!-- SweetAlert2 (Local offline bundle with CDN fallback) -->
   <script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
@@ -103,11 +103,11 @@
   </style>
 </head>
 
-<body class="flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen {% if session.get('student_id') or session.get('faculty_username') %}user-logged-in{% endif %}">
 
   <!-- Top Bauhaus Navigation Bar -->
   <header class="navbar flex-between">
-    <div style="display:flex;align-items:center;gap:16px">
+    <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
       <!-- Mobile Sidebar Toggle -->
       <button onclick="toggleVLabSidebar()" class="btn btn-sm btn-outline" style="padding:6px 10px"
         title="Toggle Navigation Menu">
@@ -126,7 +126,7 @@
     </div>
 
     <!-- Desktop Navigation Links -->
-    <nav class="desktop-nav" style="display:flex;align-items:center;gap:8px" class="hidden md:flex">
+    <nav class="desktop-nav">
       <a href="{{ url_for('index') }}#curriculum" class="nav-link">Curriculum</a>
       <a href="{{ url_for('index') }}#features" class="nav-link">Capabilities</a>
       <a href="{{ url_for('index') }}#telemetry" class="nav-link">Telemetry</a>
@@ -135,7 +135,7 @@
     </nav>
 
     <!-- User Action Controls -->
-    <div style="display:flex;align-items:center;gap:10px">
+    <div class="user-actions" style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <!-- Cluster Connectivity & Sync Status Badge -->
       <div id="vlabConnectivityContainer" style="display:inline-flex;align-items:center;gap:6px;flex-shrink:0">
         <div id="vlabConnectivityBadge" class="connectivity-badge" title="Checking cluster connectivity..." style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:0.75rem;font-weight:700;border-radius:4px;border:2px solid #121212;background:#f5f5f5;box-shadow:2px 2px 0px #121212;cursor:default;white-space:nowrap;flex-shrink:0">
@@ -149,8 +149,8 @@
 
       {% if session.get('student_id') %}
       <!-- Student In-App Notification Bell -->
-      <div style="position:relative">
-        <button id="vlabNotifBtn" onclick="toggleNotifDropdown(event)" class="btn btn-sm btn-white" style="position:relative;padding:6px 12px;border:2px solid #121212;box-shadow:2px 2px 0px #121212" title="Notifications">
+      <div style="position:relative;flex-shrink:0">
+        <button id="vlabNotifBtn" onclick="toggleNotifDropdown(event)" class="btn btn-sm btn-white" style="position:relative;padding:6px 12px;border:2px solid #121212;box-shadow:2px 2px 0px #121212;flex-shrink:0" title="Notifications">
           <i class="fa-solid fa-bell"></i>
           <span id="notifBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--primary-red);color:#fff;font-size:0.68rem;font-weight:900;padding:2px 6px;border-radius:999px;border:2px solid #121212">0</span>
         </button>
@@ -168,19 +168,19 @@
       {% endif %}
 
       {% if session.get('student_id') or session.get('faculty_username') %}
-      <div style="display:flex;align-items:center;gap:10px">
-        <a href="{{ url_for('playground.playground_view') }}" class="btn btn-sm btn-yellow" title="Open Practice Playground" style="display:inline-flex;align-items:center;gap:6px">
-          <i class="fa-solid fa-terminal"></i> Playground
+      <div class="auth-buttons-group" style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <a href="{{ url_for('playground.playground_view') }}" class="btn btn-sm btn-yellow nav-action-btn" title="Open Practice Playground" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0">
+          <i class="fa-solid fa-terminal"></i> <span class="nav-btn-label">Playground</span>
         </a>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-blue">
-          <i class="fa-solid fa-gauge"></i> Dashboard
+        <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-blue nav-action-btn" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0">
+          <i class="fa-solid fa-gauge"></i> <span class="nav-btn-label">Dashboard</span>
         </a>
-        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-red" title="Sign Out">
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-red nav-logout-btn" title="Sign Out" style="flex-shrink:0;min-width:34px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center">
           <i class="fa-solid fa-right-from-bracket"></i>
         </a>
       </div>
       {% else %}
-      <button onclick="openLoginRoleModal()" class="btn btn-sm btn-yellow">
+      <button onclick="openLoginRoleModal()" class="btn btn-sm btn-yellow" style="white-space:nowrap;flex-shrink:0">
         <i class="fa-solid fa-right-to-bracket"></i> Portal Login
       </button>
       {% endif %}
@@ -247,6 +247,15 @@
           class="fa-solid fa-gauge" style="color:var(--primary-blue)"></i> Control Dashboard</a>
       <a href="{{ url_for('playground.playground_view') }}" class="btn btn-outline" style="justify-content:flex-start"><i
           class="fa-solid fa-terminal" style="color:var(--primary-yellow)"></i> Practice Playground</a>
+
+      <div
+        style="font-family:var(--font-display);font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-top:14px;color:#888888">
+        Sections</div>
+      <a href="{{ url_for('index') }}#curriculum" onclick="closeVLabSidebar()" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-book-open" style="color:var(--primary-blue)"></i> Curriculum</a>
+      <a href="{{ url_for('index') }}#features" onclick="closeVLabSidebar()" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-cubes" style="color:var(--primary-yellow)"></i> Capabilities</a>
+      <a href="{{ url_for('index') }}#telemetry" onclick="closeVLabSidebar()" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-chart-line" style="color:var(--accent-green)"></i> Telemetry</a>
+      <a href="{{ url_for('index') }}#readiness" onclick="closeVLabSidebar()" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-calculator" style="color:var(--orange)"></i> Skill Calculator</a>
+      <a href="{{ url_for('index') }}#faq" onclick="closeVLabSidebar()" class="btn btn-outline" style="justify-content:flex-start"><i class="fa-solid fa-circle-question" style="color:var(--purple)"></i> FAQ</a>
 
       <div
         style="font-family:var(--font-display);font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-top:16px;color:#888888">

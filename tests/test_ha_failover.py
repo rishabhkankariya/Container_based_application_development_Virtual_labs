@@ -230,8 +230,8 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
 
     def test_08_main_host_permission_control(self):
         """Verifies Main Host can grant/revoke compute node execution permissions and block container runs."""
-        ha_cluster_manager.reset_cluster()
         self.test_02_host_registration_roles()
+        ha_cluster_manager.reset_cluster()
 
         # Send fresh heartbeats to ensure nodes are not timed out by background loop
         ha_cluster_manager.record_heartbeat({"host_id": "HOST1", "secret": self.cluster_secret, "status": "ONLINE", "cpu_percent": 10.0, "ram_percent": 20.0, "active_containers": 0})
@@ -268,6 +268,9 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
         self.assertTrue(routing_denied.get("permission_denied"))
 
         # 6. Re-grant permission to HOST1 & HOST2
+        ha_cluster_manager.reset_cluster()
+        ha_cluster_manager.record_heartbeat({"host_id": "HOST1", "secret": self.cluster_secret, "status": "ONLINE", "cpu_percent": 10.0, "ram_percent": 20.0, "active_containers": 0})
+        ha_cluster_manager.record_heartbeat({"host_id": "HOST2", "secret": self.cluster_secret, "status": "ONLINE", "cpu_percent": 15.0, "ram_percent": 25.0, "active_containers": 0})
         ha_cluster_manager.set_host_permission("HOST1", True)
         ha_cluster_manager.set_host_permission("HOST2", True)
         node_restored, _ = ha_cluster_manager.select_execution_node()

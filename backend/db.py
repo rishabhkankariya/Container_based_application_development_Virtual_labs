@@ -10,6 +10,7 @@ import re
 import json
 import sqlite3
 import datetime
+import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 try:
@@ -129,6 +130,18 @@ def init_db():
                 completed_at TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(student_id, lab_number)
+            );
+
+            CREATE TABLE IF NOT EXISTS sync_outbox (
+                operation_id VARCHAR(36) PRIMARY KEY,
+                entity_type VARCHAR(50) NOT NULL,
+                entity_id VARCHAR(150) NOT NULL,
+                payload TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT,
+                synced_at TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS issue_tickets (
@@ -320,6 +333,18 @@ def init_db():
                 updated_at TEXT NOT NULL,
                 UNIQUE(student_id, lab_number),
                 FOREIGN KEY(student_id) REFERENCES students(student_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS sync_outbox (
+                operation_id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'PENDING',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT,
+                synced_at TEXT
             );
 
             CREATE TABLE IF NOT EXISTS issue_tickets (
@@ -627,3 +652,98 @@ def rename_workspace_file(student_id: str, old_filename: str, new_filename: str)
     finally:
         conn.close()
 
+
+
+def enqueue_lab_progress_outbox(conn: DBConnectionWrapper, student_id: str, lab_number: int) -> str:
+    """
+    Add a durable lab-progress sync event using the caller's connection.
+    Call after mutating lab_progress and before conn.commit() so the local
+    update and its outbox event commit or roll back in the same transaction.
+    This function deliberately does not commit or close the connection.
+    """
+    row = conn.execute(
+        "SELECT student_id, lab_number, steps_completed, verification_passed, completed_at, updated_at "
+        "FROM lab_progress WHERE student_id = ? AND lab_number = ?",
+        (student_id, lab_number),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"No lab progress row exists for student {student_id!r}, lab {lab_number}")
+
+    steps_value = row["steps_completed"]
+    if isinstance(steps_value, str):
+        try:
+            steps_value = json.loads(steps_value)
+        except (TypeError, ValueError):
+            steps_value = []
+    if not isinstance(steps_value, list):
+        steps_value = []
+
+    operation_id = str(uuid.uuid4())
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    payload = {
+        "student_id": str(row["student_id"]),
+        "lab_number": int(row["lab_number"]),
+        "steps_completed": list(dict.fromkeys(steps_value)),
+        "verification_passed": int(row["verification_passed"] or 0),
+        "completed_at": row["completed_at"],
+        "updated_at": row["updated_at"],
+    }
+    conn.execute(
+        "INSERT INTO sync_outbox "
+        "(operation_id, entity_type, entity_id, payload, created_at, status, attempts) "
+        "VALUES (?, ?, ?, ?, ?, 'PENDING', 0)",
+        (
+            operation_id,
+            "lab_progress",
+            f"{student_id}:lab{lab_number}",
+            json.dumps(payload, default=str, separators=(",", ":")),
+            now,
+        ),
+    )
+    return operation_id
+
+
+def get_pending_sync_events(limit: int = 100) -> List[Dict[str, Any]]:
+    """Return pending outbox events in creation order for a future sync worker."""
+    if limit < 1:
+        return []
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT operation_id, entity_type, entity_id, payload, created_at, status, attempts, last_error "
+            "FROM sync_outbox WHERE status = 'PENDING' ORDER BY created_at, operation_id LIMIT ?",
+            (int(limit),),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def mark_sync_event_synced(operation_id: str) -> bool:
+    """Mark an outbox event synced only after the remote service acknowledges it."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE sync_outbox SET status = 'SYNCED', synced_at = ?, last_error = NULL "
+            "WHERE operation_id = ? AND status = 'PENDING'",
+            (datetime.datetime.now(datetime.timezone.utc).isoformat(), operation_id),
+        )
+        conn.commit()
+        return getattr(cur, "rowcount", 0) == 1
+    finally:
+        conn.close()
+
+
+def record_sync_event_failure(operation_id: str, error: str) -> bool:
+    """Keep a failed event pending and record a bounded diagnostic for retry."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE sync_outbox SET attempts = attempts + 1, last_error = ? "
+            "WHERE operation_id = ? AND status = 'PENDING'",
+            (str(error)[:1000], operation_id),
+        )
+        conn.commit()
+        return getattr(cur, "rowcount", 0) == 1
+    finally:
+        conn.close()

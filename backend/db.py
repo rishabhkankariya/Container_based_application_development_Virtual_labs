@@ -66,30 +66,64 @@ class DBConnectionWrapper:
 
 def get_db() -> DBConnectionWrapper:
     """
-    Returns a unified DB connection.
-    If DATABASE_URL is set, connects to PostgreSQL.
-    Otherwise, connects to SQLite database at database/vlab.db.
-    """
-    database_url = os.environ.get("DATABASE_URL", "").strip()
+    Return the operational database connection.
 
-    if database_url:
+    Local-first is the default: SQLite remains the authoritative LAN database,
+    even when DATABASE_URL is configured for asynchronous cloud replication.
+    To explicitly run in PostgreSQL-primary mode, set VLAB_DATABASE_MODE=postgres.
+    PostgreSQL-primary mode fails closed rather than silently switching databases.
+    """
+    mode = os.environ.get("VLAB_DATABASE_MODE", "sqlite").strip().lower()
+    if mode in ("postgres", "postgresql", "cloud"):
+        database_url = os.environ.get("DATABASE_URL", "").strip()
+        if not database_url:
+            raise RuntimeError(
+                "VLAB_DATABASE_MODE=postgres requires DATABASE_URL to be configured."
+            )
         if not HAS_POSTGRES:
-            print("⚠️ [V-Lab DB Warning] DATABASE_URL is defined, but 'psycopg2' is not installed. Falling back to SQLite.")
-        else:
-            if database_url.startswith("postgres://"):
-                database_url = database_url.replace("postgres://", "postgresql://", 1)
-            try:
-                conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
-                return DBConnectionWrapper(conn, is_postgres=True)
-            except Exception as e:
-                print(f"❌ [V-Lab DB Error] Unable to connect to remote PostgreSQL DB VM: {e}")
-                print("   Falling back to local SQLite at database/vlab.db for resilience.")
+            raise RuntimeError(
+                "VLAB_DATABASE_MODE=postgres requires psycopg2 to be installed."
+            )
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        try:
+            conn = psycopg2.connect(
+                database_url, cursor_factory=RealDictCursor, connect_timeout=5
+            )
+        except Exception as exc:
+            raise RuntimeError("PostgreSQL-primary database is unavailable.") from exc
+        return DBConnectionWrapper(conn, is_postgres=True)
 
     os.makedirs(os.path.dirname(DEFAULT_SQLITE_PATH), exist_ok=True)
     conn = sqlite3.connect(DEFAULT_SQLITE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return DBConnectionWrapper(conn, is_postgres=False)
+
+
+def get_cloud_db() -> Optional[DBConnectionWrapper]:
+    """
+    Connect strictly to the PostgreSQL replica configured by DATABASE_URL.
+
+    This helper never falls back to SQLite. It returns None when PostgreSQL is
+    not configured, psycopg2 is unavailable, or the connection cannot be made.
+    The caller owns and must close a successful connection.
+    """
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if not database_url or not HAS_POSTGRES:
+        return None
+
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    try:
+        conn = psycopg2.connect(
+            database_url, cursor_factory=RealDictCursor, connect_timeout=5
+        )
+        return DBConnectionWrapper(conn, is_postgres=True)
+    except Exception as exc:
+        print(f"⚠️ [V-Lab Sync] Cloud PostgreSQL unavailable: {exc}")
+        return None
 
 
 def init_db():

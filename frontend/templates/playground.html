@@ -57,7 +57,7 @@
       <div class="pg-panel">
         <div class="pg-panel-header">
           <span><i class="fa-solid fa-folder-tree" style="color:var(--pg-yellow);margin-right:6px"></i> WORKSPACE FILES</span>
-          <button onclick="createNewFile()" class="btn btn-sm btn-yellow" style="padding:2px 8px;font-size:0.7rem;border:1px solid #000">
+          <button onclick="createNewFile()" class="btn btn-sm btn-yellow" style="padding:3px 10px;font-size:0.75rem;font-weight:800;border:2px solid #121212;box-shadow:2px 2px 0px #121212">
             <i class="fa-solid fa-plus"></i> New File
           </button>
         </div>
@@ -181,7 +181,7 @@
         <i class="fa-solid fa-pen-to-square" style="color:var(--pg-yellow)"></i>
         <span style="font-family:var(--font-display, sans-serif);font-weight:800;font-size:0.95rem">WORKSPACE FILE EDITOR</span>
       </div>
-      <button onclick="closeFileEditor()" class="btn btn-sm btn-white" style="padding:2px 8px;font-size:0.8rem">&times;</button>
+      <button onclick="closeFileEditor()" class="modal-close-btn" style="width:28px;height:28px;background:#fff;color:#121212;border:2px solid #121212;font-weight:900;font-size:1rem;display:flex;align-items:center;justify-content:center;cursor:pointer" title="Close editor (Esc)">&times;</button>
     </div>
 
     <div style="padding:10px 16px;background:#f8fafc;border-bottom:2px solid var(--pg-border);display:flex;align-items:center;gap:12px">
@@ -192,10 +192,10 @@
     <textarea id="pgEditorContent" class="pg-editor-textarea" spellcheck="false" placeholder="Write code here..."></textarea>
 
     <div class="pg-editor-footer">
-      <span style="font-size:0.75rem;color:#64748b">Changes are saved directly into your isolated session workspace.</span>
+      <span style="font-size:0.75rem;color:#64748b">Changes are saved directly into your isolated session workspace. (Ctrl+S to save)</span>
       <div style="display:flex;gap:8px">
-        <button onclick="closeFileEditor()" class="btn btn-sm btn-white" style="border:2px solid #121212">Cancel</button>
-        <button onclick="saveFileEditor()" class="btn btn-sm btn-yellow" style="border:2px solid #121212;box-shadow:2px 2px 0px #121212">
+        <button onclick="closeFileEditor()" class="btn btn-sm btn-white" style="border:2px solid #121212;font-weight:700">Cancel</button>
+        <button onclick="saveFileEditor()" class="btn btn-sm btn-yellow" style="border:2px solid #121212;box-shadow:2px 2px 0px #121212;font-weight:800">
           <i class="fa-solid fa-floppy-disk"></i> Save File
         </button>
       </div>

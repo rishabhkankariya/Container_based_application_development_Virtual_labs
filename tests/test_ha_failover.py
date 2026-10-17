@@ -233,6 +233,10 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
         ha_cluster_manager.reset_cluster()
         self.test_02_host_registration_roles()
 
+        # Send fresh heartbeats to ensure nodes are not timed out by background loop
+        ha_cluster_manager.record_heartbeat({"host_id": "HOST1", "secret": self.cluster_secret, "status": "ONLINE", "cpu_percent": 10.0, "ram_percent": 20.0, "active_containers": 0})
+        ha_cluster_manager.record_heartbeat({"host_id": "HOST2", "secret": self.cluster_secret, "status": "ONLINE", "cpu_percent": 15.0, "ram_percent": 25.0, "active_containers": 0})
+
         # 1. Verify default: Global compute enabled
         self.assertTrue(ha_cluster_manager.is_global_compute_enabled())
 

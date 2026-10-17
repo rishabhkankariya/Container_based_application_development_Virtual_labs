@@ -843,9 +843,9 @@ textarea {
   transition: all 0.15s ease;
 }
 
-input:focus,
+input:not(.pg-input):not(#pgEditorFilename):focus,
 select:focus,
-textarea:focus {
+textarea:not(.vscode-textarea):not(.pg-editor-textarea):focus {
   outline: none;
   background: var(--accent-yellow-light);
   border-color: #121212;
@@ -1968,7 +1968,8 @@ footer.bauhaus-footer a:hover {
   overflow: hidden;
 }
 
-.vscode-textarea {
+.vscode-textarea,
+.vscode-textarea:focus {
   position: absolute;
   top: 0;
   left: 0;
@@ -1977,6 +1978,7 @@ footer.bauhaus-footer a:hover {
   caret-color: var(--primary-yellow) !important;
   resize: none !important;
   outline: none !important;
+  box-shadow: none !important;
   overflow: auto !important;
 }
 

@@ -284,6 +284,7 @@
           editorFilename.value = data.filename;
           editorContent.value = data.content;
           editorModal.classList.add('open');
+          setTimeout(() => { if (editorContent) editorContent.focus(); }, 60);
         } else {
           alert('Could not read file: ' + (data.error || 'Unknown error'));
         }
@@ -296,6 +297,7 @@
     editorFilename.value = fname.trim();
     editorContent.value = '';
     editorModal.classList.add('open');
+    setTimeout(() => { if (editorContent) editorContent.focus(); }, 60);
   };
 
   window.saveFileEditor = function () {
@@ -325,8 +327,42 @@
   };
 
   window.closeFileEditor = function () {
-    editorModal.classList.remove('open');
+    if (editorModal) editorModal.classList.remove('open');
+    if (termInput) termInput.focus();
   };
+
+  // Close modal when clicking backdrop
+  if (editorModal) {
+    editorModal.addEventListener('click', (e) => {
+      if (e.target === editorModal) closeFileEditor();
+    });
+  }
+
+  // Handle Tab indentation inside code editor textarea
+  if (editorContent) {
+    editorContent.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = editorContent.selectionStart;
+        const end = editorContent.selectionEnd;
+        editorContent.value = editorContent.value.substring(0, start) + '    ' + editorContent.value.substring(end);
+        editorContent.selectionStart = editorContent.selectionEnd = start + 4;
+      }
+    });
+  }
+
+  // Global hotkeys for file editor modal (Ctrl+S to save, Escape to exit)
+  window.addEventListener('keydown', (e) => {
+    if (editorModal && editorModal.classList.contains('open')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeFileEditor();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveFileEditor();
+      }
+    }
+  });
 
   // Cheatsheet snippet paste
   window.pasteCommand = function (cmdText) {

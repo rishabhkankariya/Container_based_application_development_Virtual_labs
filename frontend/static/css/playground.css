@@ -476,17 +476,43 @@
   align-items: center;
 }
 
-.pg-editor-textarea {
+.pg-editor-textarea,
+.pg-editor-textarea:focus,
+textarea.pg-editor-textarea,
+textarea.pg-editor-textarea:focus {
   flex: 1;
-  padding: 14px;
-  font-family: 'Fira Code', 'Courier New', monospace;
-  font-size: 0.9rem;
-  background: #1e293b;
-  color: #f8fafc;
-  border: none;
-  resize: none;
-  outline: none;
-  line-height: 1.5;
+  padding: 16px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace !important;
+  font-size: 0.92rem !important;
+  background: #0d1117 !important;
+  color: #f0f6fc !important;
+  caret-color: var(--pg-yellow) !important;
+  border: none !important;
+  resize: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  line-height: 1.6 !important;
+}
+
+.pg-editor-textarea::selection {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#pgEditorFilename {
+  background: #ffffff !important;
+  color: #121212 !important;
+  border: 2px solid #121212 !important;
+  border-radius: 0px !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-weight: 600 !important;
+}
+
+#pgEditorFilename:focus {
+  background: #ffffff !important;
+  border-color: #121212 !important;
+  box-shadow: 2px 2px 0px #121212 !important;
+  outline: none !important;
 }
 
 .pg-editor-footer {

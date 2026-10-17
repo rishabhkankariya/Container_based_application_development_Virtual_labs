@@ -16,6 +16,7 @@ import json
 import time
 import shutil
 import secrets
+import getpass
 import datetime
 import subprocess
 from typing import Optional, Dict, Any, List, Tuple
@@ -168,6 +169,81 @@ ENVIRONMENTS = {
 class PlaygroundService:
     def __init__(self):
         self.workspaces_root = PLAYGROUND_WORKSPACES_ROOT
+        self.project_root = BASE_DIR
+
+    def _sanitize_output(self, text: str, ws_path: str = "") -> str:
+        """
+        Sanitizes command output before presenting it in the playground terminal:
+        1. Strips all host usernames and Windows credentials, replacing them with 'vlab'.
+        2. Normalizes all Windows and POSIX workspace paths to '/home/vlab'.
+        3. Normalizes Windows group IDs (e.g. 197121) in 'ls -l' output to 'vlab'.
+        4. Strips any parent project directories, drive letters, or host paths.
+        """
+        if not text:
+            return text
+
+        # Collect known usernames
+        usernames = set()
+        current_user = os.environ.get("USERNAME", "")
+        if current_user:
+            usernames.add(current_user)
+            for part in current_user.split():
+                if len(part) >= 3:
+                    usernames.add(part)
+        try:
+            gp = getpass.getuser()
+            if gp:
+                usernames.add(gp)
+                for part in gp.split():
+                    if len(part) >= 3:
+                        usernames.add(part)
+        except Exception:
+            pass
+
+        usernames.add("Rishabh Kankariya")
+        usernames.add("Kankariya")
+        usernames.add("Rishabh")
+
+        out = text
+
+        # 1. Replace workspace paths with /home/vlab
+        if ws_path:
+            norm_ws_win = ws_path.replace("/", "\\")
+            norm_ws_posix = ws_path.replace("\\", "/")
+            drive_match = re.match(r'^([a-zA-Z]):[\\/](.*)$', ws_path)
+            git_bash_ws = f"/{drive_match.group(1).lower()}/{drive_match.group(2).replace(chr(92), '/')}" if drive_match else ""
+
+            for p in (norm_ws_win, norm_ws_posix, git_bash_ws):
+                if p:
+                    out = re.sub(re.escape(p), "/home/vlab", out, flags=re.IGNORECASE)
+
+        # Replace project root directory and workspaces root
+        for root_p in (self.project_root, self.workspaces_root):
+            p_win = root_p.replace("/", "\\")
+            p_posix = root_p.replace("\\", "/")
+            dm = re.match(r'^([a-zA-Z]):[\\/](.*)$', root_p)
+            gb_p = f"/{dm.group(1).lower()}/{dm.group(2).replace(chr(92), '/')}" if dm else ""
+            for p in (p_win, p_posix, gb_p):
+                if p:
+                    out = re.sub(re.escape(p), "/home/vlab", out, flags=re.IGNORECASE)
+
+        # Replace parent workspaces references
+        out = re.sub(r'playground_workspaces[\\/][a-zA-Z0-9_-]+', '/home/vlab', out, flags=re.IGNORECASE)
+        out = re.sub(r'playground_workspaces', '/home/vlab', out, flags=re.IGNORECASE)
+
+        # Replace any leaked Windows User paths (e.g. C:\Users\Username\... or /c/Users/Username/...)
+        out = re.sub(r'[a-zA-Z]:[\\/]Users[\\/][^\\/\r\n\t]+(?:[\\/][^\r\n\t :\'"]+)*', '/home/vlab', out, flags=re.IGNORECASE)
+        out = re.sub(r'/[a-zA-Z]/Users/[^/\r\n\t]+(?:/[^\r\n\t :\'"]+)*', '/home/vlab', out, flags=re.IGNORECASE)
+
+        # 2. Replace usernames (sorted by length descending so full name is replaced first)
+        for u in sorted(usernames, key=len, reverse=True):
+            if u:
+                out = re.sub(re.escape(u), "vlab", out, flags=re.IGNORECASE)
+
+        # 3. Replace Windows numerical Group ID in ls -la (e.g. "1 vlab 197121 0")
+        out = re.sub(r'(\b\d+\s+vlab\s+)\d+(\s+)', r'\g<1>vlab\2', out)
+
+        return out
 
     def _resolve_secure_session_path(self, session_id: str, relative_path: str = "") -> Optional[str]:
         """
@@ -451,10 +527,15 @@ class PlaygroundService:
             }
 
         # 3. Block absolute host drive paths, UNC shares, and parent directory traversals
-        if re.search(r'(\b[a-zA-Z]:[\\/]|\\\\|\.\./\.\./|\.\.\\\.\.\\)', cmd):
+        if (
+            re.search(r'(\b[a-zA-Z]:[\\/]|\\\\|/[a-zA-Z]/)', cmd)
+            or re.search(r'(^|\s)/[a-zA-Z]($|\s)', cmd)
+            or re.search(r'(^|[\s\\/])\.\.($|[\s\\/])', cmd)
+            or re.search(r'(--git-dir|--work-tree|-C\s+)', cmd, flags=re.IGNORECASE)
+        ):
             return {
                 "ok": False,
-                "output": "⛔ Security Violation: Access to host drives or paths outside the isolated workspace is strictly forbidden.",
+                "output": "⛔ Security Violation: Access to host drives, parent paths, or repository escape flags is strictly forbidden.",
                 "returncode": 1,
                 "env_type": sess["env_type"]
             }
@@ -474,7 +555,7 @@ class PlaygroundService:
                         content = f.read()
                     return {
                         "ok": True,
-                        "output": content,
+                        "output": self._sanitize_output(content, ws_path),
                         "returncode": 0,
                         "env_type": sess["env_type"]
                     }
@@ -497,7 +578,7 @@ class PlaygroundService:
         if stripped_lower == "pwd":
             return {
                 "ok": True,
-                "output": f"/home/vlab/{os.path.basename(ws_path)}",
+                "output": "/home/vlab",
                 "returncode": 0,
                 "env_type": sess["env_type"]
             }
@@ -507,6 +588,49 @@ class PlaygroundService:
             return {
                 "ok": True,
                 "output": "vlab",
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        # Built-in instant id handler
+        if stripped_lower in ("id", "id -u", "id -un", "id -gn"):
+            if stripped_lower == "id":
+                return {
+                    "ok": True,
+                    "output": "uid=1000(vlab) gid=1000(vlab) groups=1000(vlab),27(sudo),100(users)",
+                    "returncode": 0,
+                    "env_type": sess["env_type"]
+                }
+            elif stripped_lower == "id -u":
+                return {"ok": True, "output": "1000", "returncode": 0, "env_type": sess["env_type"]}
+            elif stripped_lower == "id -un":
+                return {"ok": True, "output": "vlab", "returncode": 0, "env_type": sess["env_type"]}
+            elif stripped_lower == "id -gn":
+                return {"ok": True, "output": "vlab", "returncode": 0, "env_type": sess["env_type"]}
+
+        # Built-in instant hostname handler
+        if stripped_lower == "hostname":
+            return {
+                "ok": True,
+                "output": "vlab-sandbox",
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        # Built-in instant env / printenv handler (prevents leaking host Windows environment variables)
+        if stripped_lower in ("env", "printenv", "export"):
+            return {
+                "ok": True,
+                "output": (
+                    "USER=vlab\n"
+                    "LOGNAME=vlab\n"
+                    "HOME=/home/vlab\n"
+                    "SHELL=/bin/bash\n"
+                    "TERM=xterm-256color\n"
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n"
+                    "VLAB_ENVIRONMENT=sandbox\n"
+                    "VLAB_ISOLATION=enforced"
+                ),
                 "returncode": 0,
                 "env_type": sess["env_type"]
             }
@@ -538,6 +662,11 @@ class PlaygroundService:
         # Prevent destructive host formatting
         if re.search(r'(\bformat\s+[a-z]:|\bmkfs|\brm\s+-[a-z]*r[a-z]*f\s+([/~]|\.\.)|\brmdir\s+/[sq]\s+[a-z]:)', stripped_lower):
             return {"ok": False, "output": "⛔ Security Policy: Destructive filesystem command blocked."}
+
+        # Ensure git environment always has isolated git repository initialized
+        if sess.get("env_type") == "git" or re.match(r'^\s*git\b', cmd, flags=re.IGNORECASE):
+            if not os.path.exists(os.path.join(ws_path, ".git")):
+                self._seed_workspace(ws_path, "git")
 
         # If docker command executed in playground, inject kernel cgroup resource controls
         exec_cmd = cmd
@@ -573,6 +702,18 @@ class PlaygroundService:
                 extra_paths.append(p)
         env["PATH"] = ";".join(extra_paths) + ";" + env.get("PATH", "")
         env["PYTHONUNBUFFERED"] = "1"
+        env["USER"] = "vlab"
+        env["LOGNAME"] = "vlab"
+        env["USERNAME"] = "vlab"
+        env["HOME"] = ws_path
+        env["GIT_CEILING_DIRECTORIES"] = f"{os.path.abspath(self.project_root)};{os.path.abspath(self.workspaces_root)}"
+        env["GIT_DISCOVERY_ACROSS_FILESYSTEM"] = "0"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        env["GIT_CONFIG_GLOBAL"] = os.path.join(ws_path, ".gitconfig_dummy")
+        env["GIT_AUTHOR_NAME"] = "VLab Student"
+        env["GIT_AUTHOR_EMAIL"] = "student@vlab.local"
+        env["GIT_COMMITTER_NAME"] = "VLab Student"
+        env["GIT_COMMITTER_EMAIL"] = "student@vlab.local"
 
         is_win = sys.platform == "win32"
         bash_bin = self._find_bash_binary() if is_win else None
@@ -581,7 +722,7 @@ class PlaygroundService:
         # If user is in the Python sandbox and types Python code directly (e.g. print("hello"), 2 + 2, import math, etc.)
         # instead of a shell command (ls, pip, git, clear, etc.), evaluate it directly in Python!
         is_python_env = sess.get("env_type") == "python"
-        is_shell_utility = re.match(r'^\s*(python|python3|pip|pip3|cat|ls|head|tail|grep|touch|rm|mkdir|git|clear|cls|exit|echo|pwd|whoami)\b', cmd, flags=re.IGNORECASE)
+        is_shell_utility = re.match(r'^\s*(python|python3|pip|pip3|cat|ls|head|tail|grep|touch|rm|mkdir|git|clear|cls|exit|echo|pwd|whoami|id|hostname|env|printenv)\b', cmd, flags=re.IGNORECASE)
 
         if is_python_env and not is_shell_utility:
             py_exec_code = (
@@ -639,16 +780,18 @@ class PlaygroundService:
             if not out and proc.returncode == 0:
                 out = "Command executed successfully (exit code 0)."
 
+            clean_out = self._sanitize_output(out, ws_path)
+
             return {
                 "ok": proc.returncode == 0,
-                "output": out.strip() if out else f"Process exited with code {proc.returncode}.",
+                "output": clean_out.strip() if clean_out else f"Process exited with code {proc.returncode}.",
                 "returncode": proc.returncode,
                 "env_type": sess["env_type"]
             }
         except subprocess.TimeoutExpired:
             return {"ok": False, "output": "Command execution timed out (25-second limit exceeded)."}
         except Exception as e:
-            return {"ok": False, "output": f"Execution error: {str(e)}"}
+            return {"ok": False, "output": f"Execution error: {self._sanitize_output(str(e), ws_path)}"}
 
     def list_files(self, session_id: str, user_id: str) -> Dict[str, Any]:
         """Lists files and directories in the session workspace."""
@@ -667,6 +810,8 @@ class PlaygroundService:
                 if ".git" in dirs:
                     dirs.remove(".git")
                 for f in files:
+                    if f.startswith(".git"):
+                        continue
                     full_p = os.path.join(root, f)
                     rel_p = os.path.relpath(full_p, ws_path).replace("\\", "/")
                     try:
@@ -729,12 +874,22 @@ class PlaygroundService:
         # For Git environment, initialize a clean local repo with sample commit
         if env_type == "git":
             try:
-                subprocess.run("git init", cwd=ws_path, shell=True, capture_output=True, timeout=5)
-                subprocess.run('git config user.name "VLab Student"', cwd=ws_path, shell=True, capture_output=True, timeout=5)
-                subprocess.run('git config user.email "student@vlab.local"', cwd=ws_path, shell=True, capture_output=True, timeout=5)
-                subprocess.run("git add .", cwd=ws_path, shell=True, capture_output=True, timeout=5)
-                subprocess.run('git commit -m "feat: initial practice repository setup"', cwd=ws_path, shell=True, capture_output=True, timeout=5)
-                subprocess.run("git branch feature-auth", cwd=ws_path, shell=True, capture_output=True, timeout=5)
+                git_env = os.environ.copy()
+                git_env["GIT_CEILING_DIRECTORIES"] = f"{os.path.abspath(self.project_root)};{os.path.abspath(self.workspaces_root)}"
+                git_env["GIT_DISCOVERY_ACROSS_FILESYSTEM"] = "0"
+                git_env["GIT_CONFIG_NOSYSTEM"] = "1"
+                git_env["GIT_CONFIG_GLOBAL"] = os.path.join(ws_path, ".gitconfig_dummy")
+                git_env["GIT_AUTHOR_NAME"] = "VLab Student"
+                git_env["GIT_AUTHOR_EMAIL"] = "student@vlab.local"
+                git_env["GIT_COMMITTER_NAME"] = "VLab Student"
+                git_env["GIT_COMMITTER_EMAIL"] = "student@vlab.local"
+                subprocess.run("git init", cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
+                subprocess.run('git config user.name "VLab Student"', cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
+                subprocess.run('git config user.email "student@vlab.local"', cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
+                subprocess.run("git add .", cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
+                subprocess.run('git commit -m "feat: initial practice repository setup"', cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
+                subprocess.run("git branch -M main", cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
+                subprocess.run("git branch feature-auth", cwd=ws_path, shell=True, capture_output=True, timeout=5, env=git_env)
             except Exception:
                 pass
 

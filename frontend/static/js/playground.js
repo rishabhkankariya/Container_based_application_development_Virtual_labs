@@ -191,7 +191,7 @@
           appendOutput(
             `🚀 Switched to ${data.session.env_name}.\n` +
             `${data.session.env_desc}\n` +
-            `Isolated workspace: playground_workspaces/${activeSessionId.substring(0, 8)}/\n` +
+            `Virtual environment: /home/vlab (Isolated container sandbox)\n` +
             `------------------------------------------------------------------------\n`,
             'pg-line-success'
           );

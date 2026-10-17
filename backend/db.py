@@ -337,6 +337,20 @@ def init_db():
                 entity_id VARCHAR(100) NOT NULL,
                 processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS playground_sessions (
+                id SERIAL PRIMARY KEY,
+                session_id VARCHAR(64) UNIQUE NOT NULL,
+                user_id VARCHAR(100) NOT NULL,
+                role VARCHAR(20) NOT NULL,
+                env_type VARCHAR(50) NOT NULL,
+                container_id VARCHAR(100),
+                status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+                workspace_path TEXT NOT NULL,
+                created_at VARCHAR(50) NOT NULL,
+                last_activity VARCHAR(50) NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_playground_user ON playground_sessions(user_id, status);
             """
         )
     else:
@@ -547,6 +561,20 @@ def init_db():
                 entity_id TEXT NOT NULL,
                 processed_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS playground_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT UNIQUE NOT NULL,
+                user_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                env_type TEXT NOT NULL,
+                container_id TEXT,
+                status TEXT NOT NULL DEFAULT 'ACTIVE',
+                workspace_path TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                last_activity TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_playground_user ON playground_sessions(user_id, status);
             """
         )
 

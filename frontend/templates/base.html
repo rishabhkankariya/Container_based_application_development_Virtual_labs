@@ -169,6 +169,9 @@
 
       {% if session.get('student_id') or session.get('faculty_username') %}
       <div style="display:flex;align-items:center;gap:10px">
+        <a href="{{ url_for('playground.playground_view') }}" class="btn btn-sm btn-yellow" title="Open Practice Playground" style="display:inline-flex;align-items:center;gap:6px">
+          <i class="fa-solid fa-terminal"></i> Playground
+        </a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-blue">
           <i class="fa-solid fa-gauge"></i> Dashboard
         </a>
@@ -242,6 +245,8 @@
           class="fa-solid fa-house" style="color:var(--primary-red)"></i> Home Portal</a>
       <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="justify-content:flex-start"><i
           class="fa-solid fa-gauge" style="color:var(--primary-blue)"></i> Control Dashboard</a>
+      <a href="{{ url_for('playground.playground_view') }}" class="btn btn-outline" style="justify-content:flex-start"><i
+          class="fa-solid fa-terminal" style="color:var(--primary-yellow)"></i> Practice Playground</a>
 
       <div
         style="font-family:var(--font-display);font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-top:16px;color:#888888">

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Playground | Container V-Lab Suite{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/playground.css') }}">
+
+<div class="pg-wrapper">
+  <!-- Top Banner & Environment Switcher -->
+  <div class="pg-header-card">
+    <div class="pg-header-top">
+      <div>
+        <div class="pg-title">
+          <i class="fa-solid fa-flask-vial" style="color:var(--pg-yellow)"></i>
+          <span>PRACTICE PLAYGROUND</span>
+          <span class="pg-badge">INDEPENDENT MODULE</span>
+        </div>
+        <p style="margin:4px 0 0 0;font-size:0.86rem;color:#64748b">
+          Experiment freely with Linux, Python, Git, and Docker. Your practice sessions and files are isolated from regular lab experiments.
+        </p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="pg-session-pill">
+          <span class="pg-session-status-dot"></span>
+          <span id="pgActiveEnvName">{{ active_session.env_name }}</span>
+          <span style="color:#94a3b8">|</span>
+          <span id="pgActiveSessionId" style="color:#64748b">#{{ active_session.session_id[:8] }}</span>
+        </div>
+        <button onclick="resetPlaygroundSession()" class="btn btn-sm btn-white" style="border:2px solid #121212;box-shadow:2px 2px 0px #121212" title="Reset Session Files">
+          <i class="fa-solid fa-rotate-left"></i> Reset Files
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 Environment Selector Cards -->
+    <div class="pg-env-selector">
+      {% for env_key, env in environments.items() %}
+      <div class="pg-env-btn {% if current_env == env_key %}active{% endif %}" data-env="{{ env_key }}" onclick="switchPlaygroundEnv('{{ env_key }}')">
+        <div class="pg-env-icon" style="color:{{ env.color }}">
+          <i class="{{ env.icon }}"></i>
+        </div>
+        <div class="pg-env-meta">
+          <h4>{{ env.name }}</h4>
+          <p>{{ env.desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Main Workspace Grid: Sidebar (Files & CheatSheet) + Terminal Stage -->
+  <div class="pg-workspace-grid">
+    <!-- Left Sidebar -->
+    <div class="pg-sidebar">
+      <!-- File Explorer Panel -->
+      <div class="pg-panel">
+        <div class="pg-panel-header">
+          <span><i class="fa-solid fa-folder-tree" style="color:var(--pg-yellow);margin-right:6px"></i> WORKSPACE FILES</span>
+          <button onclick="createNewFile()" class="btn btn-sm btn-yellow" style="padding:2px 8px;font-size:0.7rem;border:1px solid #000">
+            <i class="fa-solid fa-plus"></i> New File
+          </button>
+        </div>
+        <div id="pgFileList" class="pg-file-list">
+          <div style="padding:10px;color:#888;font-size:0.75rem">Loading files...</div>
+        </div>
+        <div style="padding:8px 12px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:0.7rem;color:#64748b">
+          <i class="fa-solid fa-circle-info"></i> Click any file above to open the scratchpad editor.
+        </div>
+      </div>
+
+      <!-- Quick Practice Cheat Sheet Panel -->
+      <div class="pg-panel">
+        <div class="pg-panel-header">
+          <span><i class="fa-solid fa-book-bookmark" style="color:var(--pg-yellow);margin-right:6px"></i> QUICK CHEAT SHEET</span>
+          <span style="font-size:0.7rem;opacity:0.8">Click to Paste</span>
+        </div>
+        <div class="pg-cheatsheet">
+          <!-- Linux Cheatsheet -->
+          <div class="pg-cheatsheet-group" data-env="linux" style="display:{% if current_env == 'linux' %}block{% else %}none{% endif %}">
+            <p><strong>File &amp; Directory Ops:</strong><br>
+              <code onclick="pasteCommand('ls -la')">ls -la</code> — List files with details<br>
+              <code onclick="pasteCommand('cat welcome.txt')">cat welcome.txt</code> — View text file<br>
+              <code onclick="pasteCommand('head -n 5 sample_data.csv')">head -n 5 sample_data.csv</code> — First 5 rows<br>
+              <code onclick="pasteCommand('mkdir test_dir')">mkdir test_dir</code> — Create folder<br>
+              <code onclick="pasteCommand('pwd')">pwd</code> — Print current working dir
+            </p>
+            <p><strong>Data Filters &amp; Piping:</strong><br>
+              <code onclick="pasteCommand('grep \'Developer\' sample_data.csv')">grep 'Developer' sample_data.csv</code><br>
+              <code onclick="pasteCommand('awk -F, \'{print $2, $5}\' sample_data.csv')">awk -F, '{print $2, $5}' sample_data.csv</code><br>
+              <code onclick="pasteCommand('bash sample_task.sh')">bash sample_task.sh</code> — Run script
+            </p>
+          </div>
+
+          <!-- Python Cheatsheet -->
+          <div class="pg-cheatsheet-group" data-env="python" style="display:{% if current_env == 'python' %}block{% else %}none{% endif %}">
+            <p><strong>Python Execution:</strong><br>
+              <code onclick="pasteCommand('python main.py')">python main.py</code> — Run starter script<br>
+              <code onclick="pasteCommand('python --version')">python --version</code> — Check Python version<br>
+              <code onclick="pasteCommand('python -c &quot;import math; print(math.sqrt(144))&quot;')">python -c "import math; print(math.sqrt(144))"</code>
+            </p>
+            <p><strong>File &amp; Module Inspection:</strong><br>
+              <code onclick="pasteCommand('cat utils.py')">cat utils.py</code> — Inspect helper functions<br>
+              <code onclick="pasteCommand('pip list')">pip list</code> — List installed packages
+            </p>
+          </div>
+
+          <!-- Git Cheatsheet -->
+          <div class="pg-cheatsheet-group" data-env="git" style="display:{% if current_env == 'git' %}block{% else %}none{% endif %}">
+            <p><strong>Repository Status &amp; History:</strong><br>
+              <code onclick="pasteCommand('git status')">git status</code> — Check repo state<br>
+              <code onclick="pasteCommand('git log --oneline --decorate')">git log --oneline --decorate</code> — Compact log<br>
+              <code onclick="pasteCommand('git branch -a')">git branch -a</code> — List all branches
+            </p>
+            <p><strong>Branching &amp; Commits:</strong><br>
+              <code onclick="pasteCommand('git checkout feature-auth')">git checkout feature-auth</code> — Switch branch<br>
+              <code onclick="pasteCommand('git checkout -b new-experiment')">git checkout -b new-experiment</code> — New branch<br>
+              <code onclick="pasteCommand('git diff')">git diff</code> — View pending changes
+            </p>
+          </div>
+
+          <!-- Docker Cheatsheet -->
+          <div class="pg-cheatsheet-group" data-env="docker" style="display:{% if current_env == 'docker' %}block{% else %}none{% endif %}">
+            <p><strong>Docker Commands:</strong><br>
+              <code onclick="pasteCommand('docker --version')">docker --version</code> — Check Engine CLI<br>
+              <code onclick="pasteCommand('docker ps -a')">docker ps -a</code> — List all containers<br>
+              <code onclick="pasteCommand('docker images')">docker images</code> — List cached images<br>
+              <code onclick="pasteCommand('cat Dockerfile')">cat Dockerfile</code> — View sample Dockerfile
+            </p>
+            <p><strong>Container Limits Protection:</strong><br>
+              All containers executed here are strictly constrained to <strong>512MB RAM, 1.0 CPU, and 100 PIDs</strong>. Direct host socket mounting is blocked.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Interactive Terminal Screen -->
+    <div class="pg-stage">
+      <div class="pg-terminal-card">
+        <!-- Terminal Titlebar -->
+        <div class="pg-term-header">
+          <div class="pg-term-dots">
+            <span class="pg-dot pg-dot-red"></span>
+            <span class="pg-dot pg-dot-yellow"></span>
+            <span class="pg-dot pg-dot-green"></span>
+          </div>
+          <div class="pg-term-title">
+            <i class="fa-solid fa-terminal" style="color:var(--pg-yellow)"></i>
+            <span>{{ display_name }} &bull; {{ active_session.env_name }}</span>
+          </div>
+          <div class="pg-term-actions">
+            <button onclick="clearTerminal()" class="pg-term-btn" title="Clear screen (Ctrl+L)">Clear</button>
+          </div>
+        </div>
+
+        <!-- Terminal Output & Interactive Input Screen -->
+        <div id="pgTermBody" class="pg-term-body">
+          <div id="pgOutputHistory" class="pg-output-history"></div>
+          <div class="pg-input-line">
+            <span id="pgPrompt" class="pg-prompt">{{ active_session.prompt }}</span>
+            <input type="text" id="pgTermInput" class="pg-input" autocomplete="off" spellcheck="false" autofocus placeholder="Type a command (e.g. ls -la, python main.py, git status)...">
+          </div>
+        </div>
+
+        <!-- Sandbox Resource Enforcements Footer -->
+        <div style="background:#0b1120;border-top:1px solid #1e293b;padding:6px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:#94a3b8;font-family:var(--font-mono, monospace)">
+          <span><i class="fa-solid fa-shield-halved" style="color:var(--pg-green);margin-right:6px"></i> Sandbox Limits: 512MB RAM &bull; 1.0 CPU &bull; 100 PIDs &bull; 25s Timeout</span>
+          <span>Workspace: <code style="color:#e2e8f0">playground_workspaces/{{ active_session.session_id[:8] }}/</code></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scratchpad File Editor Modal -->
+<div id="pgEditorModal" class="pg-editor-modal">
+  <div class="pg-editor-card">
+    <div class="pg-editor-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-pen-to-square" style="color:var(--pg-yellow)"></i>
+        <span style="font-family:var(--font-display, sans-serif);font-weight:800;font-size:0.95rem">WORKSPACE FILE EDITOR</span>
+      </div>
+      <button onclick="closeFileEditor()" class="btn btn-sm btn-white" style="padding:2px 8px;font-size:0.8rem">&times;</button>
+    </div>
+
+    <div style="padding:10px 16px;background:#f8fafc;border-bottom:2px solid var(--pg-border);display:flex;align-items:center;gap:12px">
+      <label style="font-weight:700;font-size:0.82rem;font-family:var(--font-mono, monospace)">Filename:</label>
+      <input type="text" id="pgEditorFilename" style="flex:1;padding:4px 8px;border:2px solid #121212;font-family:var(--font-mono, monospace);font-size:0.85rem">
+    </div>
+
+    <textarea id="pgEditorContent" class="pg-editor-textarea" spellcheck="false" placeholder="Write code here..."></textarea>
+
+    <div class="pg-editor-footer">
+      <span style="font-size:0.75rem;color:#64748b">Changes are saved directly into your isolated session workspace.</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeFileEditor()" class="btn btn-sm btn-white" style="border:2px solid #121212">Cancel</button>
+        <button onclick="saveFileEditor()" class="btn btn-sm btn-yellow" style="border:2px solid #121212;box-shadow:2px 2px 0px #121212">
+          <i class="fa-solid fa-floppy-disk"></i> Save File
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.VLAB_PLAYGROUND_SESSION_ID = "{{ active_session.session_id }}";
+  window.VLAB_PLAYGROUND_ENV = "{{ current_env }}";
+  window.VLAB_PLAYGROUND_PROMPT = "{{ active_session.prompt }}";
+</script>
+<script src="{{ url_for('static', filename='js/playground.js') }}"></script>
+{% endblock %}

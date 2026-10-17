@@ -107,6 +107,10 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
+# Register isolated Practice Playground module
+from backend.playground import playground_bp
+app.register_blueprint(playground_bp)
+
 
 LAB1_STEPS = [
     {"id": 1, "title": "Check System Requirements",

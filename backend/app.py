@@ -95,8 +95,17 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 # Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader or multi-worker deployments)
-enable_sync = os.environ.get("ENABLE_SYNC_WORKER", "true").lower() in ("true", "1", "yes")
-if enable_sync and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
+enable_sync = os.environ.get(
+    "ENABLE_SYNC_WORKER", "true"
+).lower() in ("true", "1", "yes")
+if (
+    enable_sync
+    and "unittest" not in sys.modules
+    and (
+        not app.debug
+        or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+    )
+):
     email_service.start_worker()
     cloud_sync_service.start_worker()
 

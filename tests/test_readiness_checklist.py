@@ -274,6 +274,12 @@ def run_check_8_security_hardening():
         bad_agent = client.post("/api/agent/register", json={"host_id": "TEST_H1", "secret": "wrong-secret"})
         assert bad_agent.status_code == 401, f"Expected 401 for invalid agent secret, got {bad_agent.status_code}"
 
+        # 5b. Revoked legacy secret must be rejected with 401
+        revoked_agent = client.post("/api/agent/register", json={"host_id": "TEST_OLD", "secret": "vlab-cluster-secret-2026"})
+        assert revoked_agent.status_code == 401, f"Expected 401 for revoked legacy secret in body, got {revoked_agent.status_code}"
+        revoked_hdr = client.post("/api/agent/register", json={"host_id": "TEST_OLD"}, headers={"X-Cluster-Secret": "vlab-cluster-secret-2026"})
+        assert revoked_hdr.status_code == 401, f"Expected 401 for revoked legacy secret in header, got {revoked_hdr.status_code}"
+
         expected_secret = ha_cluster_manager._get_config("cluster_auth_secret", "dummy")
         good_agent = client.post("/api/agent/register", json={
             "host_id": "TEST_H1",

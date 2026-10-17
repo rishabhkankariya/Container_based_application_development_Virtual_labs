@@ -532,7 +532,7 @@ def main():
     parser.add_argument("--controller-url", default=os.environ.get("VLAB_CONTROLLER_URL", "http://127.0.0.1:5000"), help="Central Controller URL")
     parser.add_argument("--agent-ip", default=os.environ.get("VLAB_AGENT_IP", "0.0.0.0"), help="IP address to bind agent RPC server")
     parser.add_argument("--agent-port", type=int, default=int(os.environ.get("VLAB_AGENT_PORT", 5051)), help="Port for agent RPC server")
-    parser.add_argument("--secret", default=os.environ.get("VLAB_AGENT_SECRET", "vlab-cluster-secret-2026"), help="Cluster authentication secret")
+    parser.add_argument("--secret", default=os.environ.get("VLAB_AGENT_SECRET") or os.environ.get("CLUSTER_AUTH_SECRET", ""), help="Cluster authentication secret (set via CLUSTER_AUTH_SECRET)")
     parser.add_argument("--interval", type=int, default=int(os.environ.get("VLAB_HEARTBEAT_INTERVAL", 3)), help="Heartbeat interval in seconds")
 
     args = parser.parse_args()

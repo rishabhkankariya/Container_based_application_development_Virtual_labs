@@ -39,6 +39,7 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
         conn.execute("DELETE FROM student_workspaces")
         conn.commit()
         conn.close()
+        self.cluster_secret = ha_cluster_manager._get_config("cluster_auth_secret", "")
 
     def test_01_db_initialization_and_schema(self):
         """Verifies all required HA tables are present."""
@@ -60,7 +61,7 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
             "ip_address": "192.168.1.101",
             "port": 5051,
             "role": "PRIMARY",
-            "secret": "vlab-cluster-secret-2026",
+            "secret": self.cluster_secret,
             "cpu_cores": 8,
             "ram_total_mb": 16384,
             "disk_total_gb": 500,
@@ -77,7 +78,7 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
             "ip_address": "192.168.1.102",
             "port": 5052,
             "role": "HOT_STANDBY",
-            "secret": "vlab-cluster-secret-2026",
+            "secret": self.cluster_secret,
             "cpu_cores": 8,
             "ram_total_mb": 16384,
             "disk_total_gb": 500,
@@ -103,7 +104,7 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
 
         hb_data = {
             "host_id": "HOST1",
-            "secret": "vlab-cluster-secret-2026",
+            "secret": self.cluster_secret,
             "cpu_percent": 34.5,
             "ram_percent": 58.2,
             "disk_percent": 45.0,
@@ -121,6 +122,19 @@ class TestTwoNodeHighAvailability(unittest.TestCase):
         self.assertAlmostEqual(host["current_cpu"], 34.5)
         self.assertAlmostEqual(host["current_ram"], 58.2)
         self.assertEqual(host["active_containers"], 3)
+
+    def test_revocation_of_legacy_cluster_secret(self):
+        """Verifies that the old default secret 'vlab-cluster-secret-2026' is strictly revoked and rejected."""
+        bad_data = {
+            "host_id": "HOST_UNAUTH",
+            "hostname": "UNAUTH-NODE",
+            "ip_address": "10.0.0.99",
+            "port": 5059,
+            "secret": "vlab-cluster-secret-2026"
+        }
+        ok, msg = ha_cluster_manager.register_host(bad_data)
+        self.assertFalse(ok)
+        self.assertIn("Revoked default cluster secret", msg)
 
     def test_04_resource_aware_overflow_scheduling(self):
         """Verifies scheduler spills over to Host 2 when Host 1 exceeds 85% CPU."""

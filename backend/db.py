@@ -595,7 +595,7 @@ def init_db():
         ("ram_warn_threshold", "75", "RAM utilization warning percentage"),
         ("ram_hard_threshold", "85", "RAM utilization hard threshold before spilling over"),
         ("max_containers_per_host", "25", "Maximum concurrent student containers allowed per host"),
-        ("cluster_auth_secret", "vlab-cluster-secret-2026", "Shared token for agent-to-controller communication"),
+        ("cluster_auth_secret", "", "Shared cryptographically random token for agent-to-controller communication"),
         ("smtp_host", "", "SMTP Host Server (e.g. smtp.gmail.com)"),
         ("smtp_port", "587", "SMTP Port (587 for TLS, 465 for SSL)"),
         ("smtp_user", "", "SMTP Username/Email"),
@@ -612,6 +612,14 @@ def init_db():
                 "INSERT INTO ha_config (config_key, config_value, description) VALUES (?, ?, ?)",
                 (key, val, desc)
             )
+
+    # Safe migration: revoke and clear any legacy cluster secret
+    try:
+        conn.execute(
+            "UPDATE ha_config SET config_value = '' WHERE config_key = 'cluster_auth_secret' AND config_value = 'vlab-cluster-secret-2026'"
+        )
+    except Exception:
+        pass
 
     # Safe migration for hosts authorization fields
     try:

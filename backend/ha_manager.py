@@ -39,7 +39,7 @@ class HAClusterManager:
     def _get_config(self, key: str, default: str) -> str:
         """Reads a configuration setting from environment variables first, then database ha_config, else default."""
         env_val = os.environ.get(key.upper())
-        if env_val:
+        if env_val and env_val != "vlab-cluster-secret-2026":
             return env_val
 
         # Specific secure handling for cluster secret
@@ -49,7 +49,7 @@ class HAClusterManager:
                 try:
                     with open(secret_file, "r", encoding="utf-8") as f:
                         s = f.read().strip()
-                        if s:
+                        if s and s != "vlab-cluster-secret-2026":
                             return s
                 except Exception:
                     pass
@@ -57,11 +57,30 @@ class HAClusterManager:
         try:
             conn = get_db()
             row = conn.execute("SELECT config_value FROM ha_config WHERE config_key = ?", (key,)).fetchone()
+            val = str(row["config_value"] if isinstance(row, dict) or hasattr(row, "__getitem__") else row[0]) if row else ""
+
+            # If cluster secret is empty or legacy default, generate and persist a fresh cryptographic token
+            if key == "cluster_auth_secret":
+                if not val or val == "vlab-cluster-secret-2026":
+                    new_secret = secrets.token_hex(32)
+                    secret_file = os.path.join(BASE_DIR, "database", ".cluster_secret")
+                    os.makedirs(os.path.dirname(secret_file), exist_ok=True)
+                    try:
+                        with open(secret_file, "w", encoding="utf-8") as f:
+                            f.write(new_secret)
+                        if hasattr(os, "chmod"):
+                            try:
+                                os.chmod(secret_file, 0o600)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    conn.execute("UPDATE ha_config SET config_value = ? WHERE config_key = ?", (new_secret, key))
+                    conn.commit()
+                    val = new_secret
             conn.close()
-            if row:
-                val = str(row["config_value"] if isinstance(row, dict) or hasattr(row, "__getitem__") else row[0])
-                if val:
-                    return val
+            if val:
+                return val
         except Exception:
             pass
         return default
@@ -212,7 +231,11 @@ class HAClusterManager:
     def register_host(self, data: dict) -> Tuple[bool, str]:
         """Registers or updates a host node in the cluster."""
         secret = data.get("secret", "")
-        expected_secret = self._get_config("cluster_auth_secret", "vlab-cluster-secret-2026")
+        # Explicitly revoke and reject legacy hardcoded default secret
+        if not secret or secret == "vlab-cluster-secret-2026":
+            return False, "Revoked default cluster secret rejected. A cryptographically generated cluster secret is required."
+
+        expected_secret = self._get_config("cluster_auth_secret", "")
         if secret != expected_secret:
             return False, "Invalid cluster authentication secret."
 
@@ -293,7 +316,11 @@ class HAClusterManager:
     def record_heartbeat(self, data: dict) -> Tuple[bool, str]:
         """Processes periodic telemetry heartbeats from a host agent."""
         secret = data.get("secret", "")
-        expected_secret = self._get_config("cluster_auth_secret", "vlab-cluster-secret-2026")
+        # Explicitly revoke and reject legacy hardcoded default secret
+        if not secret or secret == "vlab-cluster-secret-2026":
+            return False, "Revoked default cluster secret rejected. A cryptographically generated cluster secret is required."
+
+        expected_secret = self._get_config("cluster_auth_secret", "")
         if secret != expected_secret:
             return False, "Invalid cluster authentication secret."
 
@@ -571,7 +598,7 @@ class HAClusterManager:
         """Makes an authenticated HTTP call to the node's agent RPC endpoint."""
         ip = node["ip_address"]
         port = node["port"]
-        secret = self._get_config("cluster_auth_secret", "vlab-cluster-secret-2026")
+        secret = self._get_config("cluster_auth_secret", "")
         url = f"http://{ip}:{port}/exec"
 
         payload = {

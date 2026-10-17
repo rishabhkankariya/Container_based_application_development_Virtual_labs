@@ -391,11 +391,71 @@ class PlaygroundService:
                 "env_type": sess["env_type"]
             }
 
-        if stripped_lower.startswith(("nano ", "vi ", "vim ")):
+        # 1. Block host GUI / interactive text editor utilities (e.g. notepad, calc, nano, vi)
+        desktop_apps = ["notepad", "calc", "mspaint", "explorer", "regedit", "taskmgr", "mstsc"]
+        for app_name in desktop_apps:
+            if re.search(r'\b' + app_name + r'(\.exe)?\b', stripped_lower):
+                if app_name in ("notepad", "explorer"):
+                    return {
+                        "ok": False,
+                        "output": (
+                            f"⛔ Sandbox Notice: Host application '{app_name}' is disabled.\n"
+                            "The Practice Playground is strictly isolated from your local host machine.\n"
+                            "👉 Use the 'Workspace Files' panel on the left to click and edit files directly in the built-in scratchpad editor!"
+                        ),
+                        "returncode": 0,
+                        "env_type": sess["env_type"]
+                    }
+                return {
+                    "ok": False,
+                    "output": f"⛔ Security Policy: Execution of host binary '{app_name}' is blocked. Operations are restricted to the isolated sandbox.",
+                    "returncode": 126,
+                    "env_type": sess["env_type"]
+                }
+
+        editor_cmds = ("nano", "vi", "vim", "code", "gedit", "subl", "wordpad", "emacs", "pico")
+        first_token = re.split(r'[\s|;&]+', stripped_lower)[0].replace('.exe', '')
+        if first_token in editor_cmds or stripped_lower.startswith(tuple(e + " " for e in editor_cmds)):
             return {
-                "ok": True,
-                "output": "Interactive terminal text editor detected. Please use the 'Workspace Files' panel on the left to click and edit files in the graphical scratchpad editor.",
+                "ok": False,
+                "output": (
+                    f"⛔ Sandbox Notice: Interactive text editor '{first_token}' is disabled.\n"
+                    "👉 Use the 'Workspace Files' panel on the left to click and edit files directly in the built-in scratchpad editor!"
+                ),
                 "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        # 2. Block dangerous host utilities, system configuration, and process management
+        host_blocked_binaries = {
+            "calc", "mspaint", "write", "wordpad", "explorer", "regedit", "reg",
+            "cmd", "powershell", "pwsh", "wscript", "cscript", "mshta", "rundll32",
+            "taskmgr", "control", "shutdown", "restart", "taskkill", "tskill",
+            "sc", "schtasks", "vssadmin", "format", "diskpart", "chkdsk",
+            "certutil", "bitsadmin", "mstsc", "mmc", "eventvwr", "dxdiag",
+            "services.msc", "compmgmt.msc", "lusrmgr.msc", "cleanmgr",
+            "ipconfig", "net", "net1", "route", "arp", "systeminfo",
+            "regsvr32", "conhost", "powershell.exe", "cmd.exe", "wmic", "start",
+            "openfiles", "netsh", "gpupdate", "driverquery", "pnputil",
+            "systemctl", "service", "init", "reboot", "poweroff", "halt"
+        }
+        if first_token in host_blocked_binaries:
+            return {
+                "ok": False,
+                "output": (
+                    f"⛔ Security Violation: Execution of host utility '{first_token}' is blocked.\n"
+                    "The Practice Playground is strictly isolated from your local host machine to protect host integrity."
+                ),
+                "returncode": 126,
+                "env_type": sess["env_type"]
+            }
+
+        # 3. Block absolute host drive paths, UNC shares, and parent directory traversals
+        if re.search(r'(\b[a-zA-Z]:[\\/]|\\\\|\.\./\.\./|\.\.\\\.\.\\)', cmd):
+            return {
+                "ok": False,
+                "output": "⛔ Security Violation: Access to host drives or paths outside the isolated workspace is strictly forbidden.",
+                "returncode": 1,
                 "env_type": sess["env_type"]
             }
 

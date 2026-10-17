@@ -34,7 +34,8 @@ class HAClusterManager:
         self.simulate_active = False
         self.lock = threading.Lock()
         self.last_failover_notice: Optional[Dict[str, Any]] = None
-        self._start_monitor_thread()
+        if "unittest" not in sys.modules:
+            self._start_monitor_thread()
 
     def _get_config(self, key: str, default: str) -> str:
         """Reads a configuration setting from environment variables first, then database ha_config, else default."""

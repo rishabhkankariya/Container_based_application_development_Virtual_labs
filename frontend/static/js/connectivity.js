@@ -38,10 +38,12 @@
     badge.style.padding = "4px 10px";
     badge.style.fontSize = "0.75rem";
     badge.style.fontWeight = "700";
-    badge.style.borderRadius = "999px";
+    badge.style.borderRadius = "4px";
     badge.style.border = "2px solid #121212";
     badge.style.boxShadow = "2px 2px 0px #121212";
     badge.style.cursor = "default";
+    badge.style.whiteSpace = "nowrap";
+    badge.style.flexShrink = "0";
     badge.style.transition = "all 0.2s ease";
 
     if (dotEl) {
@@ -49,6 +51,7 @@
       dotEl.style.height = "8px";
       dotEl.style.borderRadius = "50%";
       dotEl.style.display = "inline-block";
+      dotEl.style.flexShrink = "0";
     }
 
     if (state === States.ONLINE_SYNCED) {
@@ -68,8 +71,8 @@
       badge.style.background = "#e8f4fd";
       badge.style.color = "#0d47a1";
       if (dotEl) dotEl.style.background = "#1976d2";
-      var pendingCount = details && details.pending ? " (" + details.pending + " pending)" : "";
-      textEl.textContent = "Local LAN Mode" + pendingCount;
+      var pendingCount = details && details.pending ? " (" + details.pending + ")" : "";
+      textEl.textContent = "LAN Mode" + pendingCount;
       badge.title = "Connected to local lab server. Work is safely stored in local SQLite.";
     } else if (state === States.HOST_OFFLINE) {
       badge.style.background = "#ffebee";

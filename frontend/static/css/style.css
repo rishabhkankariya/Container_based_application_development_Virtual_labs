@@ -2018,11 +2018,18 @@ footer.bauhaus-footer a:hover {
   transform: rotate(45deg);
 }
 
+.connectivity-badge {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  border-radius: 4px !important;
+}
+
 .vscode-preview-url {
   background: #FFFFFF;
   border: 2px solid #121212;
   padding: 4px 10px;
   flex: 1;
+  min-width: 0;
   color: #121212;
   font-family: var(--font-mono);
   font-weight: 700;
@@ -2030,7 +2037,18 @@ footer.bauhaus-footer a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vscode-preview-url span,
+.vscode-preview-url #previewUrlText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  min-width: 0;
 }
 
 .vscode-preview-body {

@@ -324,6 +324,20 @@ class PlaygroundService:
         finally:
             conn.close()
 
+    def _find_bash_binary(self) -> Optional[str]:
+        """Finds bash binary on Windows, prioritizing Git Bash with full POSIX coreutils."""
+        candidates = [
+            r"C:\Program Files\Git\bin\bash.exe",
+            r"C:\Program Files\Git\usr\bin\bash.exe",
+            r"C:\Program Files (x86)\Git\bin\bash.exe",
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Programs\Git\bin\bash.exe"),
+            shutil.which("bash")
+        ]
+        for c in candidates:
+            if c and os.path.isfile(c):
+                return c
+        return None
+
     def execute_command(self, session_id: str, user_id: str, command: str) -> Dict[str, Any]:
         """
         Executes a user command inside their session workspace with strict timeouts,
@@ -340,15 +354,50 @@ class PlaygroundService:
         if not cmd:
             return {"ok": False, "output": "No command provided."}
 
-        cmd_lower = cmd.lower()
+        stripped_lower = cmd.lower()
 
         # Built-in clear / cls
-        if cmd_lower in ("clear", "cls"):
+        if stripped_lower in ("clear", "cls"):
             return {"ok": True, "action": "clear", "output": ""}
 
         # Built-in exit
-        if cmd_lower == "exit":
+        if stripped_lower == "exit":
             return {"ok": True, "action": "exit", "output": "Playground session remains active. Use 'Reset' to clear files."}
+
+        # Prevent headless interactive hanging
+        if stripped_lower in ("python", "python3"):
+            py_ver = sys.version.split()[0]
+            return {
+                "ok": True,
+                "output": (
+                    f"Python {py_ver} Sandbox Active.\n"
+                    "Ready to run Python scripts or one-liners!\n"
+                    "  • Run a file:    python main.py\n"
+                    "  • Run inline:    python -c \"import math; print(math.pi)\"\n"
+                    "  • Inspect code:  cat main.py"
+                ),
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        if stripped_lower in ("bash", "sh"):
+            return {
+                "ok": True,
+                "output": (
+                    "POSIX Linux Shell Active.\n"
+                    "Run your commands directly in this terminal (e.g. 'ls -la', 'cat welcome.txt', or 'bash sample_task.sh')."
+                ),
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
+
+        if stripped_lower.startswith(("nano ", "vi ", "vim ")):
+            return {
+                "ok": True,
+                "output": "Interactive terminal text editor detected. Please use the 'Workspace Files' panel on the left to click and edit files in the graphical scratchpad editor.",
+                "returncode": 0,
+                "env_type": sess["env_type"]
+            }
 
         ws_path = self._resolve_secure_session_path(session_id)
         if not ws_path or not os.path.exists(ws_path):
@@ -370,12 +419,12 @@ class PlaygroundService:
             return {"ok": False, "output": "⛔ Security Violation: Direct host Docker socket mounting is strictly forbidden."}
 
         # Prevent destructive host formatting
-        if re.search(r'(\bformat\s+[a-z]:|\bmkfs|\brm\s+-[a-z]*r[a-z]*f\s+([/~]|\.\.)|\brmdir\s+/[sq]\s+[a-z]:)', cmd_lower):
+        if re.search(r'(\bformat\s+[a-z]:|\bmkfs|\brm\s+-[a-z]*r[a-z]*f\s+([/~]|\.\.)|\brmdir\s+/[sq]\s+[a-z]:)', stripped_lower):
             return {"ok": False, "output": "⛔ Security Policy: Destructive filesystem command blocked."}
 
         # If docker command executed in playground, inject kernel cgroup resource controls
         exec_cmd = cmd
-        if cmd_lower.startswith("docker run"):
+        if stripped_lower.startswith("docker run"):
             limit_flags = []
             if "--memory" not in exec_cmd and "-m " not in exec_cmd:
                 limit_flags.append("--memory=512m")
@@ -386,14 +435,43 @@ class PlaygroundService:
             if limit_flags:
                 exec_cmd = re.sub(r'^(docker\s+run\b)', r'\1 ' + ' '.join(limit_flags), exec_cmd, count=1, flags=re.IGNORECASE)
 
+        # Normalize python3 to python on Windows if needed
+        if sys.platform == "win32" and re.match(r'^\s*python3\b', exec_cmd):
+            exec_cmd = re.sub(r'^\s*python3\b', 'python', exec_cmd, count=1)
+
+        # Prepare environment with Python directory in PATH
+        env = os.environ.copy()
+        py_dir = os.path.dirname(sys.executable)
+        scripts_dir = os.path.join(py_dir, "Scripts")
+        env["PATH"] = f"{py_dir};{scripts_dir};" + env.get("PATH", "")
+        env["PYTHONUNBUFFERED"] = "1"
+
+        is_win = sys.platform == "win32"
+        bash_bin = self._find_bash_binary() if is_win else None
+
+        if is_win and bash_bin:
+            cmd_args = [bash_bin, "-c", exec_cmd]
+            use_shell = False
+        elif is_win:
+            powershell_bin = shutil.which("powershell")
+            if powershell_bin:
+                cmd_args = [powershell_bin, "-NoProfile", "-Command", exec_cmd]
+                use_shell = False
+            else:
+                cmd_args = exec_cmd
+                use_shell = True
+        else:
+            cmd_args = exec_cmd
+            use_shell = True
+
         # Run in subprocess inside isolated session workspace
         try:
-            is_win = sys.platform == "win32"
             creation_flags = subprocess.CREATE_NO_WINDOW if is_win else 0
             proc = subprocess.run(
-                exec_cmd,
-                shell=True,
+                cmd_args,
+                shell=use_shell,
                 cwd=ws_path,
+                env=env,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",

@@ -133,25 +133,38 @@
 }
 
 .pg-env-btn.active {
-  background: #121212;
-  color: #ffffff;
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px var(--pg-border);
+  background: var(--pg-yellow);
+  color: #121212;
+  border: 3px solid var(--pg-border);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--pg-border);
 }
 
 .pg-env-btn.active .pg-env-icon {
-  background: var(--pg-yellow);
+  background: #121212;
+  color: var(--pg-yellow);
+  border-color: #121212;
+}
+
+.pg-env-btn.active .pg-env-meta h4 {
   color: #121212;
+  font-weight: 900;
+}
+
+.pg-env-btn.active .pg-env-meta p {
+  color: #1e293b;
+  opacity: 1;
+  font-weight: 600;
 }
 
 .pg-env-icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--pg-border);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   background: #f1f5f9;
   flex-shrink: 0;
   transition: all 0.15s ease;
@@ -167,8 +180,8 @@
 .pg-env-meta p {
   margin: 0;
   font-size: 0.74rem;
-  opacity: 0.8;
-  line-height: 1.2;
+  color: #475569;
+  line-height: 1.25;
 }
 
 /* Main Workspace Grid (Sidebar + Terminal/Editor) */
@@ -396,14 +409,35 @@
   user-select: none;
 }
 
+.pg-terminal-card input.pg-input,
 .pg-input {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #ffffff;
-  font-family: inherit;
-  font-size: inherit;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #f8fafc !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace !important;
+  font-size: 0.92rem !important;
+  font-weight: 500 !important;
+  padding: 3px 6px !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.pg-terminal-card input.pg-input::placeholder,
+.pg-input::placeholder {
+  color: #64748b !important;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.pg-terminal-card input.pg-input:focus,
+.pg-input:focus {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Scratchpad Editor Modal / View */

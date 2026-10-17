@@ -216,12 +216,6 @@
         </div>
       </div>
 
-      <!-- Interactive Instruction & Hover Guidance Bar -->
-      <div class="notice-banner-bar">
-        <span><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
-        <button onclick="toggleInstructionsDrawer()" class="btn btn-sm btn-yellow" style="padding:2px 10px;font-size:.72rem"><i class="fa-solid fa-book-open"></i> OPEN INSTRUCTIONS &rarr;</button>
-      </div>
-
       <!-- Editor & Replica Visualizer Split Pane -->
       <div class="vscode-editor-pane">
         <!-- Left: Code Editor -->
@@ -239,7 +233,6 @@
             <i class="fa-solid fa-rotate-right preview-refresh-btn" title="Refresh Compose Preview" onclick="updateReplicaGrid()"></i>
             <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.85rem;color:#059669"></i> <span id="previewUrlText">http://localhost:5000/add?a=10&amp;b=20</span></div>
             <span class="preview-status-badge offline" id="previewBadge">OFFLINE</span>
-            <span class="badge badge-purple" id="l6ReplicaBadge" style="margin-left:8px;font-size:.72rem"><i class="fa-solid fa-cubes"></i> Replicas: 1 Active</span>
           </div>
 
           <div class="vscode-preview-body" id="previewContainer">
@@ -253,7 +246,10 @@
               <div style="border:1px solid #30363d;border-radius:6px;padding:12px;background:#161b22;margin-bottom:12px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                   <h4 style="color:#a855f7;margin:0;font-size:.9rem"><i class="fa-solid fa-server"></i> Active Microservice Container Replicas</h4>
-                  <span class="badge badge-purple" id="scalingStateBadge">Baseline (1 Replica)</span>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span class="badge badge-purple" id="l6ReplicaBadge" style="font-size:.72rem"><i class="fa-solid fa-cubes"></i> Replicas: 1 Active</span>
+                    <span class="badge badge-blue" id="scalingStateBadge" style="font-size:.72rem">Baseline (1 Replica)</span>
+                  </div>
                 </div>
                 <div id="replicaContainerGrid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-top:10px">
                   <!-- Replica cards injected dynamically -->

@@ -151,7 +151,7 @@ echo ========================================================================
 echo.
 
 :: Launch Host 1 Compute Agent in dedicated background window
-start "V-Lab Compute Node (HOST 1 PRIMARY - Port 5051)" cmd /k "%PYTHON_EXE% agent\vlab_agent.py --host-id HOST1 --role PRIMARY --controller-url http://127.0.0.1:5000 --agent-port 5051"
+start "V-Lab Compute Node (HOST 1 PRIMARY - Port 5051)" cmd /k "%PYTHON_EXE% agent\vlab_agent.py --host-id HOST1 --role PRIMARY --controller-url http://127.0.0.1:5000 --agent-ip 127.0.0.1 --agent-port 5051"
 
 :: Launch Web Controller in current foreground window
 %PYTHON_EXE% backend\app.py
@@ -224,7 +224,7 @@ if not defined CLUSTER_AUTH_SECRET (
 echo ========================================================================
 echo.
 
-%PYTHON_EXE% agent\vlab_agent.py --host-id HOST2 --role HOT_STANDBY --controller-url %CONTROLLER_URL% --agent-port 5052
+%PYTHON_EXE% agent\vlab_agent.py --host-id HOST2 --role HOT_STANDBY --controller-url %CONTROLLER_URL% --agent-ip %LAN_IP% --agent-port 5052
 pause
 goto MENU
 

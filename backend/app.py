@@ -97,6 +97,7 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 @app.context_processor
 def inject_cluster_standby():
     standby_url = None
+    primary_url = None
     try:
         conn = get_db()
         standby_row = conn.execute(
@@ -106,10 +107,23 @@ def inject_cluster_standby():
             s_ip = standby_row["ip_address"]
             if s_ip and s_ip not in ("0.0.0.0", "127.0.0.1"):
                 standby_url = f"http://{s_ip}:5000"
+
+        primary_row = conn.execute(
+            "SELECT ip_address FROM hosts WHERE role = 'PRIMARY' AND status = 'ONLINE' ORDER BY host_id ASC"
+        ).fetchone()
+        if primary_row:
+            p_ip = primary_row["ip_address"]
+            if p_ip and p_ip not in ("0.0.0.0",):
+                try:
+                    my_ip = request.host.split(":")[0]
+                except Exception:
+                    my_ip = ""
+                if p_ip != my_ip and p_ip != "127.0.0.1":
+                    primary_url = f"http://{p_ip}:5000"
         conn.close()
     except Exception:
         pass
-    return {"cluster_standby_url": standby_url}
+    return {"cluster_standby_url": standby_url, "cluster_primary_url": primary_url}
 
 # Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader or multi-worker deployments)
 enable_sync = os.environ.get(
@@ -484,6 +498,23 @@ def api_health():
     except Exception:
         pass
 
+    # 6. Peer Primary Node discovery for client-side auto-failback
+    primary_controller_url = None
+    try:
+        conn2 = get_db()
+        primary_row = conn2.execute(
+            "SELECT ip_address FROM hosts WHERE role = 'PRIMARY' AND status = 'ONLINE' ORDER BY host_id ASC"
+        ).fetchone()
+        if primary_row:
+            p_ip = primary_row["ip_address"]
+            if p_ip and p_ip not in ("0.0.0.0",):
+                my_ip = request.host.split(":")[0]
+                if p_ip != my_ip and p_ip != "127.0.0.1":
+                    primary_controller_url = f"http://{p_ip}:5000"
+        conn2.close()
+    except Exception:
+        pass
+
     is_healthy = (db_status == "ok")
     return jsonify({
         "status": "healthy" if is_healthy else "degraded",
@@ -496,6 +527,7 @@ def api_health():
         "cloud_sync_status": sync_state,
         "cloud_last_error": last_err,
         "standby_controller_url": standby_controller_url,
+        "primary_controller_url": primary_controller_url,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }), (200 if is_healthy else 503)
 

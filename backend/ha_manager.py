@@ -306,6 +306,21 @@ class HAClusterManager:
                         now_str
                     )
                 )
+            # Auto-failback: if HOST1 is coming back online after a failover, restore it as PRIMARY
+            if existing and existing["role"] in ("STANDBY", "HOT_STANDBY", "OFFLINE"):
+                # Check if another host is currently PRIMARY (i.e., a failover happened before)
+                current_primary = conn.execute(
+                    "SELECT host_id FROM hosts WHERE role = 'PRIMARY' AND host_id != ?",(host_id,)
+                ).fetchone()
+                # Only restore if this host was originally primary (host_id ends with HOST1 or first registered)
+                original_primary = conn.execute(
+                    "SELECT host_id FROM hosts WHERE host_id = ? AND registered_at = (SELECT MIN(registered_at) FROM hosts)", (host_id,)
+                ).fetchone()
+                if current_primary and original_primary:
+                    conn.execute("UPDATE hosts SET role = 'PRIMARY' WHERE host_id = ?", (host_id,))
+                    conn.execute("UPDATE hosts SET role = 'HOT_STANDBY' WHERE host_id != ?", (host_id,))
+                    print(f"\U0001f504 [HA FAILBACK] {host_id} is back online. Restored as PRIMARY, others demoted to HOT_STANDBY.")
+
             conn.commit()
             return True, f"Host {host_id} successfully registered."
         except Exception as e:

@@ -16,8 +16,14 @@
   if (window.VLAB_INITIAL_STANDBY_URL) {
     try { localStorage.setItem("vlab_standby_controller_url", window.VLAB_INITIAL_STANDBY_URL); } catch (e) {}
   }
+  var cachedPrimaryUrl = window.VLAB_INITIAL_PRIMARY_URL || localStorage.getItem("vlab_primary_controller_url") || "";
+  if (window.VLAB_INITIAL_PRIMARY_URL) {
+    try { localStorage.setItem("vlab_primary_controller_url", window.VLAB_INITIAL_PRIMARY_URL); } catch (e) {}
+  }
   var offlineFailureCount = 0;
   var failoverRedirecting = false;
+  var failbackCheckTimer = null;
+  var failbackRedirecting = false;
 
   var States = {
     CHECKING: "CHECKING",
@@ -128,6 +134,13 @@
             localStorage.setItem("vlab_standby_controller_url", cachedStandbyUrl);
           } catch (e) {}
         }
+        // Cache primary URL for auto-failback detection (exposed when WE are on a standby host)
+        if (data.primary_controller_url) {
+          cachedPrimaryUrl = data.primary_controller_url;
+          try { localStorage.setItem("vlab_primary_controller_url", cachedPrimaryUrl); } catch (e) {}
+          // We are currently on a standby — start probing Host 1 for failback
+          schedulePrimaryProbe();
+        }
         var pending = data.pending_sync_count || 0;
         var cloudConfigured = Boolean(data.cloud_configured);
         var cloudReachable = Boolean(data.cloud_reachable);
@@ -182,6 +195,58 @@
       })
       .finally(function () {
         scheduleNextPoll();
+      });
+  }
+
+  function schedulePrimaryProbe() {
+    if (failbackCheckTimer || failbackRedirecting) return; // already running or done
+    failbackCheckTimer = setTimeout(probePrimary, 15000); // first probe after 15s
+  }
+
+  function probePrimary() {
+    failbackCheckTimer = null;
+    if (!cachedPrimaryUrl || failbackRedirecting) return;
+    var primaryOrigin = cachedPrimaryUrl.replace(/\/+$/, "");
+    if (window.location.origin === primaryOrigin) return; // already on primary
+
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var sig = ctrl ? ctrl.signal : undefined;
+    var tId = ctrl ? setTimeout(function () { ctrl.abort(); }, 3000) : null;
+
+    fetch(primaryOrigin + "/api/health", { method: "GET", cache: "no-store", signal: sig })
+      .then(function (res) { if (tId) clearTimeout(tId); return res.json(); })
+      .then(function (data) {
+        if (data && (data.status === "healthy" || data.status === "degraded")) {
+          // Host 1 is back! Trigger failback
+          failbackRedirecting = true;
+          if (window.Swal) {
+            window.Swal.fire({
+              icon: "success",
+              title: "Primary Host Back Online!",
+              html: "Host 1 (Primary) has recovered.<br><b>Auto-switching back to Primary Host...</b>",
+              timer: 4000,
+              timerProgressBar: true,
+              showConfirmButton: false,
+              allowOutsideClick: false
+            }).then(function () {
+              try { localStorage.removeItem("vlab_primary_controller_url"); } catch (e) {}
+              window.location.href = primaryOrigin + window.location.pathname + window.location.search;
+            });
+          } else {
+            setTimeout(function () {
+              try { localStorage.removeItem("vlab_primary_controller_url"); } catch (e) {}
+              window.location.href = primaryOrigin + window.location.pathname + window.location.search;
+            }, 2000);
+          }
+        } else {
+          // Still not fully healthy, check again later
+          failbackCheckTimer = setTimeout(probePrimary, 15000);
+        }
+      })
+      .catch(function () {
+        if (tId) clearTimeout(tId);
+        // Still unreachable, probe again later
+        failbackCheckTimer = setTimeout(probePrimary, 15000);
       });
   }
 

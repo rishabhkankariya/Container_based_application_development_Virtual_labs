@@ -125,6 +125,51 @@ def inject_cluster_standby():
         pass
     return {"cluster_standby_url": standby_url, "cluster_primary_url": primary_url}
 
+# ─── Hourly Auto-Commit & Push ─────────────────────────────────────────────
+import threading as _threading
+import subprocess as _subprocess
+import datetime as _dt
+
+def _auto_git_commit_loop():
+    """Background thread: every hour, git-add tracked data files and push to origin/main."""
+    # Paths to auto-commit (database + all student workspaces)
+    _REPO_ROOT = BASE_DIR
+    _TARGET_PATHS = ["database/vlab.db", "workspaces/"]
+    _INTERVAL_SECONDS = 3600  # 1 hour
+
+    # Wait 60 s on startup so the app is fully ready before the first attempt
+    _threading.Event().wait(60)
+
+    while True:
+        try:
+            ts = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+            # Stage only the data paths we care about
+            _subprocess.run(
+                ["git", "add"] + _TARGET_PATHS,
+                cwd=_REPO_ROOT, capture_output=True, timeout=30
+            )
+            # Check if there is actually anything new to commit
+            diff = _subprocess.run(
+                ["git", "diff", "--cached", "--quiet"],
+                cwd=_REPO_ROOT, capture_output=True, timeout=10
+            )
+            if diff.returncode != 0:  # non-zero = staged changes exist
+                _subprocess.run(
+                    ["git", "commit", "-m", f"chore(auto): hourly data backup [{ts}]"],
+                    cwd=_REPO_ROOT, capture_output=True, timeout=30
+                )
+                _subprocess.run(
+                    ["git", "push", "origin", "main"],
+                    cwd=_REPO_ROOT, capture_output=True, timeout=60
+                )
+                print(f"[Auto-Commit] ✅ Pushed data backup at {ts}")
+            else:
+                print(f"[Auto-Commit] ℹ️  No changes to commit at {ts}")
+        except Exception as _e:
+            print(f"[Auto-Commit] ⚠️  Error during auto-commit: {_e}")
+
+        _threading.Event().wait(_INTERVAL_SECONDS)
+
 # Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader or multi-worker deployments)
 enable_sync = os.environ.get(
     "ENABLE_SYNC_WORKER", "true"
@@ -139,6 +184,9 @@ if (
 ):
     email_service.start_worker()
     cloud_sync_service.start_worker()
+    _t = _threading.Thread(target=_auto_git_commit_loop, name="auto-git-commit", daemon=True)
+    _t.start()
+    print("[Auto-Commit] 🕐 Hourly data backup thread started (first run in 60 s).")
 
 @app.after_request
 def add_header(response):

@@ -758,7 +758,10 @@
   </script>
 
   <!-- Real-time Cluster Connectivity & Cloud Sync Engine -->
-  <script src="{{ url_for('static', filename='js/connectivity.js') }}"></script>
+  {% if cluster_standby_url %}
+  <script>window.VLAB_INITIAL_STANDBY_URL = "{{ cluster_standby_url }}";</script>
+  {% endif %}
+  <script src="{{ url_for('static', filename='js/connectivity.js') }}?v=8.0"></script>
 </body>
 
 </html>

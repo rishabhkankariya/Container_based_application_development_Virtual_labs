@@ -94,6 +94,23 @@ app.config["SECRET_KEY"] = _get_or_create_flask_secret()
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
+@app.context_processor
+def inject_cluster_standby():
+    standby_url = None
+    try:
+        conn = get_db()
+        standby_row = conn.execute(
+            "SELECT ip_address FROM hosts WHERE role IN ('HOT_STANDBY', 'STANDBY') AND status = 'ONLINE' ORDER BY current_cpu ASC"
+        ).fetchone()
+        if standby_row:
+            s_ip = standby_row["ip_address"]
+            if s_ip and s_ip not in ("0.0.0.0", "127.0.0.1"):
+                standby_url = f"http://{s_ip}:5000"
+        conn.close()
+    except Exception:
+        pass
+    return {"cluster_standby_url": standby_url}
+
 # Start asynchronous background workers (prevent duplicate threads with Werkzeug reloader or multi-worker deployments)
 enable_sync = os.environ.get(
     "ENABLE_SYNC_WORKER", "true"

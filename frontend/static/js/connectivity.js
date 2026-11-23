@@ -7,12 +7,15 @@
 (function () {
   "use strict";
 
-  var currentInterval = 12000; // 12 seconds base
-  var minInterval = 10000;     // 10 seconds min
-  var maxInterval = 35000;     // 35 seconds max
+  var currentInterval = 4000;  // 4 seconds base for fast failover
+  var minInterval = 3000;      // 3 seconds min
+  var maxInterval = 15000;     // 15 seconds max
   var pollTimer = null;
   var isSyncing = false;
-  var cachedStandbyUrl = localStorage.getItem("vlab_standby_controller_url") || "";
+  var cachedStandbyUrl = window.VLAB_INITIAL_STANDBY_URL || localStorage.getItem("vlab_standby_controller_url") || "";
+  if (window.VLAB_INITIAL_STANDBY_URL) {
+    try { localStorage.setItem("vlab_standby_controller_url", window.VLAB_INITIAL_STANDBY_URL); } catch (e) {}
+  }
   var offlineFailureCount = 0;
   var failoverRedirecting = false;
 
@@ -105,7 +108,7 @@
     var timeoutId = controller
       ? setTimeout(function () {
           controller.abort();
-        }, 5000)
+        }, 2500)
       : null;
 
     fetch("/api/health", { method: "GET", cache: "no-store", signal: signal })

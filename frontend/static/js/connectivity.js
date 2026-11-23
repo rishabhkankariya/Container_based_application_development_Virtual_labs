@@ -16,14 +16,31 @@
   if (window.VLAB_INITIAL_STANDBY_URL) {
     try { localStorage.setItem("vlab_standby_controller_url", window.VLAB_INITIAL_STANDBY_URL); } catch (e) {}
   }
-  var cachedPrimaryUrl = window.VLAB_INITIAL_PRIMARY_URL || localStorage.getItem("vlab_primary_controller_url") || "";
-  if (window.VLAB_INITIAL_PRIMARY_URL) {
-    try { localStorage.setItem("vlab_primary_controller_url", window.VLAB_INITIAL_PRIMARY_URL); } catch (e) {}
-  }
+
+  // ── Failback: "home host" approach ──────────────────────────────────────────
+  // KEY FIX: We record THIS page's origin as the "home host" while we are on
+  // the PRIMARY (Host 1). After auto-failover redirects the browser to Host 2,
+  // localStorage still holds Host 1's URL — so the probe can fire without
+  // the server needing to tell us anything about where Host 1 is.
+  var homeHostUrl = localStorage.getItem("vlab_home_host_url") || "";
+  // cachedPrimaryUrl: server hint OR stored home host (most reliable path)
+  var cachedPrimaryUrl = window.VLAB_INITIAL_PRIMARY_URL
+    || localStorage.getItem("vlab_primary_controller_url")
+    || homeHostUrl
+    || "";
+
   var offlineFailureCount = 0;
   var failoverRedirecting = false;
   var failbackCheckTimer = null;
   var failbackRedirecting = false;
+
+  // If we are already on a different host than our stored home, start probing
+  // immediately (handles page refresh on Host 2 after a failover)
+  if (homeHostUrl && homeHostUrl !== window.location.origin && !failbackRedirecting) {
+    cachedPrimaryUrl = homeHostUrl;
+    // Kick off probe after a short delay so the page finishes loading first
+    failbackCheckTimer = setTimeout(probePrimary, 8000);
+  }
 
   var States = {
     CHECKING: "CHECKING",
@@ -134,12 +151,29 @@
             localStorage.setItem("vlab_standby_controller_url", cachedStandbyUrl);
           } catch (e) {}
         }
-        // Cache primary URL for auto-failback detection (exposed when WE are on a standby host)
-        if (data.primary_controller_url) {
-          cachedPrimaryUrl = data.primary_controller_url;
-          try { localStorage.setItem("vlab_primary_controller_url", cachedPrimaryUrl); } catch (e) {}
-          // We are currently on a standby — start probing Host 1 for failback
-          schedulePrimaryProbe();
+
+        // ── HOME HOST recording (runs while on Host 1 / PRIMARY) ─────────────
+        // If the server did NOT return a primary_controller_url, that means WE
+        // are the primary. Record our own origin so the browser can find us
+        // again after a failover redirects to Host 2.
+        if (!data.primary_controller_url) {
+          try {
+            localStorage.setItem("vlab_home_host_url", window.location.origin);
+            homeHostUrl = window.location.origin;
+          } catch (e) {}
+        }
+
+        // ── FAILBACK probe trigger (runs while on Host 2 / standby) ──────────
+        // Server hint (optional) OR our stored home host — either works.
+        var effectivePrimary = data.primary_controller_url || homeHostUrl || cachedPrimaryUrl;
+        if (effectivePrimary) {
+          var ep = effectivePrimary.replace(/\/+$/, "");
+          if (ep && ep !== window.location.origin) {
+            // We are on a standby host — keep probing Host 1
+            cachedPrimaryUrl = ep;
+            try { localStorage.setItem("vlab_primary_controller_url", ep); } catch (e) {}
+            schedulePrimaryProbe();
+          }
         }
         var pending = data.pending_sync_count || 0;
         var cloudConfigured = Boolean(data.cloud_configured);
@@ -230,11 +264,13 @@
               allowOutsideClick: false
             }).then(function () {
               try { localStorage.removeItem("vlab_primary_controller_url"); } catch (e) {}
+              try { localStorage.removeItem("vlab_home_host_url"); } catch (e) {}
               window.location.href = primaryOrigin + window.location.pathname + window.location.search;
             });
           } else {
             setTimeout(function () {
               try { localStorage.removeItem("vlab_primary_controller_url"); } catch (e) {}
+              try { localStorage.removeItem("vlab_home_host_url"); } catch (e) {}
               window.location.href = primaryOrigin + window.location.pathname + window.location.search;
             }, 2000);
           }

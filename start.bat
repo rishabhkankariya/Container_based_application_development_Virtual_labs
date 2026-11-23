@@ -191,6 +191,7 @@ if "%CONTROLLER_URL%"=="" (
 
 echo.
 echo Launching Host 2 Standby Agent on port 5052...
+echo Launching Host 2 Standby Web Controller on port 5000...
 echo Pre-caching lab images in background for instant failover readiness...
 
 if not defined CLUSTER_AUTH_SECRET (
@@ -224,7 +225,12 @@ if not defined CLUSTER_AUTH_SECRET (
 echo ========================================================================
 echo.
 
-%PYTHON_EXE% agent\vlab_agent.py --host-id HOST2 --role HOT_STANDBY --controller-url %CONTROLLER_URL% --agent-ip %LAN_IP% --agent-port 5052
+:: Launch Host 2 Compute Agent in dedicated background window
+start "V-Lab Compute Node (HOST 2 STANDBY - Port 5052)" cmd /k "%PYTHON_EXE% agent\vlab_agent.py --host-id HOST2 --role HOT_STANDBY --controller-url %CONTROLLER_URL% --agent-ip %LAN_IP% --agent-port 5052"
+
+:: Launch Standby Web Controller on Host 2 so browser can auto-failover if Host 1 dies
+echo Starting Standby Web Controller on http://%LAN_IP%:5000 ...
+%PYTHON_EXE% backend\app.py
 pause
 goto MENU
 

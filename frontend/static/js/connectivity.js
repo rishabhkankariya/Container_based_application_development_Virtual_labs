@@ -12,6 +12,9 @@
   var maxInterval = 35000;     // 35 seconds max
   var pollTimer = null;
   var isSyncing = false;
+  var cachedStandbyUrl = localStorage.getItem("vlab_standby_controller_url") || "";
+  var offlineFailureCount = 0;
+  var failoverRedirecting = false;
 
   var States = {
     CHECKING: "CHECKING",
@@ -115,6 +118,13 @@
       })
       .then(function (data) {
         currentInterval = minInterval; // reset backoff
+        offlineFailureCount = 0; // reset offline failure count on successful response
+        if (data.standby_controller_url) {
+          cachedStandbyUrl = data.standby_controller_url;
+          try {
+            localStorage.setItem("vlab_standby_controller_url", cachedStandbyUrl);
+          } catch (e) {}
+        }
         var pending = data.pending_sync_count || 0;
         var cloudConfigured = Boolean(data.cloud_configured);
         var cloudReachable = Boolean(data.cloud_reachable);
@@ -136,9 +146,36 @@
       })
       .catch(function (err) {
         if (timeoutId) clearTimeout(timeoutId);
+        offlineFailureCount++;
         // Server or LAN offline
         updateBadgeUI(States.HOST_OFFLINE);
         currentInterval = Math.min(currentInterval * 1.5, maxInterval);
+
+        // Check for automatic failover redirection if Host 1 dropped and Host 2 is known
+        if (offlineFailureCount >= 2 && cachedStandbyUrl && !failoverRedirecting) {
+          var targetHost = cachedStandbyUrl.replace(/\/+$/, "");
+          // Verify we aren't already on the standby host
+          if (window.location.origin !== targetHost) {
+            failoverRedirecting = true;
+            if (window.Swal) {
+              window.Swal.fire({
+                icon: "warning",
+                title: "Primary Host Offline",
+                html: "Primary lab server (Host 1) became unreachable.<br><b>Auto-switching to Standby Host 2...</b>",
+                timer: 4000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                allowOutsideClick: false
+              }).then(function () {
+                window.location.href = targetHost + window.location.pathname + window.location.search;
+              });
+            } else {
+              setTimeout(function () {
+                window.location.href = targetHost + window.location.pathname + window.location.search;
+              }, 2000);
+            }
+          }
+        }
       })
       .finally(function () {
         scheduleNextPoll();

@@ -452,6 +452,21 @@ def api_health():
     else:
         sync_state = "SYNCED"
 
+    # 5. Peer Standby Node discovery for client-side auto-failover
+    standby_controller_url = None
+    try:
+        conn = get_db()
+        standby_row = conn.execute(
+            "SELECT ip_address, port FROM hosts WHERE role IN ('HOT_STANDBY', 'STANDBY') AND status = 'ONLINE' ORDER BY current_cpu ASC"
+        ).fetchone()
+        if standby_row:
+            s_ip = standby_row["ip_address"]
+            if s_ip and s_ip not in ("0.0.0.0", "127.0.0.1"):
+                standby_controller_url = f"http://{s_ip}:5000"
+        conn.close()
+    except Exception:
+        pass
+
     is_healthy = (db_status == "ok")
     return jsonify({
         "status": "healthy" if is_healthy else "degraded",
@@ -463,6 +478,7 @@ def api_health():
         "cloud_reachable": cloud_reachable,
         "cloud_sync_status": sync_state,
         "cloud_last_error": last_err,
+        "standby_controller_url": standby_controller_url,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }), (200 if is_healthy else 503)
 

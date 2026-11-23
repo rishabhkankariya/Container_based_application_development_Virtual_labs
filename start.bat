@@ -57,6 +57,13 @@ if not defined LAN_IP (
     )
 )
 
+:: Cluster Secret (the Controller rejects unauthenticated agents with HTTP 401)
+if not defined CLUSTER_AUTH_SECRET (
+    if exist "database\.cluster_secret" (
+        set /p CLUSTER_AUTH_SECRET=<"database\.cluster_secret"
+    )
+)
+
 :: -------------------------------------------------------------------------
 :: 2. Command Line Arguments Evaluation
 :: -------------------------------------------------------------------------
@@ -185,6 +192,12 @@ if "%CONTROLLER_URL%"=="" (
 echo.
 echo Launching Host 2 Standby Agent on port 5052...
 echo Pre-caching lab images in background for instant failover readiness...
+if not defined CLUSTER_AUTH_SECRET (
+    echo.
+    echo [IMPORTANT] This host has no cluster secret. Copy database\.cluster_secret
+    echo from Host 1 into this folder, or set CLUSTER_AUTH_SECRET before launching,
+    echo otherwise the Controller will reject this node with HTTP 401.
+)
 echo ========================================================================
 echo.
 

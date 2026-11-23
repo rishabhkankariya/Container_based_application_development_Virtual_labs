@@ -3742,6 +3742,11 @@ def api_agent_register():
         or data.get("secret", "")
     )
     data["secret"] = secret
+    # Prevent WinError 10049 when agent registers with 0.0.0.0 or empty IP
+    reported_ip = data.get("ip_address", "").strip()
+    if not reported_ip or reported_ip in ("0.0.0.0", "None"):
+        client_ip = request.remote_addr or "127.0.0.1"
+        data["ip_address"] = client_ip
     ok, msg = ha_cluster_manager.register_host(data)
     status_code = 200 if ok else (401 if "secret" in msg.lower() else 400)
     return jsonify({"ok": ok, "message": msg}), status_code

@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  sum-microservice:
+    build: .
+    ports:
+      - "5001-5005:5000"
+    deploy:
+      replicas: 1

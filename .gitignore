@@ -151,6 +151,9 @@ database/.*secret*
 .cluster_secret
 *.secret
 
+# Per-machine launcher state (LAN IP of the controller)
+host_node_config.txt
+
 # Dynamic student workspaces created during local execution
 backend/workspaces/
 playground_workspaces/

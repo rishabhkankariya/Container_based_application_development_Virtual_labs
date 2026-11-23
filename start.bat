@@ -192,11 +192,34 @@ if "%CONTROLLER_URL%"=="" (
 echo.
 echo Launching Host 2 Standby Agent on port 5052...
 echo Pre-caching lab images in background for instant failover readiness...
+
+if not defined CLUSTER_AUTH_SECRET (
+    if exist "database\.cluster_secret" (
+        set /p CLUSTER_AUTH_SECRET=<"database\.cluster_secret"
+    )
+)
+
 if not defined CLUSTER_AUTH_SECRET (
     echo.
-    echo [IMPORTANT] This host has no cluster secret. Copy database\.cluster_secret
-    echo from Host 1 into this folder, or set CLUSTER_AUTH_SECRET before launching,
-    echo otherwise the Controller will reject this node with HTTP 401.
+    echo ========================================================================
+    echo  [PAIRING] This node needs the cluster secret generated on Host 1.
+    echo  On Host 1 open cmd in the project folder and run:
+    echo      type database\.cluster_secret
+    echo  Paste that 64-character value below.
+    echo ========================================================================
+    set /p CLUSTER_AUTH_SECRET="Cluster secret: "
+    if defined CLUSTER_AUTH_SECRET (
+        set "CLUSTER_AUTH_SECRET=!CLUSTER_AUTH_SECRET: =!"
+        if not exist "database" mkdir "database"
+        > "database\.cluster_secret" echo !CLUSTER_AUTH_SECRET!
+        echo [OK] Secret saved to database\.cluster_secret for future launches.
+    )
+)
+
+if not defined CLUSTER_AUTH_SECRET (
+    echo.
+    echo [WARNING] No secret entered. The Controller will reject this node with HTTP 401
+    echo until database\.cluster_secret exists or CLUSTER_AUTH_SECRET is set.
 )
 echo ========================================================================
 echo.

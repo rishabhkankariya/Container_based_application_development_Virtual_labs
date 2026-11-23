@@ -546,25 +546,29 @@ def api_health():
     except Exception:
         pass
 
-    # 6. Peer Primary Node discovery for client-side auto-failback
+    # 6. Peer host discovery for client-side auto-failback
+    # KEY FIX: Query ANY peer host regardless of role/status — after failover
+    # HOST1's role is 'STANDBY' in Host2's DB, so we can't filter by role='PRIMARY'.
+    # We just need HOST1's last-known IP so the browser can probe it.
     primary_controller_url = None
     try:
         conn2 = get_db()
-        primary_row = conn2.execute(
-            "SELECT ip_address FROM hosts WHERE role = 'PRIMARY' AND status = 'ONLINE' ORDER BY host_id ASC"
+        my_ip = request.host.split(":")[0]
+        peer_row = conn2.execute(
+            """SELECT ip_address FROM hosts
+               WHERE ip_address NOT IN ('0.0.0.0', '127.0.0.1', '')
+                 AND ip_address != ?
+               ORDER BY registered_at ASC LIMIT 1""",
+            (my_ip,)
         ).fetchone()
-        if primary_row:
-            p_ip = primary_row["ip_address"]
-            if p_ip and p_ip not in ("0.0.0.0",):
-                my_ip = request.host.split(":")[0]
-                if p_ip != my_ip and p_ip != "127.0.0.1":
-                    primary_controller_url = f"http://{p_ip}:5000"
+        if peer_row:
+            primary_controller_url = f"http://{peer_row['ip_address']}:5000"
         conn2.close()
     except Exception:
         pass
 
     is_healthy = (db_status == "ok")
-    return jsonify({
+    resp = jsonify({
         "status": "healthy" if is_healthy else "degraded",
         "role": getattr(ha_cluster_manager, "current_role", "PRIMARY"),
         "database": db_status,
@@ -577,7 +581,10 @@ def api_health():
         "standby_controller_url": standby_controller_url,
         "primary_controller_url": primary_controller_url,
         "timestamp": datetime.now(timezone.utc).isoformat()
-    }), (200 if is_healthy else 503)
+    })
+    # CORS: allow cross-origin probe from the peer host's browser (failback detection)
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp, (200 if is_healthy else 503)
 
 
 _LAST_MANUAL_SYNC_TIME = 0.0

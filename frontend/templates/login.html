@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Portal Authentication | Container V-Lab{% endblock %}
+{% block title %}Student Authentication | Container V-Lab{% endblock %}
 
 {% block body %}
-<div style="min-height:75vh;display:flex;align-items:center;justify-content:center;padding:20px 0">
+<div style="min-height:75vh;display:flex;align-items:center;justify-content:center;padding:24px 0">
   <div class="card" style="max-width:480px;width:100%;padding:36px">
     <div class="corner-decor corner-decor-rotated"></div>
 
@@ -15,9 +15,10 @@
           <span class="shape-square"></span>
           <span class="shape-triangle"></span>
         </div>
-        <span>PORTAL ACCESS</span>
       </div>
-      <p style="font-size:.88rem;color:#555">Virtual Docker Laboratory Authentication Console</p>
+      <div class="badge badge-blue" style="margin-top:6px">
+        <i class="fa-solid fa-graduation-cap"></i> STUDENT ACCESS
+      </div>
     </div>
 
     <!-- Flash Notifications -->
@@ -28,26 +29,21 @@
     {% endwith %}
 
     <form method="POST" action="{{ url_for('login') }}">
-      <!-- Bauhaus Role Toggle Switch -->
-      <div class="role-toggle">
-        <label>
-          <input type="radio" name="role" value="student" id="roleStudent" onchange="updateHint()" checked>
-          <span><i class="fa-solid fa-user-graduate"></i> Student</span>
-        </label>
-        <label>
-          <input type="radio" name="role" value="faculty" id="roleFaculty" onchange="updateHint()">
-          <span><i class="fa-solid fa-chalkboard-user"></i> Faculty</span>
-        </label>
-      </div>
+      <input type="hidden" name="role" value="student">
 
       <!-- Identity Field -->
-      <label id="idLabel"><i class="fa-solid fa-id-badge"></i> Student ID or Email</label>
-      <input type="text" name="identifier" id="idField" placeholder="e.g. STU001 or student@univ.edu" required autofocus>
+      <label><i class="fa-solid fa-id-badge"></i> Student ID, Enrollment No, or Email</label>
+      <input type="text" name="identifier" id="idField" required autofocus>
 
       <!-- Password Field with Toggle -->
-      <label><i class="fa-solid fa-lock"></i> Password</label>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <label><i class="fa-solid fa-lock"></i> Password</label>
+        <a href="{{ url_for('change_password') }}" style="font-size:0.8rem;color:var(--primary-blue);font-weight:700">
+          Forgot Password?
+        </a>
+      </div>
       <div style="position:relative;display:flex;align-items:center">
-        <input type="password" name="password" id="loginPassword" placeholder="••••••••" required style="padding-right:45px">
+        <input type="password" name="password" id="loginPassword" required style="padding-right:45px">
         <button type="button" onclick="window.togglePassword(this)" style="position:absolute;right:10px;background:none;border:none;cursor:pointer;font-size:1.1rem;color:#121212" title="Toggle password visibility">
           <i class="fa-solid fa-eye"></i>
         </button>
@@ -59,49 +55,13 @@
       </button>
     </form>
 
-    <!-- Sub links -->
-    <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:2px solid #E0E0E0">
-      <a href="{{ url_for('change_password') }}" style="font-size:.85rem;font-weight:700">
-        <i class="fa-solid fa-key"></i> Need to change your password?
+    <!-- Separate Faculty Portal Link -->
+    <div style="margin-top:20px;background:#F8F9FA;border:2px dashed #121212;padding:14px 16px;text-align:center">
+      <div style="font-size:.82rem;color:#666;margin-bottom:8px">Are you a faculty member or lab instructor?</div>
+      <a href="{{ url_for('faculty_login') }}" class="btn btn-sm btn-black" style="width:100%">
+        <i class="fa-solid fa-chalkboard-user"></i> SWITCH TO FACULTY PORTAL &rarr;
       </a>
-    </div>
-
-    <div style="margin-top:16px;background:var(--accent-yellow-light);border:2px solid #121212;padding:10px 14px;font-size:.8rem;color:#121212;box-shadow:2px 2px 0px #121212">
-      <i class="fa-solid fa-shield-halved" style="color:var(--primary-blue)"></i> Faculty Default: <code>faculty</code> / <code>faculty123</code>
     </div>
   </div>
 </div>
-
-<script>
-  function updateHint(clearInputs = true) {
-    const role = document.querySelector('input[name=role]:checked').value;
-    const label = document.getElementById('idLabel');
-    const field = document.getElementById('idField');
-    const pwdField = document.getElementById('loginPassword');
-    
-    if (clearInputs) {
-      if (field) field.value = '';
-      if (pwdField) pwdField.value = '';
-    }
-
-    if (role === 'student') {
-      label.innerHTML = '<i class="fa-solid fa-id-badge"></i> Student ID or Email';
-      field.placeholder = 'e.g. STU001 or student@univ.edu';
-    } else {
-      label.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Faculty Username';
-      field.placeholder = 'e.g. faculty';
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paramRole = urlParams.get('role');
-    if (paramRole === 'faculty') {
-      document.getElementById('roleFaculty').checked = true;
-    } else {
-      document.getElementById('roleStudent').checked = true;
-    }
-    updateHint(false);
-  });
-</script>
 {% endblock %}

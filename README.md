@@ -149,6 +149,14 @@ Make sure Python 3 is installed.
    ```
    *Note: Environment variables such as `FLASK_SECRET_KEY`, `FLASK_RUN_HOST`, `FLASK_RUN_PORT`, and `FLASK_DEBUG` can be customized to change execution parameters.*
 
+### Local-first cloud synchronization
+
+- **Default mode:** SQLite at `database/vlab.db` remains the operational database. The application continues to serve the college LAN when the internet or cloud database is unavailable.
+- **Optional cloud replica:** Set `DATABASE_URL` to a PostgreSQL connection string to enable the background outbox sync worker. The worker sends pending lab-progress events and acknowledges them locally only after the PostgreSQL transaction commits.
+- **Explicit PostgreSQL-primary mode:** Set `VLAB_DATABASE_MODE=postgres` only when the application should use PostgreSQL as its operational database. This mode requires `DATABASE_URL` and `psycopg2`; it fails closed if PostgreSQL is unavailable instead of silently switching to SQLite.
+- **Sync tuning (optional):** `VLAB_SYNC_INTERVAL_SECONDS` (default 12), `VLAB_SYNC_MAX_BACKOFF_SECONDS` (default 300), and `VLAB_SYNC_BATCH_SIZE` (default 50).
+- **Security:** Keep `DATABASE_URL` out of source control. Store production credentials in environment variables or the deployment platform's secret manager.
+
 ## 👥 Collaborator & Teammate Development Guide
 
 To work on new virtual lab worksheets (e.g., Lab 3, Lab 4, etc.) smoothly without code conflicts, follow these guidelines:

@@ -1,0 +1,20 @@
+{% extends "emails/layout.html" %}
+
+{% block content %}
+<h2>Security Alert: Password Changed 🛡️</h2>
+<p>Hello <strong>{{ student_name }}</strong>,</p>
+<p>
+  This email confirms that the password for your V-Lab account (Student ID: <strong>{{ student_id }}</strong>) was changed on <strong>{{ timestamp }}</strong>.
+</p>
+
+<div class="info-card">
+  <div style="font-size:14px;color:#2e7d32;">
+    ✓ Your new password is now active. You can use it to log in on all lab PCs and through the browser interface.
+  </div>
+</div>
+
+<div class="security-note" style="border-left:3px solid #d9381e;background:#fff5f5;padding:12px 14px;color:#c53030;font-size:13px;">
+  <strong>⚠️ Did you not make this change?</strong><br>
+  If you did not change your password, someone may have accessed your account. Please contact your faculty administrator or course instructor immediately to secure your account.
+</div>
+{% endblock %}

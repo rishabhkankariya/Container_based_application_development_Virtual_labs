@@ -3,6 +3,37 @@
 {% block title %}Faculty Control Center | Container V-Lab{% endblock %}
 
 {% block body %}
+<style>
+  .minimalist-swal-popup {
+    border: 3px solid #121212 !important;
+    border-radius: 0px !important;
+    box-shadow: 6px 6px 0px #121212 !important;
+    background: #FFFFFF !important;
+    padding: 24px !important;
+    font-family: var(--font-sans) !important;
+  }
+  .minimalist-swal-popup .swal2-title {
+    font-family: var(--font-display) !important;
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+  }
+  .minimalist-swal-popup .swal2-confirm,
+  .minimalist-swal-popup .swal2-cancel {
+    border-radius: 0px !important;
+    font-family: var(--font-display) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.5px !important;
+    padding: 9px 22px !important;
+    border: 2px solid #121212 !important;
+    box-shadow: 3px 3px 0px #121212 !important;
+    transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+  }
+  .minimalist-swal-popup .swal2-confirm:hover,
+  .minimalist-swal-popup .swal2-cancel:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px #121212 !important;
+  }
+</style>
 <div style="display:flex;flex-direction:column;gap:28px">
 
   <!-- Header Banner -->
@@ -53,6 +84,152 @@
     <div class="stat-item">
       <div class="stat-val" style="color:var(--purple)" id="statLab6Done">{{ lab6_completed }}</div>
       <div class="stat-lbl">LAB 6 COMPLETED</div>
+    </div>
+  </div>
+
+  <!-- High-Availability Compute Cluster Control Center -->
+  <div class="card" style="margin-top:24px;border:3px solid var(--primary-blue);box-shadow:6px 6px 0px rgba(0,0,0,0.15)">
+    <div class="corner-decor corner-decor-rect"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div>
+        <div class="badge badge-blue" style="margin-bottom:6px">HIGH-AVAILABILITY CLUSTER INFRASTRUCTURE</div>
+        <h2 style="margin:0"><i class="fa-solid fa-server"></i> Two-Node Container Execution Nodes</h2>
+        <p style="margin:4px 0 0 0;font-size:0.9rem;color:#555;">
+          Host 1 (Primary Physical PC) + Host 2 (Hot Standby Physical PC) with automated heartbeat failover and persistent workspace replication.
+        </p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span id="haClusterModeBadge" class="badge" style="background:#28a745;color:#fff;font-weight:700">MULTI-NODE CLUSTER (ACTIVE)</span>
+      </div>
+    </div>
+
+    <!-- Main Host Compute Permission Gatekeeper Bar -->
+    <div style="background:#fff;border:2px solid #121212;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;box-shadow:3px 3px 0px #121212">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-weight:800;font-size:0.9rem"><i class="fa-solid fa-tower-broadcast" style="color:var(--primary-blue)"></i> MAIN HOST ACCESS PERMISSION:</span>
+        <span id="globalComputeBadge" class="badge badge-green" style="font-size:0.85rem">
+          <i class="fa-solid fa-circle-check"></i> ACCESS GRANTED (ACTIVE)
+        </span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button type="button" id="btnToggleGlobalCompute" class="btn btn-sm btn-yellow" onclick="toggleGlobalComputePermission()">
+          <i class="fa-solid fa-pause"></i> PAUSE LAB COMPUTE ACCESS
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Nodes Grid -->
+    <div class="grid-2" id="haNodesGrid" style="gap:20px">
+      <!-- Host 1 Card -->
+      <div id="cardHost1" style="border:2px solid #333;background:#fafafa;padding:18px;border-radius:4px;position:relative">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <span id="badgeRoleHost1" class="badge badge-blue" style="font-weight:700">PRIMARY NODE</span>
+            <h3 style="margin:6px 0 0 0;font-size:1.15rem"><i class="fa-solid fa-desktop"></i> Host 1 (Primary PC)</h3>
+            <span id="ipHost1" style="font-family:monospace;font-size:0.82rem;color:#666">127.0.0.1:5051</span>
+          </div>
+          <span id="statusHost1" class="badge" style="background:#28a745;color:#fff;font-size:0.85rem;padding:4px 10px">
+            <i class="fa-solid fa-circle-dot"></i> ONLINE
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:3px">
+            <div style="font-size:0.75rem;font-weight:700;color:#666">CPU UTILIZATION</div>
+            <div id="cpuValHost1" style="font-size:1.25rem;font-weight:800;color:var(--primary-blue)">0.0%</div>
+            <div style="background:#eee;height:6px;border-radius:3px;overflow:hidden;margin-top:4px">
+              <div id="cpuBarHost1" style="background:var(--primary-blue);height:100%;width:0%"></div>
+            </div>
+          </div>
+          <div style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:3px">
+            <div style="font-size:0.75rem;font-weight:700;color:#666">RAM UTILIZATION</div>
+            <div id="ramValHost1" style="font-size:1.25rem;font-weight:800;color:var(--accent-green)">0.0%</div>
+            <div style="background:#eee;height:6px;border-radius:3px;overflow:hidden;margin-top:4px">
+              <div id="ramBarHost1" style="background:var(--accent-green);height:100%;width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:0.85rem;line-height:1.6;color:#444">
+          <div><i class="fa-brands fa-docker"></i> <strong>Engine:</strong> <span id="dockerVerHost1">Checking...</span></div>
+          <div><i class="fa-solid fa-box"></i> <strong>Containers:</strong> <span id="containersHost1">0 active</span></div>
+          <div><i class="fa-solid fa-heart-pulse"></i> <strong>Heartbeat:</strong> <span id="hbHost1">Connected</span></div>
+        </div>
+
+        <!-- Host 1 Permission Status & Toggle -->
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-size:0.72rem;font-weight:800;color:#666;display:block">MAIN HOST PERMISSION</span>
+            <span id="permBadgeHost1" class="badge badge-green" style="font-size:0.78rem">
+              <i class="fa-solid fa-circle-check"></i> PERMISSION GRANTED
+            </span>
+          </div>
+          <button type="button" id="permBtnHost1" class="btn btn-sm btn-outline" onclick="toggleHostPermission('HOST1')" style="font-size:0.78rem;padding:4px 10px">
+            <i class="fa-solid fa-ban"></i> Revoke Access
+          </button>
+        </div>
+      </div>
+
+      <!-- Host 2 Card -->
+      <div id="cardHost2" style="border:2px solid #333;background:#fafafa;padding:18px;border-radius:4px;position:relative">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <span id="badgeRoleHost2" class="badge badge-yellow" style="font-weight:700;background:#ffc107;color:#000">HOT STANDBY</span>
+            <h3 style="margin:6px 0 0 0;font-size:1.15rem"><i class="fa-solid fa-desktop"></i> Host 2 (Standby PC)</h3>
+            <span id="ipHost2" style="font-family:monospace;font-size:0.82rem;color:#666">127.0.0.1:5052</span>
+          </div>
+          <span id="statusHost2" class="badge" style="background:#0d6efd;color:#fff;font-size:0.85rem;padding:4px 10px">
+            <i class="fa-solid fa-shield-halved"></i> STANDBY (READY)
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:3px">
+            <div style="font-size:0.75rem;font-weight:700;color:#666">CPU UTILIZATION</div>
+            <div id="cpuValHost2" style="font-size:1.25rem;font-weight:800;color:var(--primary-blue)">0.0%</div>
+            <div style="background:#eee;height:6px;border-radius:3px;overflow:hidden;margin-top:4px">
+              <div id="cpuBarHost2" style="background:var(--primary-blue);height:100%;width:0%"></div>
+            </div>
+          </div>
+          <div style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:3px">
+            <div style="font-size:0.75rem;font-weight:700;color:#666">RAM UTILIZATION</div>
+            <div id="ramValHost2" style="font-size:1.25rem;font-weight:800;color:var(--accent-green)">0.0%</div>
+            <div style="background:#eee;height:6px;border-radius:3px;overflow:hidden;margin-top:4px">
+              <div id="ramBarHost2" style="background:var(--accent-green);height:100%;width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:0.85rem;line-height:1.6;color:#444">
+          <div><i class="fa-brands fa-docker"></i> <strong>Engine:</strong> <span id="dockerVerHost2">Checking...</span></div>
+          <div><i class="fa-solid fa-layer-group"></i> <strong>Image Sync:</strong> <span id="imageSyncHost2" style="color:#28a745;font-weight:600">Pre-cached &amp; Ready</span></div>
+          <div><i class="fa-solid fa-heart-pulse"></i> <strong>Heartbeat:</strong> <span id="hbHost2"><span style="color:#0d6efd"><i class="fa-solid fa-shield-halved"></i> Standby (Ready for Hot Spare)</span></span></div>
+        </div>
+
+        <!-- Host 2 Permission Status & Toggle -->
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-size:0.72rem;font-weight:800;color:#666;display:block">MAIN HOST PERMISSION</span>
+            <span id="permBadgeHost2" class="badge badge-green" style="font-size:0.78rem">
+              <i class="fa-solid fa-circle-check"></i> PERMISSION GRANTED
+            </span>
+          </div>
+          <button type="button" id="permBtnHost2" class="btn btn-sm btn-outline" onclick="toggleHostPermission('HOST2')" style="font-size:0.78rem;padding:4px 10px">
+            <i class="fa-solid fa-ban"></i> Revoke Access
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Failover Audit Banner -->
+    <div id="haFailoverBanner" style="display:none;margin-top:16px;background:#fff3cd;border:2px solid #ffeeba;padding:12px 16px;border-radius:4px;color:#856404">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-circle-exclamation" style="font-size:1.4rem;color:#d39e00"></i>
+        <div>
+          <strong id="haFailoverTitle">Automatic Failover In Effect</strong>
+          <div id="haFailoverReason" style="font-size:0.88rem">Host 1 is currently offline. Host 2 has taken over active workloads.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -158,6 +335,17 @@
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
           <div>
+            <label for="studentEnrollmentInput">Enrollment Number</label>
+            <input type="text" id="studentEnrollmentInput" name="enrollment_no" placeholder="e.g. ADT25SOCBD129">
+          </div>
+          <div>
+            <label for="studentRollInput">Roll Number</label>
+            <input type="text" id="studentRollInput" name="roll_no" placeholder="e.g. 129">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+          <div>
             <label for="studentIdInput">Custom Student ID (Optional)</label>
             <input type="text" id="studentIdInput" name="student_id" placeholder="Auto-generated (e.g. STU005)">
           </div>
@@ -167,8 +355,8 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-green" style="width:100%;margin-top:18px">
-          <i class="fa-solid fa-user-plus"></i> ENROLL STUDENT
+        <button type="submit" id="btnEnrollStudent" class="btn btn-green" style="width:100%;margin-top:18px">
+          <i class="fa-solid fa-user-plus"></i> ENROLL STUDENT &amp; DISPATCH CREDENTIALS
         </button>
       </form>
       <div id="addStudentAlert" style="display:none;margin-top:16px" class="flash"></div>
@@ -201,14 +389,22 @@
       <span class="badge badge-blue" id="liveSyncBadge"><i class="fa-solid fa-rotate"></i> LIVE SYNC (ACTIVE)</span>
     </div>
 
-    <div id="noStudentsEmptyBox" style="text-align:center;padding:40px 20px;border:3px dashed #121212;background:#F8F8F8;display:{% if roster|length == 0 %}block{% else %}none{% endif %}">
+    {% if roster|length == 0 %}
+    <div id="noStudentsEmptyBox" style="text-align:center;padding:40px 20px;border:3px dashed #121212;background:#F8F8F8;display:block;">
+    {% else %}
+    <div id="noStudentsEmptyBox" style="text-align:center;padding:40px 20px;border:3px dashed #121212;background:#F8F8F8;display:none;">
+    {% endif %}
       <i class="fa-solid fa-clipboard-user" style="font-size:3rem;color:#888;margin-bottom:12px;display:block"></i>
       <div style="font-weight:700;font-size:1.1rem">No students enrolled yet.</div>
       <p>Upload a class list Excel file or add a student manually above to begin.</p>
     </div>
 
     <!-- Search & Filters Toolbar -->
-    <div id="rosterToolbar" style="display:{% if roster|length == 0 %}none{% else %}flex{% endif %};gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#F5F5F5;border:3px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212">
+    {% if roster|length == 0 %}
+    <div id="rosterToolbar" style="display:none;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#F5F5F5;border:3px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212">
+    {% else %}
+    <div id="rosterToolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#F5F5F5;border:3px solid #121212;padding:12px;box-shadow:3px 3px 0px #121212">
+    {% endif %}
       <div style="flex:1;min-width:240px;position:relative">
         <input type="search" id="studentSearchInput" placeholder="Search by name, ID, or email..." onkeyup="filterAndSortRoster()" style="padding-left:36px;margin:0">
         <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#666"></i>
@@ -233,11 +429,17 @@
     </div>
 
     <!-- Roster Data Grid -->
-    <div class="table-wrap" id="rosterTableWrap" style="display:{% if roster|length == 0 %}none{% else %}block{% endif %}">
+    {% if roster|length == 0 %}
+    <div class="table-wrap" id="rosterTableWrap" style="display:none;">
+    {% else %}
+    <div class="table-wrap" id="rosterTableWrap" style="display:block;">
+    {% endif %}
       <table class="bauhaus-table" id="rosterTable">
         <thead>
           <tr>
             <th>STUDENT ID</th>
+            <th>ENROLLMENT NO</th>
+            <th>ROLL NO</th>
             <th>NAME</th>
             <th>EMAIL</th>
             <th>DEFAULT PASSWORD</th>
@@ -258,8 +460,12 @@
                 data-name="{{ r.name|lower }}"
                 data-id="{{ r.student_id|lower }}"
                 data-email="{{ (r.email or '')|lower }}"
+                data-enrollment="{{ (r.enrollment_no or '')|lower }}"
+                data-roll="{{ (r.roll_no or '')|lower }}"
                 data-score="{{ r.overall_pct }}">
               <td><code>{{ r.student_id }}</code></td>
+              <td><code>{{ r.enrollment_no or "—" }}</code></td>
+              <td><span class="badge badge-white">{{ r.roll_no or "—" }}</span></td>
               <td><b>{{ r.name }}</b></td>
               <td>{{ r.email or "—" }}</td>
               <td><code>{{ r.default_password }}</code></td>
@@ -318,12 +524,62 @@
                 </div>
               </td>
               <td>
-                <button type="button" class="btn btn-sm btn-red" data-id="{{ r.student_id }}" data-name="{{ r.name }}" onclick="deleteStudent(this.dataset.id, this.dataset.name)" title="Delete Student Record" style="padding:4px 8px">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
+                <div style="display:flex;gap:6px">
+                  <button type="button" class="btn btn-sm btn-blue" onclick="resendCredentials('{{ r.student_id }}', '{{ r.name }}', this)" title="Resend Credentials Email" style="padding:4px 8px">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-yellow" onclick="resetStudentPassword('{{ r.student_id }}', '{{ r.name }}', this)" title="Generate New Default Password &amp; Email Student" style="padding:4px 8px">
+                    <i class="fa-solid fa-key"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-red" data-id="{{ r.student_id }}" data-name="{{ r.name }}" onclick="deleteStudent(this.dataset.id, this.dataset.name)" title="Delete Student Record" style="padding:4px 8px">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Email Delivery & Audit Desk -->
+  <div class="card" style="border-top:8px solid var(--primary-blue)">
+    <div class="corner-decor corner-decor-rect"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div>
+        <div class="badge badge-blue" style="margin-bottom:6px">COMMUNICATION INFRASTRUCTURE</div>
+        <h2><i class="fa-solid fa-envelopes-bulk"></i> Student Email Dispatches &amp; Delivery Audit</h2>
+        <p style="margin:4px 0 0 0;font-size:0.9rem;color:#555">
+          Real-time delivery telemetry for student default passwords, password resets, lab completion notices, and ticket alerts.
+        </p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span id="emailQueueBadge" class="badge badge-green">0 PENDING</span>
+        <button type="button" class="btn btn-sm btn-black" onclick="loadEmailAuditLogs()" style="padding:6px 12px">
+          <i class="fa-solid fa-rotate"></i> REFRESH LOGS
+        </button>
+      </div>
+    </div>
+
+    <!-- Email Logs Table -->
+    <div class="table-wrap">
+      <table class="bauhaus-table" id="emailLogsTable">
+        <thead>
+          <tr>
+            <th>TIMESTAMP</th>
+            <th>STUDENT ID</th>
+            <th>RECIPIENT</th>
+            <th>TEMPLATE</th>
+            <th>SUBJECT</th>
+            <th>STATUS</th>
+            <th>DELIVERY DETAILS</th>
+          </tr>
+        </thead>
+        <tbody id="emailLogsTbody">
+          <tr>
+            <td colspan="7" style="text-align:center;padding:20px;color:#888">Loading email audit logs...</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -379,34 +635,301 @@
     e.preventDefault();
     const name = document.getElementById('studentNameInput').value.trim();
     const email = document.getElementById('studentEmailInput').value.trim();
+    const enrollment_no = (document.getElementById('studentEnrollmentInput') ? document.getElementById('studentEnrollmentInput').value.trim() : '');
+    const roll_no = (document.getElementById('studentRollInput') ? document.getElementById('studentRollInput').value.trim() : '');
     const student_id = document.getElementById('studentIdInput').value.trim();
     const default_password = document.getElementById('studentPasswordInput').value.trim();
     const alertBox = document.getElementById('addStudentAlert');
+    const btn = document.getElementById('btnEnrollStudent');
+
+    const origBtnHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ENROLLING &amp; DISPATCHING EMAIL...';
+    }
 
     try {
       const res = await fetch('/faculty/add-student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, student_id, default_password })
+        body: JSON.stringify({ name, email, enrollment_no, roll_no, student_id, default_password })
       });
       const d = await res.json();
       if (d.ok) {
         const s = d.student || d;
-        alertBox.className = 'flash flash-success';
-        alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${escapeHtml(s.name || name)}</b> (ID: <code>${escapeHtml(s.student_id)}</code>, Pass: <code>${escapeHtml(s.default_password)}</code>)`;
-        alertBox.style.display = 'flex';
+        const assignedId = s.student_id || student_id;
+        const assignedPwd = s.default_password || default_password || 'Docker@1234';
+        const assignedName = s.name || name;
+        const assignedEmail = s.email || email;
+
+        // Display minimalist modal
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: '<div style="font-size:1.25rem;font-weight:900;letter-spacing:-0.5px;color:#121212">STUDENT ENROLLED</div>',
+            html: `
+              <div style="text-align:left;background:#F9F9FB;border:2px solid #121212;box-shadow:4px 4px 0px #121212;padding:18px;margin-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:0.75rem;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:0.5px">Student ID</span>
+                  <span style="font-family:var(--font-mono);font-weight:700;color:#1040C0;background:#EBF2FF;padding:2px 8px;border:1px solid #1040C0">${escapeHtml(assignedId)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:0.75rem;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:0.5px">Full Name</span>
+                  <span style="font-weight:700;color:#121212">${escapeHtml(assignedName)}</span>
+                </div>
+                ${assignedEmail ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:0.75rem;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:0.5px">Email</span>
+                  <span style="color:#1040C0;font-size:0.88rem">${escapeHtml(assignedEmail)}</span>
+                </div>` : ''}
+                ${s.enrollment_no ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:0.75rem;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:0.5px">Enrollment</span>
+                  <span style="font-family:var(--font-mono);font-size:0.85rem">${escapeHtml(s.enrollment_no)}</span>
+                </div>` : ''}
+
+                <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #CCC">
+                  <div style="font-size:0.75rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Default Password</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <code style="flex:1;background:#FFFFFF;border:2px solid #121212;padding:8px 12px;font-family:var(--font-mono);font-size:1.05rem;font-weight:800;color:#D02020;letter-spacing:1px">${escapeHtml(assignedPwd)}</code>
+                    <button type="button" class="btn btn-sm btn-black" onclick="navigator.clipboard.writeText('${escapeHtml(assignedPwd)}');this.innerHTML='<i class=\\'fa-solid fa-check\\'></i> COPIED';setTimeout(()=>this.innerHTML='<i class=\\'fa-regular fa-copy\\'></i> COPY', 2000)" style="padding:8px 14px;font-weight:700">
+                      <i class="fa-regular fa-copy"></i> COPY
+                    </button>
+                  </div>
+                </div>
+
+                ${assignedEmail ? `
+                <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:600;color:#0D8F4F;background:#E8F5E9;border:1px solid #A5D6A7;padding:8px 12px">
+                  <i class="fa-solid fa-circle-check" style="font-size:1rem"></i>
+                  <span>Welcome email with default password dispatched to student.</span>
+                </div>` : `
+                <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:600;color:#E65100;background:#FFF3E0;border:1px solid #FFE0B2;padding:8px 12px">
+                  <i class="fa-solid fa-triangle-exclamation" style="font-size:1rem"></i>
+                  <span>No email specified. Share default password manually with student.</span>
+                </div>`}
+              </div>
+            `,
+            showConfirmButton: true,
+            confirmButtonText: 'DONE',
+            confirmButtonColor: '#121212',
+            customClass: { popup: 'minimalist-swal-popup' }
+          });
+        }
+
+        if (alertBox) {
+          alertBox.className = 'flash flash-success';
+          let successMsg = `<i class="fa-solid fa-circle-check"></i> Enrolled <b>${escapeHtml(assignedName)}</b> (ID: <code>${escapeHtml(assignedId)}</code>, Pass: <code>${escapeHtml(assignedPwd)}</code>)`;
+          if (s.enrollment_no) successMsg += ` | Enr: <code>${escapeHtml(s.enrollment_no)}</code>`;
+          alertBox.innerHTML = successMsg;
+          alertBox.style.display = 'flex';
+        }
         document.getElementById('manualStudentForm').reset();
-        // Immediately synchronize live roster without page reload
+        // Immediately synchronize live roster and email audit logs without page reload
         syncFacultyLiveData(true);
+        loadEmailAuditLogs();
       } else {
-        alertBox.className = 'flash flash-error';
-        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(d.message || d.error || 'Failed to enroll student.')}`;
-        alertBox.style.display = 'flex';
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Enrollment Error',
+            text: d.message || d.error || 'Failed to enroll student.',
+            confirmButtonColor: '#121212',
+            customClass: { popup: 'minimalist-swal-popup' }
+          });
+        }
+        if (alertBox) {
+          alertBox.className = 'flash flash-error';
+          alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(d.message || d.error || 'Failed to enroll student.')}`;
+          alertBox.style.display = 'flex';
+        }
       }
     } catch (err) {
-      alertBox.className = 'flash flash-error';
-      alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${escapeHtml(err.message || 'Network error')}`;
-      alertBox.style.display = 'flex';
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Network Error',
+          text: err.message || 'Submission error',
+          confirmButtonColor: '#121212',
+          customClass: { popup: 'minimalist-swal-popup' }
+        });
+      }
+      if (alertBox) {
+        alertBox.className = 'flash flash-error';
+        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Submission error: ${escapeHtml(err.message || 'Network error')}`;
+        alertBox.style.display = 'flex';
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origBtnHtml;
+      }
+    }
+  }
+
+  async function resendCredentials(studentId, studentName, btnEl) {
+    if (typeof Swal !== 'undefined') {
+      const result = await Swal.fire({
+        title: '<div style="font-size:1.15rem;font-weight:900;text-transform:uppercase">Resend Credentials?</div>',
+        html: `Re-dispatch login credentials and default password for <b>${escapeHtml(studentName)}</b> (<code>${escapeHtml(studentId)}</code>) to their registered email?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1040C0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fa-solid fa-paper-plane"></i> Send Email',
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'minimalist-swal-popup' }
+      });
+      if (!result.isConfirmed) return;
+    } else {
+      if (!confirm(`Send login credentials for ${studentName} (${studentId}) to their registered email?`)) return;
+    }
+
+    let origHtml = '';
+    if (btnEl) {
+      origHtml = btnEl.innerHTML;
+      btnEl.disabled = true;
+      btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    }
+
+    try {
+      const res = await fetch(`/api/faculty/resend-credentials/${encodeURIComponent(studentId)}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        if (typeof Swal !== 'undefined') {
+          const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true
+          });
+          Toast.fire({
+            icon: 'success',
+            title: 'Credentials Dispatched',
+            text: data.message
+          });
+        } else {
+          alert(data.message);
+        }
+        loadEmailAuditLogs();
+      } else {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Delivery Notice',
+            text: data.message || 'Failed to resend credentials.',
+            confirmButtonColor: '#121212',
+            customClass: { popup: 'minimalist-swal-popup' }
+          });
+        } else {
+          alert('Error: ' + (data.message || 'Failed to resend credentials.'));
+        }
+      }
+    } catch (err) {
+      alert('Network error while requesting credential dispatch.');
+    } finally {
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = origHtml;
+      }
+    }
+  }
+
+  async function resetStudentPassword(studentId, studentName, btnEl) {
+    if (typeof Swal !== 'undefined') {
+      const result = await Swal.fire({
+        title: '<div style="font-size:1.15rem;font-weight:900;text-transform:uppercase">Reset Default Password?</div>',
+        html: `Generate a new default password for <b>${escapeHtml(studentName)}</b> (<code>${escapeHtml(studentId)}</code>) and immediately dispatch it to their registered email?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#D02020',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fa-solid fa-key"></i> Generate &amp; Send',
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'minimalist-swal-popup' }
+      });
+      if (!result.isConfirmed) return;
+    } else {
+      if (!confirm(`Generate a new default password for ${studentName} (${studentId}) and email it to them?`)) return;
+    }
+
+    let origHtml = '';
+    if (btnEl) {
+      origHtml = btnEl.innerHTML;
+      btnEl.disabled = true;
+      btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    }
+
+    try {
+      const res = await fetch(`/api/faculty/reset-student-password/${encodeURIComponent(studentId)}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        const newPwd = data.default_password;
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: '<div style="font-size:1.25rem;font-weight:900;letter-spacing:-0.5px;color:#121212">NEW DEFAULT PASSWORD</div>',
+            html: `
+              <div style="text-align:left;background:#F9F9FB;border:2px solid #121212;box-shadow:4px 4px 0px #121212;padding:18px;margin-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:0.75rem;font-weight:800;color:#666;text-transform:uppercase">Student</span>
+                  <span style="font-weight:700;color:#121212">${escapeHtml(studentName)} (<code>${escapeHtml(studentId)}</code>)</span>
+                </div>
+                ${data.email ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:0.75rem;font-weight:800;color:#666;text-transform:uppercase">Recipient</span>
+                  <span style="color:#1040C0;font-size:0.88rem">${escapeHtml(data.email)}</span>
+                </div>` : ''}
+
+                <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #CCC">
+                  <div style="font-size:0.75rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">New Default Password</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <code style="flex:1;background:#FFFFFF;border:2px solid #121212;padding:8px 12px;font-family:var(--font-mono);font-size:1.15rem;font-weight:800;color:#D02020;letter-spacing:1px">${escapeHtml(newPwd)}</code>
+                    <button type="button" class="btn btn-sm btn-black" onclick="navigator.clipboard.writeText('${escapeHtml(newPwd)}');this.innerHTML='<i class=\\'fa-solid fa-check\\'></i> COPIED';setTimeout(()=>this.innerHTML='<i class=\\'fa-regular fa-copy\\'></i> COPY', 2000)" style="padding:8px 14px;font-weight:700">
+                      <i class="fa-regular fa-copy"></i> COPY
+                    </button>
+                  </div>
+                </div>
+
+                ${data.email ? `
+                <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:600;color:#0D8F4F;background:#E8F5E9;border:1px solid #A5D6A7;padding:8px 12px">
+                  <i class="fa-solid fa-circle-check" style="font-size:1rem"></i>
+                  <span>New password and login instructions dispatched to ${escapeHtml(data.email)}.</span>
+                </div>` : `
+                <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:600;color:#E65100;background:#FFF3E0;border:1px solid #FFE0B2;padding:8px 12px">
+                  <i class="fa-solid fa-triangle-exclamation" style="font-size:1rem"></i>
+                  <span>No registered email address. Share new password manually.</span>
+                </div>`}
+              </div>
+            `,
+            showConfirmButton: true,
+            confirmButtonText: 'DONE',
+            confirmButtonColor: '#121212',
+            customClass: { popup: 'minimalist-swal-popup' }
+          });
+        } else {
+          alert(data.message);
+        }
+        syncFacultyLiveData(true);
+        loadEmailAuditLogs();
+      } else {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Reset Error',
+            text: data.message || 'Failed to reset default password.',
+            confirmButtonColor: '#121212',
+            customClass: { popup: 'minimalist-swal-popup' }
+          });
+        } else {
+          alert('Error: ' + (data.message || 'Failed to reset default password.'));
+        }
+      }
+    } catch (err) {
+      alert('Network error while resetting default password.');
+    } finally {
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = origHtml;
+      }
     }
   }
 
@@ -447,8 +970,12 @@
           data-name="${escapeHtml((r.name || '').toLowerCase())}"
           data-id="${escapeHtml((r.student_id || '').toLowerCase())}"
           data-email="${escapeHtml((r.email || '').toLowerCase())}"
+          data-enrollment="${escapeHtml((r.enrollment_no || '').toLowerCase())}"
+          data-roll="${escapeHtml((r.roll_no || '').toLowerCase())}"
           data-score="${r.overall_pct || 0}">
         <td><code>${escapeHtml(r.student_id || '')}</code></td>
+        <td><code>${escapeHtml(r.enrollment_no || '—')}</code></td>
+        <td><span class="badge badge-white">${escapeHtml(r.roll_no || '—')}</span></td>
         <td><b>${escapeHtml(r.name || '')}</b></td>
         <td>${r.email ? escapeHtml(r.email) : '—'}</td>
         <td><code>${escapeHtml(r.default_password || '')}</code></td>
@@ -465,9 +992,17 @@
           </div>
         </td>
         <td>
-          <button type="button" class="btn btn-sm btn-red" onclick="deleteStudent('${escapeHtml(r.student_id || '')}', '${escapeHtml(r.name || '')}')" title="Delete Student Record" style="padding:4px 8px">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn btn-sm btn-blue" onclick="resendCredentials('${escapeHtml(r.student_id || '')}', '${escapeHtml(r.name || '')}', this)" title="Resend Credentials Email" style="padding:4px 8px">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-yellow" onclick="resetStudentPassword('${escapeHtml(r.student_id || '')}', '${escapeHtml(r.name || '')}', this)" title="Generate New Default Password &amp; Email Student" style="padding:4px 8px">
+              <i class="fa-solid fa-key"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-red" onclick="deleteStudent('${escapeHtml(r.student_id || '')}', '${escapeHtml(r.name || '')}')" title="Delete Student Record" style="padding:4px 8px">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -684,7 +1219,9 @@
       const name = r.getAttribute('data-name') || '';
       const id = r.getAttribute('data-id') || '';
       const email = r.getAttribute('data-email') || '';
-      const match = !q || name.includes(q) || id.includes(q) || email.includes(q);
+      const enrollment = r.getAttribute('data-enrollment') || '';
+      const roll = r.getAttribute('data-roll') || '';
+      const match = !q || name.includes(q) || id.includes(q) || email.includes(q) || enrollment.includes(q) || roll.includes(q);
       if (match) {
         r.style.display = '';
         visible++;
@@ -721,9 +1258,245 @@
 
   // Polling every 2.5 seconds for near-real-time updates
   setInterval(() => syncFacultyLiveData(false), 2500);
+  setInterval(syncClusterHAStatus, 2000);
+
+  let lastHAFailoverNoticeSeen = false;
+  let currentGlobalComputeEnabled = true;
+  let hostAuthStates = { HOST1: true, HOST2: true };
+
+  function syncClusterHAStatus() {
+    fetch('/api/ha/status')
+      .then(r => r.json())
+      .then(data => {
+        if (!data || !data.ok) return;
+
+        // Sync Global Main Host Permission
+        currentGlobalComputeEnabled = (data.global_compute_enabled !== false);
+        const gBadge = document.getElementById('globalComputeBadge');
+        const gBtn = document.getElementById('btnToggleGlobalCompute');
+        if (gBadge && gBtn) {
+          if (currentGlobalComputeEnabled) {
+            gBadge.className = 'badge badge-green';
+            gBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> ACCESS GRANTED (ACTIVE)';
+            gBtn.className = 'btn btn-sm btn-yellow';
+            gBtn.innerHTML = '<i class="fa-solid fa-pause"></i> PAUSE LAB COMPUTE ACCESS';
+          } else {
+            gBadge.className = 'badge badge-red';
+            gBadge.innerHTML = '<i class="fa-solid fa-ban"></i> ACCESS PAUSED (BLOCKED)';
+            gBtn.className = 'btn btn-sm btn-green';
+            gBtn.innerHTML = '<i class="fa-solid fa-play"></i> GRANT LAB COMPUTE ACCESS';
+          }
+        }
+
+        const modeBadge = document.getElementById('haClusterModeBadge');
+        if (modeBadge) {
+          modeBadge.innerText = data.cluster_mode === 'MULTI_NODE' ? 'MULTI-NODE CLUSTER' : 'STANDALONE LOCAL';
+          modeBadge.style.background = data.cluster_mode === 'MULTI_NODE' ? '#28a745' : '#6c757d';
+        }
+
+        const nodes = data.nodes || [];
+        nodes.forEach(n => {
+          const isHost1 = (n.host_id === 'HOST1');
+          const prefix = isHost1 ? 'Host1' : 'Host2';
+
+          // Sync Host Permission Status
+          const isAuth = (n.is_authorized === 1 || n.is_authorized === true);
+          hostAuthStates[n.host_id] = isAuth;
+          const pBadge = document.getElementById('permBadge' + prefix);
+          const pBtn = document.getElementById('permBtn' + prefix);
+          if (pBadge && pBtn) {
+            if (isAuth) {
+              pBadge.className = 'badge badge-green';
+              pBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> PERMISSION GRANTED';
+              pBtn.className = 'btn btn-sm btn-outline';
+              pBtn.innerHTML = '<i class="fa-solid fa-ban"></i> Revoke Access';
+            } else {
+              pBadge.className = 'badge badge-red';
+              pBadge.innerHTML = '<i class="fa-solid fa-ban"></i> ACCESS REVOKED';
+              pBtn.className = 'btn btn-sm btn-green';
+              pBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Grant Access';
+            }
+          }
+
+          const roleBadge = document.getElementById('badgeRole' + prefix);
+          if (roleBadge) {
+            roleBadge.innerText = n.role + (n.role === 'PRIMARY' ? ' (ACTIVE)' : '');
+            roleBadge.className = n.role === 'PRIMARY' ? 'badge badge-blue' : 'badge badge-yellow';
+            roleBadge.style.background = n.role === 'PRIMARY' ? 'var(--primary-blue)' : '#ffc107';
+            roleBadge.style.color = n.role === 'PRIMARY' ? '#fff' : '#000';
+          }
+
+          const ipEl = document.getElementById('ip' + prefix);
+          if (ipEl) ipEl.innerText = `${n.ip_address}:${n.port} [${n.hostname}]`;
+
+          const statusEl = document.getElementById('status' + prefix);
+          if (statusEl) {
+            const isOnline = (n.status === 'ONLINE');
+            if (isOnline) {
+              statusEl.innerHTML = '<i class="fa-solid fa-circle-dot"></i> ONLINE';
+              statusEl.style.background = '#28a745';
+            } else if (n.role === 'HOT_STANDBY' || n.role === 'STANDBY') {
+              statusEl.innerHTML = '<i class="fa-solid fa-shield-halved"></i> STANDBY (READY)';
+              statusEl.style.background = '#0d6efd';
+            } else {
+              statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> OFFLINE';
+              statusEl.style.background = '#dc3545';
+            }
+          }
+
+          const cpuVal = document.getElementById('cpuVal' + prefix);
+          const cpuBar = document.getElementById('cpuBar' + prefix);
+          if (cpuVal) cpuVal.innerText = `${(n.current_cpu || 0).toFixed(1)}%`;
+          if (cpuBar) cpuBar.style.width = `${Math.min(100, Math.max(0, n.current_cpu || 0))}%`;
+
+          const ramVal = document.getElementById('ramVal' + prefix);
+          const ramBar = document.getElementById('ramBar' + prefix);
+          if (ramVal) ramVal.innerText = `${(n.current_ram || 0).toFixed(1)}%`;
+          if (ramBar) ramBar.style.width = `${Math.min(100, Math.max(0, n.current_ram || 0))}%`;
+
+          const dockerVer = document.getElementById('dockerVer' + prefix);
+          if (dockerVer) dockerVer.innerText = n.docker_version || (n.docker_available ? 'Docker Engine Ready' : 'Unavailable');
+
+          const containersEl = document.getElementById('containers' + prefix);
+          if (containersEl) containersEl.innerText = `${n.active_containers || 0} active`;
+
+          const hbEl = document.getElementById('hb' + prefix);
+          if (hbEl) {
+            const sec = n.seconds_since_heartbeat || 0;
+            if (n.status === 'ONLINE') {
+              hbEl.innerHTML = `<span style="color:#28a745"><i class="fa-solid fa-circle-check"></i> Connected &amp; Active</span>`;
+            } else if (n.role === 'HOT_STANDBY' || n.role === 'STANDBY') {
+              hbEl.innerHTML = `<span style="color:#0d6efd"><i class="fa-solid fa-shield-halved"></i> Standby (Ready for Hot Spare)</span>`;
+            } else {
+              hbEl.innerHTML = `<span style="color:#dc3545">Heartbeat lost (${n.missed_heartbeats || 3} misses)</span>`;
+            }
+          }
+        });
+
+        const banner = document.getElementById('haFailoverBanner');
+        if (data.last_failover_notice) {
+          if (banner) {
+            banner.style.display = 'block';
+            const reasonEl = document.getElementById('haFailoverReason');
+            if (reasonEl) reasonEl.innerText = data.last_failover_notice.reason;
+          }
+          if (!lastHAFailoverNoticeSeen && window.VLabNotify) {
+            window.VLabNotify.showFailoverAlert(
+              data.last_failover_notice.from_host,
+              data.last_failover_notice.to_host,
+              data.last_failover_notice.reason
+            );
+            lastHAFailoverNoticeSeen = true;
+          }
+        } else {
+          if (banner) banner.style.display = 'none';
+        }
+      })
+      .catch(() => {});
+  }
+
+  function toggleGlobalComputePermission() {
+    const newSetting = !currentGlobalComputeEnabled;
+    fetch('/api/ha/global-permission', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: newSetting })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: newSetting ? 'Lab Access Granted!' : 'Lab Access Paused!',
+          text: res.message,
+          icon: newSetting ? 'success' : 'warning',
+          confirmButtonColor: '#3085d6'
+        });
+      } else {
+        alert(res.message);
+      }
+      syncClusterHAStatus();
+    });
+  }
+
+  function toggleHostPermission(hostId) {
+    const currentlyAuth = (hostAuthStates[hostId] !== false);
+    const newSetting = !currentlyAuth;
+    fetch(`/api/ha/host/${hostId}/permission`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authorized: newSetting })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: newSetting ? 'Host Permission Granted' : 'Host Permission Revoked',
+          text: res.message,
+          icon: newSetting ? 'success' : 'info',
+          confirmButtonColor: '#3085d6'
+        });
+      } else {
+        alert(res.message);
+      }
+      syncClusterHAStatus();
+    });
+  }
+
+  async function loadEmailAuditLogs() {
+    const tbody = document.getElementById('emailLogsTbody');
+    const qBadge = document.getElementById('emailQueueBadge');
+    if (!tbody) return;
+
+    try {
+      const res = await fetch('/api/faculty/email-logs?limit=30');
+      const data = await res.json();
+      if (!data || !data.ok) return;
+
+      if (qBadge) {
+        const qCount = data.queue ? data.queue.length : 0;
+        qBadge.innerText = `${qCount} PENDING/FAILED`;
+        qBadge.className = qCount > 0 ? 'badge badge-red' : 'badge badge-green';
+      }
+
+      if (!data.logs || data.logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#888"><i class="fa-solid fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;color:#ccc"></i>No outbound email logs recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.logs.map(l => {
+        const isSent = l.status === 'sent';
+        const isMock = l.status === 'mock_sent';
+        const statusBadge = isSent
+          ? '<span class="badge badge-green"><i class="fa-solid fa-check"></i> DELIVERED</span>'
+          : isMock
+            ? '<span class="badge badge-blue"><i class="fa-solid fa-laptop-code"></i> LOCAL TEST</span>'
+            : '<span class="badge badge-red"><i class="fa-solid fa-triangle-exclamation"></i> FAILED</span>';
+
+        const timeDisplay = l.timestamp ? l.timestamp.replace('T', ' ').substring(0, 19) : '—';
+
+        return `
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:0.78rem">${escapeHtml(timeDisplay)}</td>
+            <td><code>${escapeHtml(l.student_id || '—')}</code></td>
+            <td><b>${escapeHtml(l.recipient || '—')}</b></td>
+            <td><span class="badge badge-yellow">${escapeHtml(l.template || 'generic')}</span></td>
+            <td style="font-size:0.85rem">${escapeHtml(l.subject || '—')}</td>
+            <td>${statusBadge}</td>
+            <td style="font-size:0.78rem;color:#555;max-width:260px;word-break:break-all">${escapeHtml(l.error_message || 'OK')}</td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      console.debug('Failed to load email logs:', e);
+    }
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     syncFacultyLiveData(true);
+    syncClusterHAStatus();
+    loadEmailAuditLogs();
+
+    setInterval(loadEmailAuditLogs, 15000);
   });
 </script>
 {% endblock %}

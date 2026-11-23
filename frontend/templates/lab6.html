@@ -216,12 +216,6 @@
         </div>
       </div>
 
-      <!-- Interactive Instruction & Hover Guidance Bar -->
-      <div class="notice-banner-bar">
-        <span><i class="fa-solid fa-lightbulb" style="color:var(--primary-yellow);margin-right:6px"></i> <b>Code &amp; Command Explanations:</b> Open Instructions drawer to view &amp; hover reference code snippets!</span>
-        <button onclick="toggleInstructionsDrawer()" class="btn btn-sm btn-yellow" style="padding:2px 10px;font-size:.72rem"><i class="fa-solid fa-book-open"></i> OPEN INSTRUCTIONS &rarr;</button>
-      </div>
-
       <!-- Editor & Replica Visualizer Split Pane -->
       <div class="vscode-editor-pane">
         <!-- Left: Code Editor -->
@@ -239,7 +233,6 @@
             <i class="fa-solid fa-rotate-right preview-refresh-btn" title="Refresh Compose Preview" onclick="updateReplicaGrid()"></i>
             <div class="vscode-preview-url"><i class="fa-solid fa-lock" style="font-size:.85rem;color:#059669"></i> <span id="previewUrlText">http://localhost:5000/add?a=10&amp;b=20</span></div>
             <span class="preview-status-badge offline" id="previewBadge">OFFLINE</span>
-            <span class="badge badge-purple" id="l6ReplicaBadge" style="margin-left:8px;font-size:.72rem"><i class="fa-solid fa-cubes"></i> Replicas: 1 Active</span>
           </div>
 
           <div class="vscode-preview-body" id="previewContainer">
@@ -253,7 +246,10 @@
               <div style="border:1px solid #30363d;border-radius:6px;padding:12px;background:#161b22;margin-bottom:12px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                   <h4 style="color:#a855f7;margin:0;font-size:.9rem"><i class="fa-solid fa-server"></i> Active Microservice Container Replicas</h4>
-                  <span class="badge badge-purple" id="scalingStateBadge">Baseline (1 Replica)</span>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span class="badge badge-purple" id="l6ReplicaBadge" style="font-size:.72rem"><i class="fa-solid fa-cubes"></i> Replicas: 1 Active</span>
+                    <span class="badge badge-blue" id="scalingStateBadge" style="font-size:.72rem">Baseline (1 Replica)</span>
+                  </div>
                 </div>
                 <div id="replicaContainerGrid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-top:10px">
                   <!-- Replica cards injected dynamically -->
@@ -442,7 +438,7 @@ if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
   files = { "app.py": "" };
 }
 
-function saveFilesToLocalStorage() {
+function saveFilesToLocalStorage(immediate = false) {
   try {
     localStorage.setItem(STORAGE_KEY_LAB6, JSON.stringify(files));
     if (STUDENT_ID && STUDENT_ID !== 'guest') {
@@ -451,6 +447,29 @@ function saveFilesToLocalStorage() {
   } catch(e) {
     console.error("Error saving files to localStorage:", e);
   }
+  if (window.VLabWorkspace) {
+    window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, immediate);
+  }
+}
+
+// Initial permanent sync with host machine storage
+if (window.VLabWorkspace) {
+  window.VLabWorkspace.fetchHostFiles(STUDENT_ID).then(hostFiles => {
+    if (hostFiles && Object.keys(hostFiles).length > 0) {
+      Object.assign(files, hostFiles);
+      try { localStorage.setItem(STORAGE_KEY_LAB6, JSON.stringify(files)); } catch(e) {}
+      if (typeof renderFileTree === 'function') renderFileTree();
+      if (typeof renderTabs === 'function') renderTabs();
+      if (activeFile && files[activeFile] !== undefined) {
+        if (typeof switchFile === 'function') switchFile(activeFile);
+      } else {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey && typeof switchFile === 'function') switchFile(firstKey);
+      }
+    } else if (files && Object.keys(files).length > 0) {
+      window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, true);
+    }
+  });
 }
 
 const ACTIVE_FILE_KEY_LAB6 = 'vlab_active_file_lab6_' + (STUDENT_ID || 'guest');
@@ -771,15 +790,19 @@ function createNewFilePrompt() {
 
 function renameCurrentFilePrompt() {
   if (!activeFile) return;
-  openCustomPrompt('<i class="fa-solid fa-pen" style="color:#f59e0b"></i> RENAME FILE', 'Rename ' + activeFile + ' to:', activeFile, activeFile, function (val) {
-    if (!val || val === activeFile) return;
+  const oldName = activeFile;
+  openCustomPrompt('<i class="fa-solid fa-pen" style="color:#f59e0b"></i> RENAME FILE', 'Rename ' + oldName + ' to:', oldName, oldName, function (val) {
+    if (!val || val === oldName) return;
     if (files[val] !== undefined) {
       showToast('File ' + val + ' already exists!', 'error');
       return;
     }
-    files[val] = files[activeFile];
-    delete files[activeFile];
-    saveFilesToLocalStorage();
+    files[val] = files[oldName];
+    delete files[oldName];
+    if (window.VLabWorkspace) {
+      window.VLabWorkspace.renameFileOnHost(oldName, val, STUDENT_ID);
+    }
+    saveFilesToLocalStorage(true);
     switchFile(val);
     renderFileTree();
     renderTabs();
@@ -790,7 +813,10 @@ function renameCurrentFilePrompt() {
 function deleteSpecificFile(fname) {
   openCustomConfirmModal('DELETE FILE', 'Are you sure you want to delete ' + fname + '?', 'DELETE FILE', '#ef4444', function () {
     delete files[fname];
-    saveFilesToLocalStorage();
+    if (window.VLabWorkspace) {
+      window.VLabWorkspace.deleteFileFromHost(fname, STUDENT_ID);
+    }
+    saveFilesToLocalStorage(true);
     const rem = Object.keys(files);
     if (activeFile === fname) {
       activeFile = rem.length > 0 ? rem[0] : '';

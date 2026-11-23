@@ -462,7 +462,7 @@ if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
   files = { 'index.html': '' };
 }
 
-function saveFilesToLocalStorage() {
+function saveFilesToLocalStorage(immediate = false) {
   try {
     localStorage.setItem(STORAGE_KEY_LAB3, JSON.stringify(files));
     if (STUDENT_ID && STUDENT_ID !== 'guest') {
@@ -471,6 +471,29 @@ function saveFilesToLocalStorage() {
   } catch(e) {
     console.error("Error saving files to localStorage:", e);
   }
+  if (window.VLabWorkspace) {
+    window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, immediate);
+  }
+}
+
+// Initial permanent sync with host machine storage
+if (window.VLabWorkspace) {
+  window.VLabWorkspace.fetchHostFiles(STUDENT_ID).then(hostFiles => {
+    if (hostFiles && Object.keys(hostFiles).length > 0) {
+      Object.assign(files, hostFiles);
+      try { localStorage.setItem(STORAGE_KEY_LAB3, JSON.stringify(files)); } catch(e) {}
+      if (typeof renderFileTree === 'function') renderFileTree();
+      if (typeof renderTabs === 'function') renderTabs();
+      if (currentFile && files[currentFile] !== undefined) {
+        if (typeof switchFile === 'function') switchFile(currentFile);
+      } else {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey && typeof switchFile === 'function') switchFile(firstKey);
+      }
+    } else if (files && Object.keys(files).length > 0) {
+      window.VLabWorkspace.saveFilesToHost(files, STUDENT_ID, true);
+    }
+  });
 }
 
 const ACTIVE_FILE_KEY_LAB3 = 'vlab_active_file_lab3_' + (STUDENT_ID || 'guest');

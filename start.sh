@@ -11,6 +11,12 @@ cd "$SCRIPT_DIR"
 
 export PYTHONPATH="$SCRIPT_DIR:${PYTHONPATH:-}"
 
+# Cluster secret: the Controller rejects unauthenticated agents with HTTP 401
+if [ -z "${CLUSTER_AUTH_SECRET:-}" ] && [ -f "$SCRIPT_DIR/database/.cluster_secret" ]; then
+    CLUSTER_AUTH_SECRET="$(cat "$SCRIPT_DIR/database/.cluster_secret")"
+    export CLUSTER_AUTH_SECRET
+fi
+
 # 1. Runtime Discovery (Python 3)
 if [ -n "$PYTHON_EXE" ] && command -v "$PYTHON_EXE" >/dev/null 2>&1; then
     PY_CMD="$PYTHON_EXE"
@@ -87,6 +93,12 @@ run_host2() {
     fi
     echo ""
     echo "Launching Host 2 Standby Agent on port 5052..."
+    if [ -z "${CLUSTER_AUTH_SECRET:-}" ]; then
+        echo ""
+        echo " [IMPORTANT] No cluster secret found on this host. Copy database/.cluster_secret"
+        echo " from Host 1 into this folder, or export CLUSTER_AUTH_SECRET, otherwise the"
+        echo " Controller will reject this node with HTTP 401."
+    fi
     echo "========================================================================"
     "$PY_CMD" agent/vlab_agent.py --host-id HOST2 --role HOT_STANDBY --controller-url "$CONTROLLER_URL" --agent-port 5052
 }

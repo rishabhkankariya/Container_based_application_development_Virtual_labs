@@ -93,11 +93,30 @@ run_host2() {
     fi
     echo ""
     echo "Launching Host 2 Standby Agent on port 5052..."
+    if [ -z "${CLUSTER_AUTH_SECRET:-}" ] && [ -f "$SCRIPT_DIR/database/.cluster_secret" ]; then
+        CLUSTER_AUTH_SECRET="$(cat "$SCRIPT_DIR/database/.cluster_secret")"
+        export CLUSTER_AUTH_SECRET
+    fi
     if [ -z "${CLUSTER_AUTH_SECRET:-}" ]; then
         echo ""
-        echo " [IMPORTANT] No cluster secret found on this host. Copy database/.cluster_secret"
-        echo " from Host 1 into this folder, or export CLUSTER_AUTH_SECRET, otherwise the"
-        echo " Controller will reject this node with HTTP 401."
+        echo "========================================================================"
+        echo " [PAIRING] This node needs the cluster secret generated on Host 1."
+        echo " On Host 1 run:  cat database/.cluster_secret"
+        echo " Paste that 64-character value below."
+        echo "========================================================================"
+        read -r -p "Cluster secret: " CLUSTER_AUTH_SECRET
+        CLUSTER_AUTH_SECRET="${CLUSTER_AUTH_SECRET// /}"
+        if [ -n "$CLUSTER_AUTH_SECRET" ]; then
+            mkdir -p "$SCRIPT_DIR/database"
+            (umask 077; printf '%s\n' "$CLUSTER_AUTH_SECRET" > "$SCRIPT_DIR/database/.cluster_secret")
+            export CLUSTER_AUTH_SECRET
+            echo "[OK] Secret saved to database/.cluster_secret for future launches."
+        fi
+    fi
+    if [ -z "${CLUSTER_AUTH_SECRET:-}" ]; then
+        echo ""
+        echo " [WARNING] No secret entered. The Controller will reject this node with HTTP 401"
+        echo " until database/.cluster_secret exists or CLUSTER_AUTH_SECRET is set."
     fi
     echo "========================================================================"
     "$PY_CMD" agent/vlab_agent.py --host-id HOST2 --role HOT_STANDBY --controller-url "$CONTROLLER_URL" --agent-port 5052
